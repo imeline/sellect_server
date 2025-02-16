@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
 
 public record OrderItemAddRequest(
-    long productId,
+    Long productId,
     @Positive(message = "가격은 1원 이상이어야 합니다.")
     @Pattern(regexp = "^[0-9]+$", message = "가격은 정수만 입력 가능합니다.")
     String price,
@@ -27,5 +27,4 @@ public record OrderItemAddRequest(
             orderItem.getQuantity()
         );
     }
-
 }

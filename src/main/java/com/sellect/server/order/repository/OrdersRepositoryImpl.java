@@ -16,6 +16,11 @@ public class OrdersRepositoryImpl implements OrdersRepository {
     private final OrdersJpaRepository ordersJpaRepository;
 
     @Override
+    public Orders save(Orders orders) {
+        return ordersJpaRepository.save(OrdersEntity.from(orders)).toModel();
+    }
+
+    @Override
     public Optional<Orders> findById(Long id) {
         return ordersJpaRepository.findById(id).map(OrdersEntity::toModel);
     }

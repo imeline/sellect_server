@@ -53,14 +53,29 @@ public class OrdersEntity extends BaseTimeEntity {
 
     public Orders toModel() {
         return Orders.builder()
-            .id(id)
-            .user(userEntity.toModel())
-//            .userReceivedCoupon(userReceivedCouponEntity.toModel())
-            .totalPrice(totalPrice)
-            .orderNumber(orderNumber)
-            .status(status)
-            .createdAt(getCreatedAt())
-            .updatedAt(getUpdatedAt())
+            .id(this.id)
+            .user(this.userEntity.toModel())
+//            .userReceivedCoupon(this.userReceivedCouponEntity.toModel())
+            .totalPrice(this.totalPrice)
+            .orderNumber(this.orderNumber)
+            .status(this.status)
+            .createdAt(this.getCreatedAt())
+            .updatedAt(this.getUpdatedAt())
+            .deletedAt(this.getDeleteAt())
+            .build();
+    }
+
+    public static OrdersEntity from(Orders orders) {
+        return OrdersEntity.builder()
+            .id(orders.getId())
+            .userEntity(UserEntity.from(orders.getUser()))
+//            .userReceivedCouponEntity(UserReceivedCouponEntity.from(orders.getUserReceivedCoupon()))
+            .totalPrice(orders.getTotalPrice())
+            .orderNumber(orders.getOrderNumber())
+            .status(orders.getStatus())
+//            .createdAt(orders.getCreatedAt())
+//            .updatedAt(orders.getUpdatedAt())
+//            .deletedAt(orders.getDeletedAt())
             .build();
     }
 }

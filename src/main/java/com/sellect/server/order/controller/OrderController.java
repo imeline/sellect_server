@@ -4,10 +4,9 @@ import com.sellect.server.auth.domain.User;
 import com.sellect.server.common.infrastructure.annotation.AuthSeller;
 import com.sellect.server.common.response.ApiResponse;
 import com.sellect.server.order.application.OrderService;
+import com.sellect.server.order.controller.request.OrderAddRequest;
 import com.sellect.server.order.controller.response.OrderDetailGetResponse;
 import com.sellect.server.order.controller.response.OrderGetResponse;
-import com.sellect.server.product.controller.request.ProductRegisterRequest;
-import com.sellect.server.product.controller.response.ProductRegisterResponse;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -27,26 +26,36 @@ public class OrderController {
     private final OrderService orderService;
 
     /**
-     * 주문서 생성(결제 전)
+     * 주문 생성(pending)
      */
     @PostMapping("/order/pending")
-    public ApiResponse<ProductRegisterResponse> registerMultiple(@AuthSeller User user,
-        @Valid @RequestBody List<ProductRegisterRequest> requests) {
+    public ApiResponse<Long> registerPendingOrder(@AuthSeller User user,
+        @Valid @RequestBody OrderAddRequest requests) {
 
-        long orderId = productService.registerMultiple(seller, requests);
-        return ApiResponse.ok(result);
+        Long orderId = orderService.registerPendingOrder(user, requests);
+        return ApiResponse.ok(orderId);
     }
+
+//    /**
+//     * 결제 전 - 재고 확인, DB 락, 재고 예약(차감)
+//     */
+//    @PatchMapping("/order/{orderId}/reserve/stock")
+//    public ApiResponse<Void> reserveStock(
+//        @PathVariable Long orderId) {
+//
+//        orderService.reserveStock(orderId);
+//        return ApiResponse.ok(null);
+//    }
 
     /**
-     * 주문 완료
+     * 주문 완료 - DB 락, 재고 차감, 결제, 주문 상태 확정, 쿠폰 삭제, 장바구니 비우기
      */
-    @PatchMapping("/order/complete")
-    public ApiResponse<ProductRegisterResponse> registerMultiple(@AuthSeller User user,
-        @Valid @RequestBody List<ProductRegisterRequest> requests) {
-
-        long orderId = productService.registerMultiple(seller, requests);
-        return ApiResponse.ok(result);
+    @PatchMapping("/order/complete/{orderId}")
+    public ApiResponse<Void> completeOrder(@AuthSeller User user, @PathVariable Long orderId) {
+        orderService.completeOrder(user, orderId);
+        return ApiResponse.ok(null);
     }
+
 
     /**
      * 주문 내역 확인
@@ -60,8 +69,7 @@ public class OrderController {
      * 주문 내역 상세 확인
      */
     @GetMapping("/orders/{orderId}")
-    public ApiResponse<OrderDetailGetResponse> getOrdersByUser(@AuthSeller User user,
-        @PathVariable Long orderId) {
-        return ApiResponse.ok(orderService.getOrderDetail(user, orderId));
+    public ApiResponse<OrderDetailGetResponse> getOrdersByUser(@PathVariable Long orderId) {
+        return ApiResponse.ok(orderService.getOrderDetail(orderId));
     }
 }

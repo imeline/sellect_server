@@ -13,7 +13,7 @@ import lombok.Getter;
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 public class OrderItem {
 
-    private final long id;
+    private final Long id;
 
     private final Orders orders;
 
@@ -26,4 +26,14 @@ public class OrderItem {
     private final LocalDateTime createdAt;
 
     private final LocalDateTime deleteAt;
+
+    public static OrderItem register(Orders orders, Product product, BigDecimal price,
+        int quantity) {
+        return OrderItem.builder()
+            .orders(orders)
+            .product(product)
+            .price(price)
+            .quantity(quantity)
+            .build();
+    }
 }

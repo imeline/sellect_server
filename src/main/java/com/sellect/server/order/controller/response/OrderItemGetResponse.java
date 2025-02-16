@@ -5,7 +5,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 public record OrderItemGetResponse(
-    long productId,
+    Long productId,
     String productName,
     BigDecimal productPrice,
     int quantity

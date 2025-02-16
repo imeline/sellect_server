@@ -54,13 +54,25 @@ public class OrderItemEntity {
 
     public OrderItem toModel() {
         return OrderItem.builder()
-            .id(id)
-            .orders(ordersEntity.toModel())
-            .product(productEntity.toModel())
-            .price(price)
-            .quantity(quantity)
-            .createdAt(createdAt)
-            .deleteAt(deleteAt)
+            .id(this.id)
+            .orders(this.ordersEntity.toModel())
+            .product(this.productEntity.toModel())
+            .price(this.price)
+            .quantity(this.quantity)
+            .createdAt(this.createdAt)
+            .deleteAt(this.deleteAt)
+            .build();
+    }
+
+    public static OrderItemEntity from(OrderItem orderItem) {
+        return OrderItemEntity.builder()
+            .id(orderItem.getId())
+            .ordersEntity(OrdersEntity.from(orderItem.getOrders()))
+            .productEntity(ProductEntity.from(orderItem.getProduct()))
+            .price(orderItem.getPrice())
+            .quantity(orderItem.getQuantity())
+            .createdAt(orderItem.getCreatedAt())
+            .deleteAt(orderItem.getDeleteAt())
             .build();
     }
 }

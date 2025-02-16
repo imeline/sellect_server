@@ -4,6 +4,7 @@ import com.sellect.server.auth.domain.User;
 import com.sellect.server.order.repository.entity.OrderStatus;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,7 +15,7 @@ import lombok.Getter;
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 public class Orders {
 
-    private final long id;
+    private final Long id;
 
     private final User user;
 
@@ -31,4 +32,29 @@ public class Orders {
     private final LocalDateTime updatedAt;
 
     private final LocalDateTime deletedAt;
+
+    public static Orders register(User user, BigDecimal totalPrice, OrderStatus status) {
+        return Orders.builder()
+            .user(user)
+            //            .userReceivedCoupon(userReceivedCoupon)
+            .totalPrice(totalPrice)
+            // 주문 번호 UUID 생성 (하이픈 제거, 대문자 + 숫자 조합)
+            .orderNumber(UUID.randomUUID().toString().replace("-", "").toUpperCase())
+            .status(status)
+            .build();
+    }
+
+    public Orders updateStatus(OrderStatus status) {
+        return Orders.builder()
+            .id(this.id)
+            .user(this.user)
+            //            .userReceivedCoupon(this.userReceivedCoupon)
+            .totalPrice(this.totalPrice)
+            .orderNumber(this.orderNumber)
+            .status(status)
+            .createdAt(this.createdAt)
+            .updatedAt(LocalDateTime.now())
+            .deletedAt(this.deletedAt)
+            .build();
+    }
 }

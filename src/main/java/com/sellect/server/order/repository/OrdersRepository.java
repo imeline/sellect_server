@@ -7,6 +7,8 @@ import java.util.Optional;
 
 public interface OrdersRepository {
 
+    Orders save(Orders orders);
+
     Optional<Orders> findById(Long id);
 
     List<Orders> findAllByUser(User user);
