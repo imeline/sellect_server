@@ -37,7 +37,33 @@ public class CouponService {
         couponRepository.save(coupon);
     }
 
+    /*
+     * 쿠폰 등록기능
+     * 쿠폰 수량 삭감 - 동시성 이슈 발생
+     * ReentrantLock을 사용하여 해결 -> 애플리케이션에서 해결
+     * 단일 인스턴스인 경우 가능한 부분
+     * 스케일 아웃을 하면?? -> DB 락????
+     * */
+    @Transactional
+    public void registerCoupon(User user, Long couponId) {
+        // TODO: 애플리케이션 락 vs DB 락 vs 큐 성능측정 필요 2025-02-18, 17:7
+//        lock.lock();
+        Coupon coupon = couponRepository.findById(couponId)
+            .orElseThrow(() -> new CommonException(BError.NOT_EXIST, String.valueOf(couponId)));
+        if (coupon.getQuantity() <= 0) {
+            throw new CommonException(BError.COUPON_QUANTITY_ZERO, couponId.toString());
+        }
 
+        try {
+
+            coupon.decreaseQuantity();
+            UserReceivedCoupon userReceivedCoupon = UserReceivedCoupon.create(user, coupon);
+            userReceivedCouponRepository.save(userReceivedCoupon);
+            couponRepository.save(coupon);
+        } finally {
+            lock.unlock();
+        }
+    }
 
 
 

@@ -21,11 +21,6 @@ public class CouponController {
 
     private final CouponService couponService;
 
-    // TODO: 쿠폰 발급 API
-    /*
-     * 판매자가 쿠폰을 발급하는 API
-     *
-     * */
     @PostMapping("/issue")
     public ApiResponse<?> issueCoupon(
         @AuthSeller User user,
@@ -35,5 +30,12 @@ public class CouponController {
         return ApiResponse.ok(null);
     }
 
+    @PutMapping("/register/{couponId}")
+    public ApiResponse<?> registerCoupon(@AuthUser User user, @PathVariable Long couponId) {
+        couponService.registerCoupon(user, couponId);
+        return null;
+    }
+
+    // *TODO: 쿠폰 조회 API*public ApiResponse<?> getCoupon(@AuthUser User user) {    return null;}`
 
 }
