@@ -49,4 +49,17 @@ public class CouponEntity extends BaseTimeEntity {
             .build();
 
     }
+
+    public Coupon toModel() {
+        return Coupon.builder()
+            .id(this.id)
+            .seller(this.seller.toModel())
+            .discountCost(this.discountCost)
+            .quantity(this.quantity)
+            .expirationDate(this.expirationDate)
+            .createdAt(this.getCreatedAt())
+            .updatedAt(this.getUpdatedAt())
+            .deleteAt(this.getDeleteAt())
+            .build();
+    }
 }

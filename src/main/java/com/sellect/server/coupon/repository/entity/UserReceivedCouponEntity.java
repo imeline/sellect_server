@@ -44,4 +44,16 @@ public class UserReceivedCouponEntity extends BaseTimeEntity {
             .build();
 
     }
+
+    public UserReceivedCoupon toModel() {
+        return UserReceivedCoupon.builder()
+            .id(this.id)
+            .user(this.user.toModel())
+            .coupon(this.coupon.toModel())
+            .isUsed(this.isUsed)
+            .createdAt(this.getCreatedAt())
+            .updatedAt(this.getUpdatedAt())
+            .deleteAt(this.getDeleteAt())
+            .build();
+    }
 }
