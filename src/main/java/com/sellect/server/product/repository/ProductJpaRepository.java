@@ -1,7 +1,6 @@
 package com.sellect.server.product.repository;
 
 import jakarta.persistence.LockModeType;
-import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -16,12 +15,6 @@ public interface ProductJpaRepository extends JpaRepository<ProductEntity, Long>
 
     @Query("SELECT p FROM ProductEntity p where p.name LIKE %:keyword%")
     Page<ProductEntity> findContainingName(@Param("keyword") String keyword, Pageable pageable);
-
-    Page<ProductEntity> findByCategoryEntityId(Long categoryId, Pageable pageable);
-
-    Page<ProductEntity> findByBrandEntityId(Long brandId, Pageable pageable);
-
-    Page<ProductEntity> findByIdIn(List<Long> ids, Pageable pageable);
 
     Optional<ProductEntity> findByIdAndDeleteAtIsNull(Long productId);
 
