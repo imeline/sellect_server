@@ -1,5 +1,6 @@
 package com.sellect.server.product.domain;
 
+import com.sellect.server.product.controller.request.ImageContextCreateRequest;
 import com.sellect.server.product.controller.request.ImageContextUpdateRequest;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
@@ -23,6 +24,19 @@ public class ProductImage {
     private final LocalDateTime updatedAt;
     private final LocalDateTime deleteAt;
 
+    public static ProductImage register(Product product, String imageUrl, ImageContextCreateRequest request) {
+        return ProductImage.builder()
+            .product(product)
+            .imageUrl(imageUrl)
+            .representative(request.isRepresentative())
+            .uuid(request.target())
+            .prev(request.prev())
+            .next(request.next())
+            .createdAt(LocalDateTime.now())
+            .updatedAt(LocalDateTime.now())
+            .build();
+    }
+
     public static ProductImage registerWhenUpdate(Product product, String imageUrl, ImageContextUpdateRequest request) {
         return ProductImage.builder()
             .product(product)
@@ -33,7 +47,6 @@ public class ProductImage {
             .next(request.next())
             .createdAt(LocalDateTime.now())
             .updatedAt(LocalDateTime.now())
-            .deleteAt(null)
             .build();
     }
 

@@ -11,10 +11,12 @@ import com.sellect.server.category.repository.FakeCategoryRepository;
 import com.sellect.server.product.controller.request.ProductModifyRequest;
 import com.sellect.server.product.controller.request.ProductRegisterRequest;
 import com.sellect.server.product.controller.response.ProductModifyResponse;
-import com.sellect.server.product.controller.response.ProductRegisterResponse;
+import com.sellect.server.product.controller.response.ProductMultipleRegisterResponse;
 import com.sellect.server.product.domain.Product;
+import com.sellect.server.product.repository.FakeProductImageRepository;
 import com.sellect.server.product.repository.FakeProductRepository;
 import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -26,7 +28,12 @@ class ProductServiceTest {
     private final FakeProductRepository productRepository = new FakeProductRepository();
     private final FakeBrandRepository brandRepository = new FakeBrandRepository();
     private final FakeCategoryRepository categoryRepository = new FakeCategoryRepository();
-    private final ProductService sut = new ProductService(productRepository, brandRepository, categoryRepository);
+    private final ProductImageService productImageService = new ProductImageService(
+        new FakeStorageService(),
+        productRepository,
+        new FakeProductImageRepository());
+    private final ProductService sut = new ProductService(productImageService, productRepository,
+        brandRepository, categoryRepository);
 
     @BeforeEach
     void setUp() {
@@ -38,6 +45,7 @@ class ProductServiceTest {
     @Nested
     @DisplayName("상품 등록 테스트")
     class RegisterMultiple {
+
         User seller = User.builder()
             .id(1L)
             .build();
@@ -56,12 +64,14 @@ class ProductServiceTest {
                 .build());
 
             List<ProductRegisterRequest> requests = List.of(
-                new ProductRegisterRequest(savedCategory.getId(), savedBrand.getId(), "10000", "상품A", 10),
-                new ProductRegisterRequest(savedCategory.getId(), savedBrand.getId(), "20000", "상품B", 20)
+                new ProductRegisterRequest(savedCategory.getId(), savedBrand.getId(), "10000",
+                    "상품A", 10, null, null),
+                new ProductRegisterRequest(savedCategory.getId(), savedBrand.getId(), "20000",
+                    "상품B", 20, null, null)
             );
 
             // When
-            ProductRegisterResponse response = sut.registerMultiple(seller, requests);
+            ProductMultipleRegisterResponse response = sut.registerMultiple(seller, requests, Collections.emptyList());
 
             // Then
             assertThat(response.successProducts()).hasSize(2);
@@ -80,14 +90,15 @@ class ProductServiceTest {
                 .id(1L)
                 .build());
 
-
             List<ProductRegisterRequest> requests = List.of(
-                new ProductRegisterRequest(savedCategory.getId(), savedBrand.getId(), "10000", "상품A", 10),
-                new ProductRegisterRequest(savedCategory.getId(), savedBrand.getId(), "20000", "상품A", 20) // 중복된 상품명
+                new ProductRegisterRequest(savedCategory.getId(), savedBrand.getId(), "10000",
+                    "상품A", 10, null, null),
+                new ProductRegisterRequest(savedCategory.getId(), savedBrand.getId(), "20000",
+                    "상품A", 20, null, null) // 중복된 상품명
             );
 
             // When
-            ProductRegisterResponse response = sut.registerMultiple(seller, requests);
+            ProductMultipleRegisterResponse response = sut.registerMultiple(seller, requests, Collections.emptyList());
 
             // Then
             assertThat(response.successProducts()).hasSize(1);
@@ -100,11 +111,11 @@ class ProductServiceTest {
         void test2() {
             // Given
             List<ProductRegisterRequest> requests = List.of(
-                new ProductRegisterRequest(999L, 1L, "10000", "상품A", 10) // 존재하지 않는 카테고리
+                new ProductRegisterRequest(999L, 1L, "10000", "상품A", 10, null, null) // 존재하지 않는 카테고리
             );
 
             // When
-            ProductRegisterResponse response = sut.registerMultiple(seller, requests);
+            ProductMultipleRegisterResponse response = sut.registerMultiple(seller, requests, Collections.emptyList());
 
             // Then
             assertThat(response.successProducts()).isEmpty();
@@ -121,11 +132,12 @@ class ProductServiceTest {
                 .build());
 
             List<ProductRegisterRequest> requests = List.of(
-                new ProductRegisterRequest(savedCategory.getId(), 1L, "10000", "상품A", 10) // 존재하지 않는 카테고리
+                new ProductRegisterRequest(savedCategory.getId(), 1L, "10000", "상품A", 10, null, null)
+                // 존재하지 않는 카테고리
             );
 
             // When
-            ProductRegisterResponse response = sut.registerMultiple(seller, requests);
+            ProductMultipleRegisterResponse response = sut.registerMultiple(seller, requests, Collections.emptyList());
 
             // Then
             assertThat(response.successProducts()).isEmpty();
@@ -158,11 +170,11 @@ class ProductServiceTest {
             );
 
             List<ProductRegisterRequest> requests = List.of(
-                new ProductRegisterRequest(10L, 1L, "20000", "상품A", 20) // 중복된 상품명
+                new ProductRegisterRequest(10L, 1L, "20000", "상품A", 20, null, null) // 중복된 상품명
             );
 
             // When
-            ProductRegisterResponse response = sut.registerMultiple(seller, requests);
+            ProductMultipleRegisterResponse response = sut.registerMultiple(seller, requests, Collections.emptyList());
 
             // Then
             assertThat(response.successProducts()).isEmpty();
@@ -174,6 +186,7 @@ class ProductServiceTest {
     @Nested
     @DisplayName("상품 수정 테스트")
     class Modify {
+
         Category category = Category.builder()
             .id(10L)
             .build();
@@ -245,7 +258,6 @@ class ProductServiceTest {
             Long anotherSellerId = 2L;
             User anotherSeller = User.builder().id(anotherSellerId)
                 .build();
-
 
             Long productId = 10L;
 

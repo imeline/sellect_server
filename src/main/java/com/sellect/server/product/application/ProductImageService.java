@@ -2,6 +2,7 @@ package com.sellect.server.product.application;
 
 import com.sellect.server.common.exception.CommonException;
 import com.sellect.server.common.exception.enums.BError;
+import com.sellect.server.product.controller.request.ImageContextCreateRequest;
 import com.sellect.server.product.controller.request.ImageContextUpdateRequest;
 import com.sellect.server.product.controller.request.ProductImageModifyRequest;
 import com.sellect.server.product.domain.Product;
@@ -24,6 +25,17 @@ public class ProductImageService {
     private final StorageService storageService;
     private final ProductRepository productRepository;
     private final ProductImageRepository productImageRepository;
+
+    @Transactional
+    public void registerProductImage(Product product, ImageContextCreateRequest request, List<MultipartFile> images) {
+        images.forEach(image -> {
+            String fileName = generateFileName(image.getName(),
+                Objects.requireNonNull(image.getOriginalFilename()));
+            storageService.store(image, fileName);
+            ProductImage productImage = ProductImage.register(product, storageService.loadAsPath(fileName), request);
+            productImageRepository.save(productImage, product);
+        });
+    }
 
     @Transactional
     public void modifyProductImages(
@@ -57,7 +69,8 @@ public class ProductImageService {
         images.forEach(image -> {
             // TODO: 클라이언트 측에서 input 태그의 name 을 uuid 로 설정해야만 정상 동작하는데,
             //  추후 클라이언트에 의존적이지 않은 방법으로 수정해야 함
-            String newFileName = generateFileName(image.getName(), image.getOriginalFilename());
+            String newFileName = generateFileName(image.getName(),
+                Objects.requireNonNull(image.getOriginalFilename()));
             newFileNames.put(image.getName(), newFileName);
             storageService.store(image, newFileName);
         });

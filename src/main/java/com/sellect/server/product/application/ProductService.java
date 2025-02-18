@@ -5,9 +5,12 @@ import com.sellect.server.brand.domain.Brand;
 import com.sellect.server.brand.repository.BrandRepository;
 import com.sellect.server.category.domain.Category;
 import com.sellect.server.category.repository.CategoryRepository;
+import com.sellect.server.common.exception.CommonException;
+import com.sellect.server.common.exception.enums.BError;
 import com.sellect.server.product.controller.request.ProductModifyRequest;
 import com.sellect.server.product.controller.request.ProductRegisterRequest;
 import com.sellect.server.product.controller.response.ProductModifyResponse;
+import com.sellect.server.product.controller.response.ProductMultipleRegisterResponse;
 import com.sellect.server.product.controller.response.ProductRegisterFailureResponse;
 import com.sellect.server.product.controller.response.ProductRegisterResponse;
 import com.sellect.server.product.domain.Product;
@@ -15,24 +18,63 @@ import com.sellect.server.product.repository.ProductRepository;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
 public class ProductService {
 
+    private final ProductImageService productImageService;
     private final ProductRepository productRepository;
     private final BrandRepository brandRepository;
     private final CategoryRepository categoryRepository;
 
-    // todo : 이미지 고려 안 함 아직 S3 없음
     @Transactional
-    public ProductRegisterResponse registerMultiple(User seller,
-        List<ProductRegisterRequest> requests) {
+    public ProductRegisterResponse register(
+        User seller,
+        ProductRegisterRequest request,
+        List<MultipartFile> images) {
+
+        // 존재하지 않는 카테고리 체크
+        Category category = categoryRepository.findById(request.categoryId())
+            .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "category"));
+
+        // 존재하지 않는 브랜드 체크
+        Brand brand = brandRepository.findById(request.brandId())
+            .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "brand"));
+
+        // 등록된 상품 기준 중복 검사 (sellerId, productName 기준)
+        if (productRepository.isDuplicateProduct(seller.getId(), request.name())) {
+            throw new CommonException(BError.EXIST, "product name");
+        }
+
+        Product product = productRepository.save(Product.register(
+            seller,
+            category,
+            brand,
+            request.getPriceAsBigDecimal(), // String -> BigDecimal 변환
+            request.name(),
+            request.stock()
+        ));
+
+        // 이미지 저장
+        productImageService.registerProductImage(product, request.imageContextCreateRequest(), images);
+
+        return ProductRegisterResponse.from(product);
+    }
+
+    @Transactional
+    public ProductMultipleRegisterResponse registerMultiple(
+        User seller,
+        List<ProductRegisterRequest> requests,
+        List<MultipartFile> images) {
+
         List<Product> successProducts = new ArrayList<>();
         List<ProductRegisterFailureResponse> failedProducts = new ArrayList<>();
 
@@ -71,8 +113,6 @@ public class ProductService {
                 continue;
             }
 
-            // todo : 상품당 이미지는 필수
-
             successProducts.add(Product.register(
                 seller,
                 optionalCategory.get(),
@@ -81,16 +121,15 @@ public class ProductService {
                 request.name(),
                 request.stock()
             ));
-
         }
 
         // 기획 : 실패한 게 하나도 없을 때에만 등록이 가능
         if (failedProducts.isEmpty()) {
-            productRepository.saveAll(successProducts);
+            List<Product> products = productRepository.saveAll(successProducts);
         }
 
         // 성공 및 실패 리스트 반환
-        return ProductRegisterResponse.from(successProducts, failedProducts);
+        return ProductMultipleRegisterResponse.from(successProducts, failedProducts);
     }
 
     @Transactional
