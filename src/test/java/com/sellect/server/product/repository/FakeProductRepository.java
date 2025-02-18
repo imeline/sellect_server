@@ -90,6 +90,13 @@ public class FakeProductRepository implements ProductRepository {
         return new PageImpl<>(findProducts, pageable, findProducts.size());
     }
 
+
+    // todo: 테스트 작성 시 구현 예정
+    @Override
+    public Optional<Product> findByIdWithLock(Long id) {
+        return Optional.empty();
+    }
+
     public List<Product> findAll() {
         return new ArrayList<>(data);
     }
