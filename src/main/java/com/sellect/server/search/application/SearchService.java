@@ -5,9 +5,6 @@ import com.sellect.server.search.domain.SearchCondition;
 import com.sellect.server.search.domain.SearchSortType;
 import com.sellect.server.search.event.SearchLogEvent;
 import com.sellect.server.search.repository.SearchRepository;
-import com.sellect.server.search.util.UserIdentifierUtil;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
@@ -22,10 +19,8 @@ public class SearchService {
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional(readOnly = true)
-    public Page<SearchResponse> searchTotal(Long userId, SearchCondition condition, int page,
-        int size,
-        SearchSortType sortType, boolean isInitialSearch, HttpServletRequest request,
-        HttpServletResponse response) {
+    public Page<SearchResponse> searchTotal(String userIdentifier,
+        SearchCondition condition, int page, int size, SearchSortType sortType) {
 
         // 0. 상품 검색 실행
         Page<SearchResponse> searchProducts = searchRepository.searchTotal(condition, page, size,
@@ -38,20 +33,14 @@ public class SearchService {
         // 2. 필터를 사용했는지 안했는지 체크 -> 사용한 로그일 경우에는 사용하지 않은 요청과 같은 요청으로 묶이도록 필터링 예정
         boolean isFilterApplied = isFilterUsed(condition);
 
-        // 3.회원 / 비회원 구분 (NPE 방지)
-        String userIdentifier = UserIdentifierUtil.getUserIdentifier(userId, request, response);
-
-        // 4. 검색 로그 이벤트 발생
+        // 3. 검색 로그 이벤트 발생
         eventPublisher.publishEvent(SearchLogEvent.publish(
             condition.getKeyword(),
-            condition.getCategoryId(),
-            condition.getBrandId(),
+            userIdentifier,
             totalResults,
             isFilterApplied,
-            userIdentifier,
-            isInitialSearch,
-            request,
-            response
+            condition.getCategoryId(),
+            condition.getBrandId()
         ));
 
         return searchProducts;
@@ -63,5 +52,4 @@ public class SearchService {
     private boolean isFilterUsed(SearchCondition condition) {
         return condition.getCategoryId() != null || condition.getBrandId() != null;
     }
-
 }

@@ -18,22 +18,17 @@ public class SearchLogEventListener {
     @EventListener
     public void handleSearchLogEvent(SearchLogEvent event) {
 
-        // 회원인지 비회원인지 식별
-        String userIdentifier = event.getUserIdentifier();
-        // IP 확인
-        String ipAddress = event.getRequest().getRemoteAddr();
+        // todo: generateIdentifier
 
         // 이벤트 객체 → 도메인 객체 변환
         SearchLog searchLog = SearchLog.builder()
-            .searchKeyword(event.getSearchKeyword())
+            .keyword(event.getSearchKeyword())
             .categoryId(event.getCategoryId())
             .brandId(event.getBrandId())
-            .userIdentifier(userIdentifier)
-            .ipAddress(ipAddress)
+            .userIdentifier(event.getUserIdentifier())
             .timestamp(LocalDateTime.now())
             .resultCount(event.getResultCount())
             .filterApplied(event.isFilterApplied())
-            .isInitialSearch(event.isInitialSearch())
             .build();
 
         // 도메인 객체 → JPA 엔티티 변환 후 저장
