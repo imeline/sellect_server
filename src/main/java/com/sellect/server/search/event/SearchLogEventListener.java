@@ -18,8 +18,6 @@ public class SearchLogEventListener {
     @EventListener
     public void handleSearchLogEvent(SearchLogEvent event) {
 
-        // todo: generateIdentifier
-
         // 이벤트 객체 → 도메인 객체 변환
         SearchLog searchLog = SearchLog.builder()
             .keyword(event.getSearchKeyword())
