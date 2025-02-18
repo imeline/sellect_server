@@ -9,6 +9,7 @@ import com.sellect.server.product.controller.request.ProductImageModifyRequest;
 import com.sellect.server.product.controller.request.ProductModifyRequest;
 import com.sellect.server.product.controller.request.ProductRegisterRequest;
 import com.sellect.server.product.controller.response.ProductModifyResponse;
+import com.sellect.server.product.controller.response.ProductMultipleRegisterResponse;
 import com.sellect.server.product.controller.response.ProductRegisterResponse;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -19,7 +20,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -33,17 +33,28 @@ public class ProductController {
     private final ProductImageService productImageService;
 
     /**
-     * 상품 등록 (복수 지원)
+     * 상품 단건 등록
      * */
     @PostMapping("/product")
-    // todo : sellerId token 에서 가져오도록 변경할 것!!
-    // todo : 상품 이미지 관련 로직 추가할 것!!
-    // todo : seller 완료 후엔 수정
-    public ApiResponse<ProductRegisterResponse> registerMultiple(@AuthSeller User seller,
-        @Valid @RequestBody List<ProductRegisterRequest> requests) {
+    public ApiResponse<ProductRegisterResponse> register(
+        @AuthSeller User seller,
+        @RequestPart("requests") ProductRegisterRequest request,
+        @RequestPart("images") List<MultipartFile> images) {
 
-        ProductRegisterResponse result = productService.registerMultiple(seller,
-            requests);
+        ProductRegisterResponse response = productService.register(seller, request, images);
+        return ApiResponse.ok(response);
+    }
+
+    /**
+     * 상품 다건 등록
+     */
+    @PostMapping("/products")
+    public ApiResponse<ProductMultipleRegisterResponse> register(
+        @AuthSeller User seller,
+        @RequestPart("requests") List<ProductRegisterRequest> requests,
+        @RequestPart("images") List<MultipartFile> images) {
+
+        ProductMultipleRegisterResponse result = productService.registerMultiple(seller, requests, images);
         return ApiResponse.ok(result);
     }
 
