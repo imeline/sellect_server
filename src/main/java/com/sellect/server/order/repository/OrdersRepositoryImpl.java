@@ -3,6 +3,7 @@ package com.sellect.server.order.repository;
 import com.sellect.server.auth.domain.User;
 import com.sellect.server.auth.repository.entity.UserEntity;
 import com.sellect.server.order.domain.Orders;
+import com.sellect.server.order.repository.entity.OrderStatus;
 import com.sellect.server.order.repository.entity.OrdersEntity;
 import java.util.List;
 import java.util.Optional;
@@ -26,9 +27,9 @@ public class OrdersRepositoryImpl implements OrdersRepository {
     }
 
     @Override
-    public List<Orders> findAllByUser(User user) {
-        List<OrdersEntity> ordersEntities = ordersJpaRepository.findAllByUserEntity(
-            UserEntity.from(user));
+    public List<Orders> findAllByUserEntityAndStatus(User user, OrderStatus status) {
+        List<OrdersEntity> ordersEntities = ordersJpaRepository.findAllByUserEntityAndStatus(
+            UserEntity.from(user), status);
 
         return ordersEntities.stream().map(OrdersEntity::toModel).toList();
     }

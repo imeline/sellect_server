@@ -34,6 +34,8 @@ public class OrderItem {
             .product(product)
             .price(price)
             .quantity(quantity)
+            .createdAt(LocalDateTime.now())
+            .deleteAt(null)
             .build();
     }
 }

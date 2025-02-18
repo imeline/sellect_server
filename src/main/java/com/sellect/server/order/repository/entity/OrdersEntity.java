@@ -17,14 +17,14 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @Entity
 @Table(name = "orders")
 @Getter
-@Builder
+@SuperBuilder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class OrdersEntity extends BaseTimeEntity {
@@ -73,9 +73,9 @@ public class OrdersEntity extends BaseTimeEntity {
             .totalPrice(orders.getTotalPrice())
             .orderNumber(orders.getOrderNumber())
             .status(orders.getStatus())
-//            .createdAt(orders.getCreatedAt())
-//            .updatedAt(orders.getUpdatedAt())
-//            .deletedAt(orders.getDeletedAt())
+            .createdAt(orders.getCreatedAt())
+            .updatedAt(orders.getUpdatedAt())
+            .deleteAt(orders.getDeletedAt())
             .build();
     }
 }

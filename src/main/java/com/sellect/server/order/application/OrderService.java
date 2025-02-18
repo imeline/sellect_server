@@ -1,6 +1,8 @@
 package com.sellect.server.order.application;
 
 import com.sellect.server.auth.domain.User;
+import com.sellect.server.common.exception.CommonException;
+import com.sellect.server.common.exception.enums.BError;
 import com.sellect.server.order.controller.request.OrderAddRequest;
 import com.sellect.server.order.controller.response.OrderDetailGetResponse;
 import com.sellect.server.order.controller.response.OrderGetResponse;
@@ -11,7 +13,9 @@ import com.sellect.server.order.repository.OrdersRepository;
 import com.sellect.server.order.repository.entity.OrderStatus;
 import com.sellect.server.product.domain.Product;
 import com.sellect.server.product.repository.ProductRepository;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -30,17 +34,24 @@ public class OrderService {
     // private final CartRepository cartRepository;
 
     @Transactional
-    public Long registerPendingOrder(User user, OrderAddRequest request) {
+    public Orders registerPendingOrder(User user, OrderAddRequest request) {
+        // Orders 저장
         Orders order = Orders.register(user, request.convertPriceAsBigDecimal(),
             OrderStatus.PENDING);
         Orders savedOrder = ordersRepository.save(order);
 
+        // productId 중복 확인을 위해 set
+        Set<Long> productIds = new HashSet<>();
+
         // OrderAddRequest -> OrderItemAddRequest -> OrderItem 으로 변환
         List<OrderItem> orderItems = request.orderItems().stream()
             .map(orderItemAddRequest -> {
+                if (!productIds.add(orderItemAddRequest.productId())) {
+                    throw new CommonException(BError.EXIST, "productId");
+                }
 
                 Product product = productRepository.findById(orderItemAddRequest.productId())
-                    .orElseThrow(() -> new RuntimeException("상품이 존제하지 않습니다."));
+                    .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "product"));
 
                 return OrderItem.register(
                     savedOrder,
@@ -50,29 +61,35 @@ public class OrderService {
                 );
             })
             .toList();
-
+        // OrderItem 저장
         orderItemRepository.saveAll(orderItems);
 
-        return savedOrder.getId();
+        return savedOrder;
+    }
+
+    @Transactional
+    public void LockProductItems(Long orderId) {
+        List<OrderItem> orderItems = getOrderItemsByOrderId(orderId);
+
+        orderItems.forEach(orderItem -> {
+            // 재고 확인
+            if (orderItem.getProduct().getStock() < orderItem.getQuantity()) {
+                throw new CommonException(BError.NOT_VALID, "재고 부족");
+            }
+            // DB 락
+            productRepository.findByIdWithLock(orderItem.getProduct().getId())
+                .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "상품이 존재하지 않습니다."));
+        });
     }
 
     @Transactional
     public void completeOrder(User user, Long orderId) {
-
         List<OrderItem> orderItems = getOrderItemsByOrderId(orderId);
 
         orderItems.forEach(orderItem -> {
-            // DB 락
-            Product product = productRepository.findByIdWithLock(orderItem.getProduct().getId())
-                .orElseThrow(() -> new RuntimeException("상품이 존재하지 않습니다."));
-            // 재고 확인 및 예약(차감)
-            productRepository.save(product.updateStock(orderItem.getQuantity()));
+            // 재고 차감
+            productRepository.save(orderItem.getProduct().updateStock(orderItem.getQuantity()));
         });
-
-        // 결제
-//        if (!paymentService.processPayment(order.getTotalPrice())) {
-//            throw new IllegalStateException("Payment failed");
-//        }
 
         // 주문 확정
         Orders order = getOrderById(orderId);
@@ -88,7 +105,6 @@ public class OrderService {
         clearCartAndDeleteCoupons(user, order);
     }
 
-    // completeOrder 과 트랜잭션 분리 - DB 락 시간을 줄이기 위함
     @Transactional
     public void clearCartAndDeleteCoupons(User user, Orders order) {
         // 장바구니 비우기
@@ -100,12 +116,13 @@ public class OrderService {
 
 
     public List<OrderGetResponse> getOrdersByUser(User user) {
-        List<Orders> orderList = ordersRepository.findAllByUser(user);
+        // 완료된 주문만 조회
+        List<Orders> orderList = ordersRepository.findAllByUserEntityAndStatus(user,
+            OrderStatus.COMPLETED);
         // 주문 목록이 없을 경우
         if (orderList.isEmpty()) {
-            throw new IllegalArgumentException("해당 회원의 주문 목록이 없습니다.");
+            throw new CommonException(BError.NOT_EXIST, "주문 목록");
         }
-
         return orderList.stream()
             .map(order -> OrderGetResponse.from(order, getOrderItemsByOrderId(order.getId())))
             .toList();
@@ -114,14 +131,14 @@ public class OrderService {
     public OrderDetailGetResponse getOrderDetail(Long orderId) {
 
         Orders order = getOrderById(orderId);
+        // PENDING 상태 주문은 에러 처리
+        if (order.getStatus() == OrderStatus.PENDING) {
+            throw new CommonException(BError.NOT_VALID, "PENDING 상태의 주문은 조회할 수 없습니다.");
+        }
+
         List<OrderItem> orderItems = getOrderItemsByOrderId(orderId);
 
-        // 할인 비용 (userReceivedCoupon에서 discountCost를 가져옴)
-//        BigDecimal discountCost = (order.getUserReceivedCoupon() != null)
-//            ? order.getUserReceivedCoupon().getDiscountCost()
-//            : BigDecimal.ZERO;
-
-        return OrderDetailGetResponse.from(order/*, discountCost*/, orderItems);
+        return OrderDetailGetResponse.from(order, orderItems);
     }
 
     @Transactional(readOnly = true)
@@ -129,7 +146,7 @@ public class OrderService {
         List<OrderItem> orderItems = orderItemRepository.findAllByOrdersId(orderId);
         // 주문 아이템이 없을 경우
         if (orderItems.isEmpty()) {
-            throw new IllegalArgumentException("해당 주문 id의 주문 아이템이 없습니다.");
+            throw new CommonException(BError.NOT_EXIST, "주문 아이템");
         }
         return orderItems;
     }
@@ -137,7 +154,6 @@ public class OrderService {
     @Transactional(readOnly = true)
     public Orders getOrderById(Long orderId) {
         return ordersRepository.findById(orderId)
-            .orElseThrow(() -> new IllegalArgumentException("해당 주문 id의 주문이 없습니다."));
+            .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "주문"));
     }
-
 }

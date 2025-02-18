@@ -1,7 +1,7 @@
 package com.sellect.server.order.controller;
 
 import com.sellect.server.auth.domain.User;
-import com.sellect.server.common.infrastructure.annotation.AuthSeller;
+import com.sellect.server.common.infrastructure.annotation.AuthUser;
 import com.sellect.server.common.response.ApiResponse;
 import com.sellect.server.order.application.OrderService;
 import com.sellect.server.order.controller.request.OrderAddRequest;
@@ -11,7 +11,6 @@ import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -29,10 +28,10 @@ public class OrderController {
      * 주문 생성(pending)
      */
     @PostMapping("/order/pending")
-    public ApiResponse<Long> registerPendingOrder(@AuthSeller User user,
+    public ApiResponse<Long> registerPendingOrder(@AuthUser User user,
         @Valid @RequestBody OrderAddRequest requests) {
 
-        Long orderId = orderService.registerPendingOrder(user, requests);
+        Long orderId = orderService.registerPendingOrder(user, requests).getId();
         return ApiResponse.ok(orderId);
     }
 
@@ -50,8 +49,8 @@ public class OrderController {
     /**
      * 주문 완료 - DB 락, 재고 차감, 결제, 주문 상태 확정, 쿠폰 삭제, 장바구니 비우기
      */
-    @PatchMapping("/order/complete/{orderId}")
-    public ApiResponse<Void> completeOrder(@AuthSeller User user, @PathVariable Long orderId) {
+    @PostMapping("/order/complete/{orderId}")
+    public ApiResponse<Void> completeOrder(@AuthUser User user, @PathVariable Long orderId) {
         orderService.completeOrder(user, orderId);
         return ApiResponse.ok(null);
     }
@@ -61,7 +60,7 @@ public class OrderController {
      * 주문 내역 확인
      */
     @GetMapping("/orders")
-    public ApiResponse<List<OrderGetResponse>> getOrdersByUser(@AuthSeller User user) {
+    public ApiResponse<List<OrderGetResponse>> getOrdersByUser(@AuthUser User user) {
         return ApiResponse.ok(orderService.getOrdersByUser(user));
     }
 
