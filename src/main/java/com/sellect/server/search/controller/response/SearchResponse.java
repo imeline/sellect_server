@@ -10,6 +10,8 @@ public record SearchResponse(
     String imageUrl,
     String name,
     BigDecimal price
+
+    // todo: 따로 빼야하지 않을까?
 //    Integer reviewCount,
 //    Long ratingAverage
 ) {

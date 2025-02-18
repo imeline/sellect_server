@@ -11,13 +11,11 @@ import lombok.Getter;
 @Builder
 public class SearchLog {
     private final Long id;
-    private final String searchKeyword;
-    private final Long categoryId;
-    private final Long brandId;
+    private final String keyword;
     private final String userIdentifier;
-    private final String ipAddress;
-    private final LocalDateTime timestamp;
     private final int resultCount;
     private final boolean filterApplied;
-    private final boolean isInitialSearch;
+    private final LocalDateTime timestamp;
+    private final Long categoryId;
+    private final Long brandId;
 }

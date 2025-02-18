@@ -10,7 +10,6 @@ import com.sellect.server.search.controller.response.SearchResponse;
 import com.sellect.server.search.domain.SearchCondition;
 import com.sellect.server.search.domain.SearchSortType;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -48,10 +47,16 @@ public class SearchController {
         @RequestParam(defaultValue = "0") int page,
         @RequestParam(defaultValue = "20") int size,
         @RequestParam(defaultValue = "LATEST") SearchSortType sortType,
-        @RequestParam(defaultValue = "false") boolean isInitialSearch,
-        HttpServletRequest request,
-        HttpServletResponse response
+        HttpServletRequest request
     ) {
+        // 1.세션 가져오기 (없으면 생성)
+        String sessionId = request.getSession(true).getId();
+
+        // 2. 회원 여부 판단 (userId가 존재하면 USER, 아니면 GUEST)
+        boolean isUser = (user != null);
+        String userIdentifier = (isUser ? "USER_" : "GUEST_") + sessionId;
+
+        // 3. USER / GUEST 식별자 생성
         SearchCondition condition = SearchCondition
             .builder()
             .keyword(keyword)
@@ -61,9 +66,8 @@ public class SearchController {
             .maxPrice(maxPrice)
             .build();
 
-        Long userId = (user != null) ? user.getId() : null;
-        Page<SearchResponse> results = searchService.searchTotal(userId, condition, page,
-            size, sortType, isInitialSearch, request, response);
+        Page<SearchResponse> results = searchService.searchTotal(userIdentifier, condition,
+            page, size, sortType);
 
         return ApiResponse.ok(results);
     }

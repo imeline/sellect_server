@@ -1,7 +1,6 @@
 package com.sellect.server.search.event;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,27 +11,23 @@ import lombok.Getter;
 @Builder
 public class SearchLogEvent {
     private String searchKeyword;
-    private Long categoryId;
-    private Long brandId;
+    private String userIdentifier;
     private int resultCount;
     private boolean filterApplied;
-    private String userIdentifier;
-    private boolean isInitialSearch;
-    private HttpServletRequest request;
-    private HttpServletResponse response;
+    private LocalDateTime timestamp;
+    private Long categoryId;
+    private Long brandId;
 
-    public static SearchLogEvent publish(String searchKeyword, Long categoryId, Long brandId, int resultCount,
-        boolean filterApplied, String userIdentifier, boolean isInitialSearch, HttpServletRequest request, HttpServletResponse response) {
+    public static SearchLogEvent publish(String searchKeyword, String userIdentifier, int resultCount,
+        boolean filterApplied,  Long categoryId, Long brandId) {
         return SearchLogEvent.builder()
             .searchKeyword(searchKeyword)
-            .categoryId(categoryId)
-            .brandId(brandId)
+            .userIdentifier(userIdentifier)
             .resultCount(resultCount)
             .filterApplied(filterApplied)
-            .userIdentifier(userIdentifier)
-            .isInitialSearch(isInitialSearch)
-            .request(request)
-            .response(response)
+            .timestamp(LocalDateTime.now())
+            .categoryId(categoryId)
+            .brandId(brandId)
             .build();
     }
 }
