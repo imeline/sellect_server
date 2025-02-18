@@ -16,7 +16,10 @@ public enum BError implements Error {
     SUCCESS("SUCCESS", "%1 succeeded"),
     FAIL_FOR_REASON("FAIL_FOR_REASON", "%1 failed for reason (%2)"),
     NOT_SUPPORT("NOT_SUPPORT", "%1 not supported"),
-    NOT_REGISTERED("NOT_REGISTERED", "%1 not registered");
+    NOT_REGISTERED("NOT_REGISTERED", "%1 not registered"),
+
+    NOT_SELLER("NOT_SELLER", "%1 is not a seller"),
+    COUPON_QUANTITY_ZERO("COUPON_QUANTITY_ZERO", "The quantity of the coupon%1 is 0");
 
     private final String errCode;
     private final String msg;

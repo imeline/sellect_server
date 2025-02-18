@@ -84,5 +84,119 @@ class CouponServiceTest {
     }
 
 
+    @Nested
+    @DisplayName("registerCoupon() 메소드는")
+    class RegisterCouponTest {
 
+        @Test
+        @DisplayName("쿠폰을 정상적으로 유저가 등록한다")
+        void _willSuccess() {
+            //given
+            long couponId = 1L;
+            User user = User.builder()
+                .id(1L)
+                .nickname("test")
+                .uuid("uuid")
+                .role(Role.USER)
+                .build();
+
+            Coupon coupon = Coupon.builder()
+                .id(couponId)
+                .seller(user)
+                .discountCost(3000)
+                .quantity(10)
+                .expirationDate(LocalDate.now().plusDays(10))
+                .build();
+            couponRepository.save(coupon);
+
+            //when
+            couponService.registerCoupon(user, couponId);
+
+            //then
+            assertEquals(9, couponRepository.findById(couponId).get().getQuantity());
+        }
+
+
+        @Test
+        @DisplayName("쿠폰 수량이 부족하면 exception을 던진다")
+        void couponQuantityLowerThenZeroThrowException() {
+            //given
+            long couponId = 1L;
+            User user = User.builder()
+                .id(1L)
+                .nickname("test")
+                .uuid("uuid")
+                .role(Role.USER)
+                .build();
+
+            User anotherUser = User.builder()
+                .id(2L)
+                .nickname("test2")
+                .uuid("uuid333")
+                .role(Role.USER)
+                .build();
+
+            Coupon coupon = Coupon.builder()
+                .id(couponId)
+                .seller(user)
+                .discountCost(3000)
+                .quantity(1)
+                .expirationDate(LocalDate.now().plusDays(10))
+                .build();
+            couponRepository.save(coupon);
+
+            //when
+            couponService.registerCoupon(user, couponId);
+
+            //when & then
+            CommonException commonException = assertThrows(CommonException.class,
+                () -> couponService.registerCoupon(anotherUser, couponId));
+
+            assertEquals(String.format("The quantity of the coupon%s is 0", couponId),
+                commonException.getMessage());
+        }
+
+
+        @ParameterizedTest
+        @CsvSource({"10, 10", "300, 100", "10000, 10000"})
+        @DisplayName("사용자가 한번에 여러명이 들어올 경우 쿠폰 등록자 숫자만큼 쿠폰개수를 삭감한다.")
+        void concurrentCouponRegistrationReducesQuantityCorrectly(int couponQuantity,
+            int threadCount) throws InterruptedException {
+            //given
+            long couponId = 1;
+            ExecutorService executorService = Executors.newFixedThreadPool(10);
+            CountDownLatch latch = new CountDownLatch(threadCount);
+            User seller = User.builder().id(1L).nickname("test").role(Role.SELLER).build();
+            User register = User.builder().id(3L).nickname("regist tester").role(Role.USER).build();
+
+            Coupon coupon = Coupon.builder()
+                .id(couponId)
+                .seller(seller)
+                .discountCost(3000)
+                .quantity(couponQuantity)
+                .expirationDate(LocalDate.now().plusDays(10))
+                .build();
+            couponRepository.save(coupon);
+
+            //when
+            for (int i = 0; i < threadCount; i++) {
+                executorService.submit(() -> {
+                    try {
+                        couponService.registerCoupon(register, 1L);
+                    } catch (Exception e) {
+                        System.out.println(e.getMessage());
+                    } finally {
+                        latch.countDown();
+                    }
+                });
+            }
+            latch.await();
+            executorService.shutdown();
+
+            //then
+            assertEquals(couponQuantity - threadCount,
+                couponRepository.findById(1L).get().getQuantity());
+        }
+
+    }
 }
