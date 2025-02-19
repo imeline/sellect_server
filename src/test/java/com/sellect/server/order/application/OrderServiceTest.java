@@ -114,7 +114,7 @@ class OrderServiceTest {
         }
 
 //        @Test
-//        @DisplayName("Lock 시 읽기 가능, 수정 불가능 여부 테스트")
+//        @DisplayName("Lock 시 읽기 가능, 수정 불가능 성공")
 //        void testLock() throws InterruptedException {
 //            // Given
 //            Orders savedOrder = ordersRepository.save(Orders.builder()
