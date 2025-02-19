@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.sellect.server.auth.domain.User;
+import com.sellect.server.cart.repository.FakeCartItemRepository;
 import com.sellect.server.common.exception.CommonException;
 import com.sellect.server.order.controller.request.OrderAddRequest;
 import com.sellect.server.order.controller.request.OrderItemAddRequest;
@@ -29,8 +30,9 @@ class OrderServiceTest {
     private final FakeOrdersRepository ordersRepository = new FakeOrdersRepository();
     private final FakeOrderItemRepository orderItemRepository = new FakeOrderItemRepository();
     private final FakeProductRepository productRepository = new FakeProductRepository();
+    private final FakeCartItemRepository cartRepository = new FakeCartItemRepository();
     private final OrderService sut = new OrderService(ordersRepository, orderItemRepository,
-        productRepository);
+        productRepository, cartRepository);
     private User user;
 
     @BeforeEach
@@ -38,6 +40,7 @@ class OrderServiceTest {
         ordersRepository.clear();
         orderItemRepository.clear();
         productRepository.clear();
+        cartRepository.clear();
         user = User.builder()
             .id(1L)
             .build();
@@ -234,7 +237,24 @@ class OrderServiceTest {
             Product updatedProduct = productRepository.findById(1L).orElseThrow();
             assertThat(updatedProduct.getStock()).isEqualTo(5); // 재고가 차감되었는지 확인
         }
+
+        @Test
+        @DisplayName("장바구니 비우기 & 쿠폰 삭제 성공")
+        void testClearCartCoupon() {
+            // Given
+            Orders savedOrder = ordersRepository.save(Orders.builder()
+                .id(1L)
+                .status(OrderStatus.COMPLETED)
+                .build());
+
+            // When
+            sut.clearCartAndDeleteCoupons(user, savedOrder);
+
+            // Then
+            assertThat(cartRepository.findAllByUserId(user.getId())).isEmpty();
+        }
     }
+
 
     @Nested
     @DisplayName("주문 조회 테스트")

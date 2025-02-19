@@ -12,4 +12,6 @@ public interface CartItemRepository {
 
     List<CartItem> findAllByUserId(Long userId);
 
+    void saveAll(List<CartItem> cartItems);
+
 }
