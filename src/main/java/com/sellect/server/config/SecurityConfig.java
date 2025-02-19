@@ -41,6 +41,7 @@ public class SecurityConfig {
                 .requestMatchers("/v1/payment/success/**").permitAll()
                 .requestMatchers("/v1/payment/fail").permitAll()
                 .requestMatchers("/v1/payment/cancel").permitAll()
+                .requestMatchers("/api/v1/search/products").permitAll()
                 .anyRequest().authenticated()
             )
             .httpBasic(AbstractHttpConfigurer::disable)// HTTP Basic 인증 비활성화

@@ -7,6 +7,8 @@ import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 @Component
 @RequiredArgsConstructor
@@ -15,6 +17,7 @@ public class SearchLogEventListener {
     private final SearchLogRepository searchLogRepository;
 
     @EventListener
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handleSearchLogEvent(SearchLogEvent event) {
 
         // 이벤트 객체 → 도메인 객체 변환
