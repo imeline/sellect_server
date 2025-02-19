@@ -82,15 +82,15 @@ class OrderServiceTest {
     @DisplayName("상품 락 테스트")
     class LockProductItemsTest {
 
+        Product product1 = productRepository.save(Product.builder()
+            .id(1L)
+            .stock(5)
+            .build());
+
         @Test
         @DisplayName("재고가 부족 시, 예외 발생")
         void testCheckStock() {
             // Given
-            Product product1 = productRepository.save(Product.builder()
-                .id(1L)
-                .stock(5)
-                .build());
-
             Orders savedOrder = ordersRepository.save(Orders.builder()
                 .id(1L)
                 .build());
@@ -109,6 +109,93 @@ class OrderServiceTest {
                 () -> sut.LockProductItems(savedOrder.getId()));
             assertEquals("재고 부족 is not valid", exception.getMessage());
         }
+
+//        @Test
+//        @DisplayName("Lock 시 읽기 가능, 수정 불가능 여부 테스트")
+//        void testLock() throws InterruptedException {
+//            // Given
+//            Orders savedOrder = ordersRepository.save(Orders.builder()
+//                .id(1L)
+//                .build());
+//
+//            List<OrderItem> savedOrderItems = orderItemRepository.saveAll(List.of(
+//                OrderItem.builder()
+//                    .id(1L)
+//                    .orders(savedOrder)
+//                    .product(product1)
+//                    .build()
+//            ));
+//
+//            // When
+//            // 락을 걸기 위한 객체
+//            Object lock = new Object();
+//
+//            // 읽기 성공 여부를 확인하기 위한 AtomicBoolean 변수
+//            AtomicBoolean isReadSuccessful = new AtomicBoolean(false);
+//
+//            // 스레드 A: LockProductItems 호출하여 락 획득
+//            Thread threadA = new Thread(() -> {
+//                try {
+//                    // 락을 획득
+//                    sut.LockProductItems(savedOrder.getId());
+//
+//                    synchronized (lock) {
+//                        lock.notifyAll();  // 락을 획득했음을 알려줌
+//                    }
+//                    Thread.sleep(2000);  // 2초 동안 락을 유지한다고 가정
+//                } catch (Exception e) {
+//                    System.out.println("락 획득 실패: " + e.getMessage());
+//                }
+//            });
+//            threadA.start();
+//
+//            // 스레드 B: 락이 걸린 동안 상품 읽기 시도
+//            Thread threadB = new Thread(() -> {
+//                try {
+//                    synchronized (lock) {
+//                        lock.wait();  // threadA가 락을 획득할 때까지 기다림
+//                    }
+//
+//                    Optional<Product> readProduct = productRepository.findById(product1.getId());
+//                    readProduct.ifPresent(p -> {
+//                        isReadSuccessful.set(true);
+//                        System.out.println("읽기 성공: " + p.getStock());
+//                    });
+//                } catch (Exception e) {
+//                    System.out.println("읽기 실패: " + e.getMessage());
+//                }
+//            });
+//
+//            // 스레드 C: 락이 걸린 동안 상품 수정 시도
+//            Thread threadC = new Thread(() -> {
+//                try {
+//                    synchronized (lock) {
+//                        lock.wait();  // threadA가 락을 획득할 때까지 기다림
+//                    }
+//                    // 수정 시도
+//                    productRepository.save(product1.updateStock(3));
+//                } catch (Exception e) {
+//                    System.out.println("수정 실패(락 활성화): " + e.getMessage());
+//                }
+//            });
+//
+//            threadB.start();
+//            threadC.start();
+//
+//            // threadA가 락을 획득한 후, threadB와 threadC가 시작되도록 대기
+//            threadA.join();
+//            threadB.join();
+//            threadC.join();
+//
+//            // Then
+//            // 1. 읽기 성공 여부 검증
+//            assertTrue(isReadSuccessful.get());
+//
+//            // 2. 상품이 수정되지 않았는지 확인
+//            Optional<Product> lockedProduct = productRepository.findById(product1.getId());
+//            assertThat(lockedProduct).isPresent();
+//            assertThat(lockedProduct.get().getStock()).isEqualTo(5); // 원래의 재고 값 (5)
+//        }
     }
 
     @Nested
