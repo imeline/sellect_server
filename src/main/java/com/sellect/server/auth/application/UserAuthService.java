@@ -1,4 +1,4 @@
-package com.sellect.server.auth.controller.application;
+package com.sellect.server.auth.application;
 
 import com.sellect.server.auth.controller.request.LoginRequest;
 import com.sellect.server.auth.controller.request.UserSignUpRequest;
