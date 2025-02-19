@@ -3,6 +3,7 @@ package com.sellect.server.auth.application;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.sellect.server.auth.domain.User;
+import com.sellect.server.auth.domain.UserAuth;
 import com.sellect.server.auth.repository.FakeUserAuthRepository;
 import com.sellect.server.auth.repository.FakeUserRepository;
 import com.sellect.server.auth.repository.entity.Role;
@@ -44,7 +45,14 @@ class UserServiceTest {
                 .updatedAt(LocalDateTime.now())
                 .deleteAt(null)
                 .build();
+
+            UserAuth userAuth = UserAuth.builder()
+                .email("test@test.com")
+                .password("test_password")
+                .user(user)
+                .build();
             userRepository.save(user);
+            userAuthRepository.save(userAuth);
             // when
             userService.leave(user);
 
