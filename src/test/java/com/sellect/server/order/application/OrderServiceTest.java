@@ -7,6 +7,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.sellect.server.auth.domain.User;
 import com.sellect.server.cart.repository.FakeCartItemRepository;
 import com.sellect.server.common.exception.CommonException;
+import com.sellect.server.coupon.domain.Coupon;
+import com.sellect.server.coupon.domain.UserReceivedCoupon;
+import com.sellect.server.coupon.repository.FakeuserReceivedCouponRepository;
 import com.sellect.server.order.controller.request.OrderAddRequest;
 import com.sellect.server.order.controller.request.OrderItemAddRequest;
 import com.sellect.server.order.controller.response.OrderDetailGetResponse;
@@ -31,8 +34,9 @@ class OrderServiceTest {
     private final FakeOrderItemRepository orderItemRepository = new FakeOrderItemRepository();
     private final FakeProductRepository productRepository = new FakeProductRepository();
     private final FakeCartItemRepository cartRepository = new FakeCartItemRepository();
+    private final FakeuserReceivedCouponRepository userReceivedCouponRepository = new FakeuserReceivedCouponRepository();
     private final OrderService sut = new OrderService(ordersRepository, orderItemRepository,
-        productRepository, cartRepository);
+        productRepository, cartRepository, userReceivedCouponRepository);
     private User user;
 
     @BeforeEach
@@ -41,6 +45,7 @@ class OrderServiceTest {
         orderItemRepository.clear();
         productRepository.clear();
         cartRepository.clear();
+        userReceivedCouponRepository.clear();
         user = User.builder()
             .id(1L)
             .build();
@@ -54,15 +59,19 @@ class OrderServiceTest {
         @DisplayName("주문, 주문 아이템 생성 성공")
         void testRegisterPendingOrder() {
             // Given
-            Product product1 = productRepository.save(Product.builder()
+            productRepository.save(Product.builder()
                 .id(1L)
                 .build());
 
-            Product product2 = productRepository.save(Product.builder()
+            productRepository.save(Product.builder()
                 .id(2L)
+                .build());
+            userReceivedCouponRepository.save(UserReceivedCoupon.builder()
+                .id(1L)
                 .build());
 
             OrderAddRequest request = new OrderAddRequest(
+                1L,
                 "200000",
                 List.of(
                     new OrderItemAddRequest(1L, "10000", 10),
@@ -75,9 +84,9 @@ class OrderServiceTest {
 
             // Then
             assertThat(savedOrder.getStatus()).isEqualTo(OrderStatus.PENDING);
-
             List<OrderItem> orderItems = orderItemRepository.findAllByOrdersId(savedOrder.getId());
             assertThat(orderItems).hasSize(2);
+            //assertThat(savedOrder.getUserReceivedCoupon().getId()).isEqualTo(1L);
         }
     }
 
@@ -85,10 +94,10 @@ class OrderServiceTest {
     @DisplayName("상품 락 테스트")
     class LockProductItemsTest {
 
-        Product product1 = productRepository.save(Product.builder()
+        Product product1 = Product.builder()
             .id(1L)
             .stock(5)
-            .build());
+            .build();
 
         @Test
         @DisplayName("재고가 부족 시, 예외 발생")
@@ -98,7 +107,7 @@ class OrderServiceTest {
                 .id(1L)
                 .build());
 
-            List<OrderItem> savedOrderItems = orderItemRepository.saveAll(List.of(
+            orderItemRepository.saveAll(List.of(
                 OrderItem.builder()
                     .id(1L)
                     .orders(savedOrder)
@@ -205,23 +214,28 @@ class OrderServiceTest {
     @DisplayName("주문 완료 테스트")
     class CompleteOrderTest {
 
-        Product product1 = productRepository.save(Product.builder()
+        Product product1 = Product.builder()
             .id(1L)
             .name("상품1")
             .price(new BigDecimal("10000"))
             .stock(10)
-            .build());
+            .build();
+        UserReceivedCoupon userReceivedCoupon = UserReceivedCoupon.builder()
+            .id(1L)
+            .build();
 
         @Test
-        @DisplayName("재고 차감 & 주문 complete 상태 변경 성공")
+        @DisplayName("재고 차감 & 주문 complete 상태 변경 성공, "
+            + "장바구니 비우기 & 쿠폰 사용 처리 성공")
         void testCompleteOrder() {
             // Given
             Orders savedOrder = ordersRepository.save(Orders.builder()
                 .id(1L)
+                .userReceivedCoupon(userReceivedCoupon)
                 .status(OrderStatus.PENDING)
                 .build());
 
-            List<OrderItem> savedOrderItems = orderItemRepository.saveAll(List.of(
+            orderItemRepository.saveAll(List.of(
                 OrderItem.builder()
                     .id(1L)
                     .orders(savedOrder)
@@ -239,11 +253,12 @@ class OrderServiceTest {
         }
 
         @Test
-        @DisplayName("장바구니 비우기 & 쿠폰 삭제 성공")
+        @DisplayName("장바구니 비우기 & 쿠폰 사용 처리 성공")
         void testClearCartCoupon() {
             // Given
             Orders savedOrder = ordersRepository.save(Orders.builder()
                 .id(1L)
+                .userReceivedCoupon(userReceivedCoupon)
                 .status(OrderStatus.COMPLETED)
                 .build());
 
@@ -252,6 +267,7 @@ class OrderServiceTest {
 
             // Then
             assertThat(cartRepository.findAllByUserId(user.getId())).isEmpty();
+            assertThat(userReceivedCoupon.getIsUsed()).isTrue();
         }
     }
 
@@ -260,17 +276,25 @@ class OrderServiceTest {
     @DisplayName("주문 조회 테스트")
     class GetOrdersTest {
 
-        Product product1 = productRepository.save(Product.builder()
+        Product product1 = Product.builder()
             .id(1L)
             .name("상품1")
             .stock(10)
-            .build());
+            .build();
 
-        Product product2 = productRepository.save(Product.builder()
+        Product product2 = Product.builder()
             .id(2L)
             .name("상품2")
             .stock(5)
-            .build());
+            .build();
+        Coupon coupon = Coupon.builder()
+            .id(1L)
+            .discountCost(10000)
+            .build();
+        UserReceivedCoupon userReceivedCoupon = UserReceivedCoupon.builder()
+            .id(1L)
+            .coupon(coupon)
+            .build();
 
         @Test
         @DisplayName("사용자의 모든 주문을 조회 성공")
@@ -281,7 +305,7 @@ class OrderServiceTest {
                 .user(user)
                 .status(OrderStatus.COMPLETED)
                 .build());
-            List<OrderItem> savedOrderItems = orderItemRepository.saveAll(List.of(
+            orderItemRepository.saveAll(List.of(
                 OrderItem.builder()
                     .id(1L)
                     .orders(savedOrder)
@@ -312,10 +336,11 @@ class OrderServiceTest {
             // Given
             Orders savedOrder = ordersRepository.save(Orders.builder()
                 .id(1L)
+                .userReceivedCoupon(userReceivedCoupon)
                 .status(OrderStatus.COMPLETED)
                 .totalPrice(new BigDecimal("50000"))
                 .build());
-            List<OrderItem> savedOrderItems = orderItemRepository.saveAll(List.of(
+            orderItemRepository.saveAll(List.of(
                 OrderItem.builder()
                     .id(1L)
                     .orders(savedOrder)
@@ -333,6 +358,7 @@ class OrderServiceTest {
             // Then
             assertThat(orderDetail.orderItems()).hasSize(1);
             assertThat(orderDetail.orderItems().get(0).productName()).isEqualTo("상품1");
+            assertThat(orderDetail.discountCost()).isEqualTo(new BigDecimal("10000"));
         }
     }
 }

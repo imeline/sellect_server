@@ -56,4 +56,10 @@ public class UserReceivedCouponRepositoryImpl implements UserReceivedCouponRepos
             CouponEntity.from(coupon));
     }
 
+    @Override
+    public Optional<UserReceivedCoupon> findById(Long id) {
+        return userReceivedCouponJpaRepository.findById(id)
+            .map(UserReceivedCouponEntity::toModel);
+    }
+
 }

@@ -65,8 +65,13 @@ public class FakeuserReceivedCouponRepository implements UserReceivedCouponRepos
         return table.values().stream().anyMatch(
             coupon1 ->
                 coupon1.getUser().getId().equals(user.getId()) &&
-                coupon1.getCoupon().getId()
-                    .equals(coupon.getId()));
+                    coupon1.getCoupon().getId()
+                        .equals(coupon.getId()));
+    }
+
+    @Override
+    public Optional<UserReceivedCoupon> findById(Long id) {
+        return Optional.ofNullable(table.get(id));
     }
 
     private Comparator<UserReceivedCoupon> getComparator(Pageable pageable) {
@@ -89,5 +94,8 @@ public class FakeuserReceivedCouponRepository implements UserReceivedCouponRepos
             .orElse(Comparator.comparing(UserReceivedCoupon::getId));
     }
 
+    public void clear() {
+        table.clear();
+    }
 
 }

@@ -2,6 +2,7 @@ package com.sellect.server.order.repository.entity;
 
 import com.sellect.server.auth.repository.entity.UserEntity;
 import com.sellect.server.common.BaseTimeEntity;
+import com.sellect.server.coupon.repository.entity.UserReceivedCouponEntity;
 import com.sellect.server.order.domain.Orders;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -37,9 +38,9 @@ public class OrdersEntity extends BaseTimeEntity {
     @JoinColumn(name = "user_id")
     private UserEntity userEntity;
 
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "user_received_coupon_id", nullable = true)
-//    private UserReceivedCouponEntity userReceivedCouponEntity;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_received_coupon_id", nullable = true)
+    private UserReceivedCouponEntity userReceivedCouponEntity;
 
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal totalPrice;
@@ -55,7 +56,7 @@ public class OrdersEntity extends BaseTimeEntity {
         return Orders.builder()
             .id(this.id)
             .user(this.userEntity.toModel())
-//            .userReceivedCoupon(this.userReceivedCouponEntity.toModel())
+            .userReceivedCoupon(this.userReceivedCouponEntity.toModel())
             .totalPrice(this.totalPrice)
             .orderNumber(this.orderNumber)
             .status(this.status)
@@ -69,7 +70,7 @@ public class OrdersEntity extends BaseTimeEntity {
         return OrdersEntity.builder()
             .id(orders.getId())
             .userEntity(UserEntity.from(orders.getUser()))
-//            .userReceivedCouponEntity(UserReceivedCouponEntity.from(orders.getUserReceivedCoupon()))
+            .userReceivedCouponEntity(UserReceivedCouponEntity.from(orders.getUserReceivedCoupon()))
             .totalPrice(orders.getTotalPrice())
             .orderNumber(orders.getOrderNumber())
             .status(orders.getStatus())
