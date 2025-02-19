@@ -1,13 +1,12 @@
 package com.sellect.server.auth.domain;
 
 import com.sellect.server.auth.repository.entity.Role;
+import java.time.LocalDateTime;
+import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-
-import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Builder
 @Getter
@@ -30,6 +29,18 @@ public class User {
             .createdAt(LocalDateTime.now())
             .updatedAt(LocalDateTime.now())
             .deleteAt(null)
+            .build();
+    }
+
+    public User delete() {
+        return User.builder()
+            .id(this.id)
+            .uuid(this.uuid)
+            .nickname(this.nickname)
+            .role(this.role)
+            .createdAt(this.createdAt)
+            .updatedAt(this.updatedAt)
+            .deleteAt(LocalDateTime.now())
             .build();
     }
 }

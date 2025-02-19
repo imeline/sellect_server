@@ -1,0 +1,36 @@
+package com.sellect.server.coupon.repository;
+
+import com.sellect.server.coupon.domain.Coupon;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
+
+public class FakeCouponRepository implements CouponRepository {
+
+    //        private final Map<Long, Coupon> storage = new HashMap<>();
+    private final Map<Long, Coupon> storage = new ConcurrentHashMap<>();
+    private Long id = 1L;
+
+    @Override
+    public void save(Coupon coupon) {
+            if (coupon.getId() == null) {
+                coupon = Coupon.builder()
+                    .id(id++)
+                    .seller(coupon.getSeller())
+                    .discountCost(coupon.getDiscountCost())
+                    .quantity(coupon.getQuantity())
+                    .expirationDate(coupon.getExpirationDate())
+                    .createdAt(coupon.getCreatedAt())
+                    .updatedAt(coupon.getUpdatedAt())
+                    .deleteAt(coupon.getDeleteAt())
+                    .build();
+            }
+            storage.put(coupon.getId(), coupon);
+    }
+
+    @Override
+    public Optional<Coupon> findById(Long couponId) {
+        return Optional.ofNullable(storage.get(couponId));
+    }
+}

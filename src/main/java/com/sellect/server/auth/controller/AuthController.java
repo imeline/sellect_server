@@ -1,6 +1,6 @@
 package com.sellect.server.auth.controller;
 
-import com.sellect.server.auth.controller.application.UserAuthService;
+import com.sellect.server.auth.application.UserAuthService;
 import com.sellect.server.auth.controller.request.LoginRequest;
 import com.sellect.server.auth.controller.request.UserSignUpRequest;
 import com.sellect.server.auth.repository.entity.Role;
@@ -17,7 +17,7 @@ import java.time.Duration;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/v1/auth")
+@RequestMapping("/api/v1/auth")
 public class AuthController {
 
     private final UserAuthService userAuthService;
@@ -58,6 +58,5 @@ public class AuthController {
 
         return ApiResponse.ok(null);
     }
-
 
 }

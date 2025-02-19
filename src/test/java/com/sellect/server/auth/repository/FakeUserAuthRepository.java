@@ -1,5 +1,6 @@
 package com.sellect.server.auth.repository;
 
+import com.sellect.server.auth.domain.User;
 import com.sellect.server.auth.domain.UserAuth;
 import com.sellect.server.auth.repository.user.UserAuthRepository;
 import java.util.HashMap;
@@ -43,5 +44,13 @@ public class FakeUserAuthRepository implements UserAuthRepository {
     public boolean existsByEmail(String email) {
         return userAuthStore.values().stream()
             .anyMatch(userAuth -> userAuth.getEmail().equals(email));
+    }
+
+    @Override
+    public UserAuth findByUser(User user) {
+        return userAuthStore.values().stream()
+            .filter(i -> i.getUser().getId().equals(user.getId()))
+            .findFirst()
+            .get();
     }
 }

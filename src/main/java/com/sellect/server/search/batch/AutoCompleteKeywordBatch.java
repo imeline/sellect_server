@@ -96,12 +96,12 @@ public class AutoCompleteKeywordBatch {
 
         return item -> {
             AutoCompleteKeywordEntity autoCompleteKeyword = autoCompleteKeywordRepository.findByKeyword(
-                    item.getSearchKeyword())
+                    item.getKeyword())
                 .orElse(null);
 
             if (autoCompleteKeyword == null) {
                 autoCompleteKeyword = AutoCompleteKeywordEntity.builder()
-                    .keyword(item.getSearchKeyword())
+                    .keyword(item.getKeyword())
                     .frequency(1L)
                     .createdAt(LocalDateTime.now())
                     .updatedAt(LocalDateTime.now())
