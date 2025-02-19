@@ -85,5 +85,17 @@ public class CouponService {
             .toList();
     }
 
+    @Transactional
+    public void useCoupon(User user, Long couponId) {
+        Coupon coupon = couponRepository.findById(couponId)
+            .orElseThrow(() -> new CommonException(BError.NOT_EXIST, String.valueOf(couponId)));
+        UserReceivedCoupon userReceivedCoupon = userReceivedCouponRepository.findByUserAndCoupon(
+                user, coupon)
+            .orElseThrow(() -> new CommonException(BError.NOT_EXIST, String.valueOf(couponId)));
+        userReceivedCoupon.useCoupon();
+
+        userReceivedCouponRepository.save(userReceivedCoupon);
+    }
+
 }
 

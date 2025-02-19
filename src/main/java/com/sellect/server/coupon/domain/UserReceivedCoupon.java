@@ -29,4 +29,8 @@ public class UserReceivedCoupon {
             .deleteAt(null)
             .build();
     }
+
+    public void useCoupon() {
+        this.isUsed = true;
+    }
 }
