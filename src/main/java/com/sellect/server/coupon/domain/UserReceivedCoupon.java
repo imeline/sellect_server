@@ -11,10 +11,10 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 public class UserReceivedCoupon {
-    private Long id;
-    private User user;
-    private Coupon coupon;
-    private Boolean isUsed;
+    private final Long id;
+    private final User user;
+    private final Coupon coupon;
+    private final Boolean isUsed;
     private final LocalDateTime createdAt;
     private final LocalDateTime updatedAt;
     private final LocalDateTime deleteAt;
@@ -30,7 +30,16 @@ public class UserReceivedCoupon {
             .build();
     }
 
-    public void useCoupon() {
-        this.isUsed = true;
+    // TODO: builder형식으로 전환 2025-02-19, 14:36
+    public UserReceivedCoupon useCoupon() {
+            return UserReceivedCoupon.builder()
+                .id(this.id)
+                .user(this.user)
+                .coupon(this.coupon)
+                .isUsed(true)
+                .createdAt(this.createdAt)
+                .updatedAt(LocalDateTime.now())
+                .deleteAt(this.deleteAt)
+                .build();
     }
 }
