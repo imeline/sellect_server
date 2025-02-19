@@ -65,9 +65,9 @@ class ProductServiceTest {
 
             List<ProductRegisterRequest> requests = List.of(
                 new ProductRegisterRequest(savedCategory.getId(), savedBrand.getId(), "10000",
-                    "상품A", 10, null, null),
+                    "상품A", "descriptionA",10, null, null),
                 new ProductRegisterRequest(savedCategory.getId(), savedBrand.getId(), "20000",
-                    "상품B", 20, null, null)
+                    "상품B", "descriptionB",20, null, null)
             );
 
             // When
@@ -92,9 +92,9 @@ class ProductServiceTest {
 
             List<ProductRegisterRequest> requests = List.of(
                 new ProductRegisterRequest(savedCategory.getId(), savedBrand.getId(), "10000",
-                    "상품A", 10, null, null),
+                    "상품A", "descriptionA",10, null, null),
                 new ProductRegisterRequest(savedCategory.getId(), savedBrand.getId(), "20000",
-                    "상품A", 20, null, null) // 중복된 상품명
+                    "상품A", "descriptionB",20, null, null) // 중복된 상품명
             );
 
             // When
@@ -111,7 +111,7 @@ class ProductServiceTest {
         void test2() {
             // Given
             List<ProductRegisterRequest> requests = List.of(
-                new ProductRegisterRequest(999L, 1L, "10000", "상품A", 10, null, null) // 존재하지 않는 카테고리
+                new ProductRegisterRequest(999L, 1L, "10000", "상품A", "descriptionA", 10, null, null) // 존재하지 않는 카테고리
             );
 
             // When
@@ -132,7 +132,7 @@ class ProductServiceTest {
                 .build());
 
             List<ProductRegisterRequest> requests = List.of(
-                new ProductRegisterRequest(savedCategory.getId(), 1L, "10000", "상품A", 10, null, null)
+                new ProductRegisterRequest(savedCategory.getId(), 1L, "10000", "상품A", "descriptionA", 10, null, null)
                 // 존재하지 않는 카테고리
             );
 
@@ -170,7 +170,7 @@ class ProductServiceTest {
             );
 
             List<ProductRegisterRequest> requests = List.of(
-                new ProductRegisterRequest(10L, 1L, "20000", "상품A", 20, null, null) // 중복된 상품명
+                new ProductRegisterRequest(10L, 1L, "20000", "상품A", "descriptionA", 20, null, null) // 중복된 상품명
             );
 
             // When
@@ -200,6 +200,7 @@ class ProductServiceTest {
             .build();
 
         @DisplayName("상품 수정 성공")
+        @Test
         void test1000() {
             // Given
             Long productId = 10L;
@@ -241,6 +242,7 @@ class ProductServiceTest {
             ProductModifyRequest request = new ProductModifyRequest(
                 "15000",
                 "수정된 상품",
+                "수정된 상품 설명",
                 100
             );
 
@@ -248,7 +250,7 @@ class ProductServiceTest {
             RuntimeException exception = assertThrows(RuntimeException.class,
                 () -> sut.modify(seller.getId(), productId, request));
 
-            assertThat(exception.getMessage()).isEqualTo("상품이 존제하지 않습니다.");
+            assertThat(exception.getMessage()).isEqualTo("상품이 존재하지 않습니다.");
         }
 
         @Test
@@ -276,6 +278,7 @@ class ProductServiceTest {
             ProductModifyRequest request = new ProductModifyRequest(
                 "15000",
                 "수정된 상품",
+                "수정된 상품 설명",
                 100
             );
 
@@ -299,6 +302,7 @@ class ProductServiceTest {
                 .brand(brand)
                 .price(new BigDecimal("10000"))
                 .name("기존 상품")
+                .description("기존 상품 설명")
                 .stock(50)
                 .build();
 
@@ -307,6 +311,7 @@ class ProductServiceTest {
             ProductModifyRequest request = new ProductModifyRequest(
                 null, // 가격 변경 없음
                 null, // 이름 변경 없음
+                null, // 상품 설명 변경 없음
                 null  // 재고 변경 없음
             );
 
@@ -315,6 +320,7 @@ class ProductServiceTest {
 
             // Then
             assertThat(response.name()).isEqualTo("기존 상품");
+            assertThat(response.description()).isEqualTo("기존 상품 설명");
             assertThat(response.price()).isEqualByComparingTo("10000");
             assertThat(response.stock()).isEqualTo(50);
         }
@@ -373,7 +379,7 @@ class ProductServiceTest {
             RuntimeException exception = assertThrows(RuntimeException.class,
                 () -> sut.remove(sellerId, productId));
 
-            assertThat(exception.getMessage()).isEqualTo("상품이 존제하지 않습니다.");
+            assertThat(exception.getMessage()).isEqualTo("상품이 존재하지 않습니다.");
         }
 
         @Test
