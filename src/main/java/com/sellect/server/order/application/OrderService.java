@@ -5,6 +5,7 @@ import com.sellect.server.cart.domain.CartItem;
 import com.sellect.server.cart.repository.CartItemRepository;
 import com.sellect.server.common.exception.CommonException;
 import com.sellect.server.common.exception.enums.BError;
+import com.sellect.server.coupon.domain.Coupon;
 import com.sellect.server.coupon.domain.UserReceivedCoupon;
 import com.sellect.server.coupon.repository.UserReceivedCouponRepository;
 import com.sellect.server.order.controller.request.OrderAddRequest;
@@ -43,11 +44,9 @@ public class OrderService {
     @Transactional
     public Orders registerPendingOrder(User user, OrderAddRequest request) {
         // 쿠폰 조회
-        UserReceivedCoupon coupon = null;
-        if (request.userReceivedCouponId() != null) {
-            coupon = userReceivedCouponRepository.findById(request.userReceivedCouponId())
-                .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "userReceivedCoupon"));
-        }
+        UserReceivedCoupon coupon = Optional.ofNullable(request.userReceivedCouponId())
+            .flatMap(userReceivedCouponRepository::findById)
+            .orElse(null);
         // Orders 저장
         Orders order = Orders.register(user, coupon, request.convertPriceAsBigDecimal(),
             OrderStatus.PENDING);
@@ -82,6 +81,11 @@ public class OrderService {
 
     @Transactional
     public void LockProductItems(Long orderId) {
+        Orders order = getOrderById(orderId);
+        // 이미 완료된 주문인지 확인
+        if (order.getStatus() == OrderStatus.COMPLETED) {
+            throw new CommonException(BError.NOT_VALID, "이미 완료(확정)된 주문입니다.");
+        }
         List<OrderItem> orderItems = getOrderItemsByOrderId(orderId);
 
         orderItems.forEach(orderItem -> {
@@ -97,6 +101,11 @@ public class OrderService {
 
     @Transactional
     public void completeOrder(User user, Long orderId) {
+        Orders order = getOrderById(orderId);
+        // 이미 완료된 주문인지 확인
+        if (order.getStatus() == OrderStatus.COMPLETED) {
+            throw new CommonException(BError.NOT_VALID, "이미 완료(확정)된 주문입니다.");
+        }
         List<OrderItem> orderItems = getOrderItemsByOrderId(orderId);
 
         orderItems.forEach(orderItem -> {
@@ -105,7 +114,6 @@ public class OrderService {
         });
 
         // 주문 확정
-        Orders order = getOrderById(orderId);
         Orders savedOrder = ordersRepository.save(order.updateStatus(OrderStatus.COMPLETED));
 
         // 쿠폰 사용 처리, 장바구니 비우기
@@ -115,11 +123,11 @@ public class OrderService {
     // 비동기 처리
     @Async
     public void clearCartAndDeleteCouponAsync(User user, Orders order) {
-        clearCartAndDeleteCoupons(user, order);
+        clearCartAndDeleteCoupon(user, order);
     }
 
     @Transactional
-    public void clearCartAndDeleteCoupons(User user, Orders order) {
+    public void clearCartAndDeleteCoupon(User user, Orders order) {
         if (order.getStatus() != OrderStatus.COMPLETED) {
             throw new CommonException(BError.NOT_VALID, "주문이 완료되지 않았습니다.");
         }
@@ -129,7 +137,9 @@ public class OrderService {
         cartRepository.saveAll(cartItems);
 
         // 쿠폰 사용 처리
-        order.getUserReceivedCoupon().useCoupon();
+        if (order.getUserReceivedCoupon() != null) {
+            userReceivedCouponRepository.save(order.getUserReceivedCoupon().useCoupon());
+        }
     }
 
 

@@ -23,6 +23,7 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @SuperBuilder
 public class UserReceivedCouponEntity extends BaseTimeEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -37,7 +38,7 @@ public class UserReceivedCouponEntity extends BaseTimeEntity {
             .id(userReceivedCoupon.getId())
             .user(UserEntity.from(userReceivedCoupon.getUser()))
             .coupon(CouponEntity.from(userReceivedCoupon.getCoupon()))
-            .isUsed(false)
+            .isUsed(userReceivedCoupon.getIsUsed())
             .createdAt(userReceivedCoupon.getCreatedAt())
             .updatedAt(userReceivedCoupon.getUpdatedAt())
             .deleteAt(userReceivedCoupon.getDeleteAt())

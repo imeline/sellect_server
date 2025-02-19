@@ -46,14 +46,14 @@ public class OrderController {
 //        return ApiResponse.ok(null);
 //    }
 
-//    /**
-//     * 주문 완료 - 주문 상태 확정, 쿠폰 삭제, 장바구니 비우기
-//     */
-//    @PostMapping("/order/complete/{orderId}")
-//    public ApiResponse<Void> completeOrder(@AuthUser User user, @PathVariable Long orderId) {
-//        orderService.completeOrder(user, orderId);
-//        return ApiResponse.ok(null);
-//    }
+    /**
+     * 주문 완료 - 주문 상태 확정, 쿠폰 삭제, 장바구니 비우기
+     */
+    @PostMapping("/order/complete/{orderId}")
+    public ApiResponse<Void> completeOrder(@AuthUser User user, @PathVariable Long orderId) {
+        orderService.completeOrder(user, orderId);
+        return ApiResponse.ok(null);
+    }
 
 
     /**

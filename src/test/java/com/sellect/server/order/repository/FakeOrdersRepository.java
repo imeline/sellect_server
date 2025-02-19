@@ -19,7 +19,7 @@ public class FakeOrdersRepository implements OrdersRepository {
             order = Orders.builder()
                 .id(idSequence++)
                 .user(order.getUser())
-                //.userReceivedCoupon(order.getUserReceivedCoupon())
+                .userReceivedCoupon(order.getUserReceivedCoupon())
                 .totalPrice(order.getTotalPrice())
                 .orderNumber(order.getOrderNumber())
                 .status(order.getStatus())

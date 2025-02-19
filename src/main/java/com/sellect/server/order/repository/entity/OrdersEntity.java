@@ -39,7 +39,7 @@ public class OrdersEntity extends BaseTimeEntity {
     private UserEntity userEntity;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_received_coupon_id", nullable = true)
+    @JoinColumn(name = "user_received_coupon_id")
     private UserReceivedCouponEntity userReceivedCouponEntity;
 
     @Column(nullable = false, precision = 10, scale = 2)
@@ -56,7 +56,9 @@ public class OrdersEntity extends BaseTimeEntity {
         return Orders.builder()
             .id(this.id)
             .user(this.userEntity.toModel())
-            .userReceivedCoupon(this.userReceivedCouponEntity.toModel())
+            .userReceivedCoupon(
+                this.userReceivedCouponEntity != null ?
+                    this.userReceivedCouponEntity.toModel() : null)
             .totalPrice(this.totalPrice)
             .orderNumber(this.orderNumber)
             .status(this.status)
@@ -70,7 +72,9 @@ public class OrdersEntity extends BaseTimeEntity {
         return OrdersEntity.builder()
             .id(orders.getId())
             .userEntity(UserEntity.from(orders.getUser()))
-            .userReceivedCouponEntity(UserReceivedCouponEntity.from(orders.getUserReceivedCoupon()))
+            .userReceivedCouponEntity(
+                orders.getUserReceivedCoupon() != null ?
+                    UserReceivedCouponEntity.from(orders.getUserReceivedCoupon()) : null)
             .totalPrice(orders.getTotalPrice())
             .orderNumber(orders.getOrderNumber())
             .status(orders.getStatus())
