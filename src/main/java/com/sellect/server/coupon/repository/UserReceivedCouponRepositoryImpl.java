@@ -2,9 +2,12 @@ package com.sellect.server.coupon.repository;
 
 import com.sellect.server.auth.domain.User;
 import com.sellect.server.auth.repository.entity.UserEntity;
+import com.sellect.server.coupon.domain.Coupon;
 import com.sellect.server.coupon.domain.UserReceivedCoupon;
+import com.sellect.server.coupon.repository.entity.CouponEntity;
 import com.sellect.server.coupon.repository.entity.UserReceivedCouponEntity;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
@@ -38,6 +41,19 @@ public class UserReceivedCouponRepositoryImpl implements UserReceivedCouponRepos
         return receivedCouponEntityList.stream()
             .map(UserReceivedCouponEntity::toModel)
             .toList();
+    }
+
+    @Override
+    public Optional<UserReceivedCoupon> findByUserAndCoupon(User user, Coupon coupon) {
+        Optional<UserReceivedCouponEntity> receivedCouponEntity = userReceivedCouponJpaRepository.findByUserAndCoupon(
+            UserEntity.from(user), CouponEntity.from(coupon));
+        return receivedCouponEntity.map(UserReceivedCouponEntity::toModel);
+    }
+
+    @Override
+    public Boolean existsByUserAndCoupon(User user, Coupon coupon) {
+        return userReceivedCouponJpaRepository.existsByUserAndCoupon(UserEntity.from(user),
+            CouponEntity.from(coupon));
     }
 
 }

@@ -25,7 +25,6 @@ public class CouponService {
 
     ReentrantLock lock = new ReentrantLock();
 
-    // TODO: 쿠폰발급 2025-02-18, 10:36
     private final CouponRepository couponRepository;
     private final UserReceivedCouponRepository userReceivedCouponRepository;
 
@@ -53,22 +52,26 @@ public class CouponService {
     @Transactional
     public void downloadCoupon(User user, Long couponId) {
         // TODO: 애플리케이션 락 vs DB 락 vs 큐 성능측정 필요 2025-02-18, 17:7
-        Coupon coupon = couponRepository.findById(couponId)
-            .orElseThrow(() -> new CommonException(BError.NOT_EXIST, String.valueOf(couponId)));
-        if (coupon.getQuantity() <= 0) {
-            throw new CommonException(BError.COUPON_QUANTITY_ZERO, couponId.toString());
-        }
         lock.lock();
         try {
+            Coupon coupon = couponRepository.findById(couponId)
+                .orElseThrow(() -> new CommonException(BError.NOT_EXIST, String.valueOf(couponId)));
+            if (coupon.getQuantity() <= 0) {
+                throw new CommonException(BError.COUPON_QUANTITY_ZERO, couponId.toString());
+            }
+            if (userReceivedCouponRepository.existsByUserAndCoupon(user, coupon)) {
+                throw new CommonException(BError.ALREADY_RECEIVED, couponId.toString());
+            }
             coupon.decreaseQuantity();
             UserReceivedCoupon userReceivedCoupon = UserReceivedCoupon.create(user, coupon);
             userReceivedCouponRepository.save(userReceivedCoupon);
-            couponRepository.save(coupon);
+                couponRepository.save(coupon);
         } finally {
             lock.unlock();
         }
     }
 
+    @Transactional(readOnly = true)
     public List<CouponResponse> getCouponList(User user, int page, int size, Boolean isUsed) {
         PageRequest pageRequest = PageRequest.of(page, size, Direction.DESC, "createdAt");
 
