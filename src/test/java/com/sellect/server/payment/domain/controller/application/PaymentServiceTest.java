@@ -6,9 +6,13 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.sellect.server.auth.domain.User;
+import com.sellect.server.auth.repository.FakeUserRepository;
+import com.sellect.server.auth.repository.user.UserRepository;
+import com.sellect.server.order.application.OrderService;
 import com.sellect.server.payment.application.PaymentService;
 import com.sellect.server.payment.controller.response.PaymentHistoryResponse;
 import com.sellect.server.payment.domain.Payment;
@@ -37,15 +41,18 @@ class PaymentServiceTest {
     private PaymentRepository paymentRepository;
     @Mock
     private RestTemplate restTemplate;
+    private UserRepository userRepository;
 
     private User user;
     private PaymentRequest paymentRequest;
     private Payment payment;
+    private OrderService orderService;
     private static String USER_UUID = "test-uuid";
 
     @BeforeEach
     void setUp() {
         paymentRepository = new FakePaymentRepository();
+        userRepository = new FakeUserRepository();
         user = User.builder()
             .id(1L)
             .uuid(USER_UUID)
@@ -53,7 +60,9 @@ class PaymentServiceTest {
 
         paymentRequest = new PaymentRequest("order-123", "test item", 1, 1000);
         payment = Payment.readyPayment("order-123", "test-pid", USER_UUID, 1000, "test-tid");
-        paymentService = new PaymentService(paymentRepository, restTemplate);
+        orderService = mock(OrderService.class);
+        paymentService = new PaymentService(orderService, paymentRepository, userRepository,
+            restTemplate);
     }
 
     @Nested
@@ -193,7 +202,8 @@ class PaymentServiceTest {
             paymentRepository.save(payment); // 테스트용 결제 데이터 저장
 
             // when
-            List<PaymentHistoryResponse> paymentHistory = paymentService.getPaymentHistory(user, 0, 5);
+            List<PaymentHistoryResponse> paymentHistory = paymentService.getPaymentHistory(user, 0,
+                5);
 
             // then
             assertNotNull(paymentHistory);
