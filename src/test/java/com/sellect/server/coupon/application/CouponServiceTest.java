@@ -290,8 +290,8 @@ class CouponServiceTest {
 
             // then
             assertEquals(2, couponList.size());
-            assertEquals(5000, couponList.get(0).couponInfo().discountCost());
-            assertEquals(3000, couponList.get(1).couponInfo().discountCost());
+            assertEquals(3000, couponList.get(0).couponInfo().discountCost());
+            assertEquals(5000, couponList.get(1).couponInfo().discountCost());
 
         }
     }
