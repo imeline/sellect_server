@@ -18,6 +18,8 @@ public record ProductModifyRequest(
     @Size(min = 10, message = "상품명은 최소 10글자 이상이어야 합니다.")
     String name,
 
+    String description,
+
     @Min(value = 1, message = "재고(stock)는 1 이상이어야 합니다.")
     Integer stock
 
