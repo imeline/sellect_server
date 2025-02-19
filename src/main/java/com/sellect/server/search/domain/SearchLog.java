@@ -14,10 +14,8 @@ public class SearchLog {
     private final String searchKeyword;
     private final Long categoryId;
     private final Long brandId;
-    private final String userIdentifier;
-    private final String ipAddress;
+    private final String sessionId;
     private final LocalDateTime timestamp;
     private final int resultCount;
     private final boolean filterApplied;
-    private final boolean isInitialSearch;
 }

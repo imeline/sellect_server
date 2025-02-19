@@ -1,24 +1,13 @@
-CREATE TABLE `cart`
+CREATE TABLE `cart_item`
 (
     `id`         BIGINT   NOT NULL,
     `user_id`    BIGINT   NOT NULL,
     `product_id` BIGINT   NOT NULL,
-    `stock`      INT      NOT NULL,
+    `quantity`      INT      NOT NULL,
     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at` DATETIME NOT NULL,
     `delete_at`  DATETIME NULL,
     PRIMARY KEY (`id`)
-);
-
-CREATE TABLE `data_user_behavior`
-(
-    `user_id`          BIGINT NULL,
-    `clicked_products` JSON NULL,
-    `wishlist`         JSON NULL,
-    `purchased`        JSON NULL,
-    `created_at`       DATETIME NULL,
-    `updated_at`       DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
-    `delete_at`        DATETIME NULL
 );
 
 CREATE TABLE `user_received_coupon`
@@ -54,17 +43,6 @@ CREATE TABLE `category`
     PRIMARY KEY (`id`)
 );
 
-CREATE TABLE `review_helpful_vote`
-(
-    `id`         BIGINT   NOT NULL,
-    `review_id`  BIGINT   NOT NULL,
-    `user_id`    BIGINT   NOT NULL,
-    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    `updated_at` DATETIME NOT NULL,
-    `delete_at`  DATETIME NULL,
-    PRIMARY KEY (`id`)
-);
-
 CREATE TABLE `user_auth`
 (
     `id`         BIGINT       NOT NULL,
@@ -83,7 +61,9 @@ CREATE TABLE `product_image`
     `product_id`     BIGINT       NOT NULL,
     `image_url`      VARCHAR(255) NOT NULL,
     `representative` TINYINT(1) NOT NULL,
-    `sequence`       INT UNSIGNED NOT NULL,
+    `uuid`           VARCHAR(255) NOT NULL,
+    `prev`           VARCHAR(255) NULL,
+    `next`           VARCHAR(255) NULL,
     `created_at`     DATETIME     NOT NULL,
     `updated_at`     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `delete_at`      DATETIME NULL,
@@ -147,29 +127,6 @@ CREATE TABLE `order_item`
     PRIMARY KEY (`id`)
 );
 
-CREATE TABLE `seller`
-(
-    `id`         BIGINT       NOT NULL,
-    `uuid`       VARCHAR(36)  NOT NULL,
-    `nickname`   VARCHAR(255) NOT NULL,
-    `created_at` DATETIME     NOT NULL,
-    `updated_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    `delete_at`  DATETIME NULL,
-    PRIMARY KEY (`id`)
-);
-
-CREATE TABLE `seller_auth`
-(
-    `id`         BIGINT       NOT NULL,
-    `seller_id`  BIGINT       NOT NULL,
-    `email`      VARCHAR(255) NOT NULL,
-    `password`   VARCHAR(255) NOT NULL,
-    `created_at` DATETIME     NOT NULL,
-    `updated_at` DATETIME     NOT NULL,
-    `delete_at`  DATETIME NULL,
-    PRIMARY KEY (`id`)
-);
-
 CREATE TABLE `product`
 (
     `id`          BIGINT         NOT NULL,
@@ -190,6 +147,7 @@ CREATE TABLE `user`
     `id`         BIGINT      NOT NULL,
     `uuid`       VARCHAR(50) NOT NULL,
     `nickname`   VARCHAR(50) NOT NULL,
+    `role`       ENUM NOT NULL,
     `created_at` DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at` DATETIME    NOT NULL,
     `delete_at`  DATETIME NULL,
@@ -207,5 +165,16 @@ CREATE TABLE `review`
     `created_at`         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at`         DATETIME NOT NULL,
     `delete_at`          DATETIME NULL,
+    PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `auto_complete_keyword`
+(
+    `id`         BIGINT       NOT NULL,
+    `keyword`    VARCHAR(255) NOT NULL,
+    `frequency`  BIGINT          NOT NULL,
+    `created_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` DATETIME     NOT NULL,
+    `delete_at`  DATETIME     NULL,
     PRIMARY KEY (`id`)
 );

@@ -28,12 +28,10 @@ public class SearchLogEventListener {
             .searchKeyword(event.getSearchKeyword())
             .categoryId(event.getCategoryId())
             .brandId(event.getBrandId())
-            .userIdentifier(userIdentifier)
-            .ipAddress(ipAddress)
+            .sessionId(event.getUserIdentifier())
             .timestamp(LocalDateTime.now())
             .resultCount(event.getResultCount())
             .filterApplied(event.isFilterApplied())
-            .isInitialSearch(event.isInitialSearch())
             .build();
 
         // 도메인 객체 → JPA 엔티티 변환 후 저장

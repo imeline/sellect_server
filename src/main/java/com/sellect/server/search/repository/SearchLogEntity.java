@@ -34,10 +34,7 @@ public class SearchLogEntity {
     private Long brandId; // 선택한 브랜드 ID
 
     @Column(nullable = false, length = 255)
-    private String userIdentifier; // 회원(userId) 또는 비회원(UUID 기반)
-
-    @Column(nullable = false, length = 50)
-    private String ipAddress; // 사용자 IP 주소
+    private String sessionId; // 회원(userId) 또는 비회원(UUID 기반)
 
     @Column(nullable = false)
     private LocalDateTime timestamp; // 검색 실행 시간
@@ -48,8 +45,6 @@ public class SearchLogEntity {
     @Column(nullable = false)
     private boolean filterApplied; // 필터링 여부 (true = 필터 적용됨)
 
-    @Column(nullable = false)
-    private boolean isInitialSearch; // 필터링 여부 (true = 필터 적용됨)
 
     public static SearchLogEntity from(SearchLog searchLog) {
         return SearchLogEntity.builder()
@@ -57,12 +52,10 @@ public class SearchLogEntity {
             .searchKeyword(searchLog.getSearchKeyword())
             .categoryId(searchLog.getCategoryId())
             .brandId(searchLog.getBrandId())
-            .userIdentifier(searchLog.getUserIdentifier())
-            .ipAddress(searchLog.getIpAddress())
+            .sessionId(searchLog.getSessionId())
             .timestamp(searchLog.getTimestamp())
             .resultCount(searchLog.getResultCount())
             .filterApplied(searchLog.isFilterApplied())
-            .isInitialSearch(searchLog.isFilterApplied())
             .build();
     }
 
@@ -72,12 +65,9 @@ public class SearchLogEntity {
             .searchKeyword(this.searchKeyword)
             .categoryId(this.categoryId)
             .brandId(this.brandId)
-            .userIdentifier(this.userIdentifier)
-            .ipAddress(this.ipAddress)
             .timestamp(this.timestamp)
             .resultCount(this.resultCount)
             .filterApplied(this.filterApplied)
-            .isInitialSearch(this.isInitialSearch)
             .build();
     }
 }

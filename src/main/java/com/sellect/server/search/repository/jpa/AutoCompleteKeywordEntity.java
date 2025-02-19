@@ -50,4 +50,8 @@ public class AutoCompleteKeywordEntity extends BaseTimeEntity {
             .deleteAt(this.getDeleteAt()) // BaseTimeEntity 필드 포함
             .build();
     }
+
+    public void incrementFrequency() {
+        this.frequency++;
+    }
 }

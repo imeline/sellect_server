@@ -17,4 +17,5 @@ public class AutoCompleteKeyword {
     private final LocalDateTime createdAt;
     private final LocalDateTime updatedAt;
     private final LocalDateTime deleteAt;
+
 }
