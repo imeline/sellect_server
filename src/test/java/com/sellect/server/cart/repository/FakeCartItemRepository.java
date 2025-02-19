@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Optional;
 
 public class FakeCartItemRepository implements CartItemRepository {
+
     private final Map<Long, CartItem> data = new HashMap<>();
 
     @Override
@@ -29,5 +30,16 @@ public class FakeCartItemRepository implements CartItemRepository {
             }
         }
         return result;
+    }
+
+    @Override
+    public void saveAll(List<CartItem> cartItems) {
+        for (CartItem item : cartItems) {
+            data.put(item.getId(), item);
+        }
+    }
+
+    public void clear() {
+        data.clear();
     }
 }

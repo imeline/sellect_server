@@ -1,8 +1,13 @@
 package com.sellect.server.order.application;
 
 import com.sellect.server.auth.domain.User;
+import com.sellect.server.cart.domain.CartItem;
+import com.sellect.server.cart.repository.CartItemRepository;
 import com.sellect.server.common.exception.CommonException;
 import com.sellect.server.common.exception.enums.BError;
+import com.sellect.server.coupon.domain.Coupon;
+import com.sellect.server.coupon.domain.UserReceivedCoupon;
+import com.sellect.server.coupon.repository.UserReceivedCouponRepository;
 import com.sellect.server.order.controller.request.OrderAddRequest;
 import com.sellect.server.order.controller.response.OrderDetailGetResponse;
 import com.sellect.server.order.controller.response.OrderGetResponse;
@@ -13,8 +18,10 @@ import com.sellect.server.order.repository.OrdersRepository;
 import com.sellect.server.order.repository.entity.OrderStatus;
 import com.sellect.server.product.domain.Product;
 import com.sellect.server.product.repository.ProductRepository;
+import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,12 +38,17 @@ public class OrderService {
     private final OrdersRepository ordersRepository;
     private final OrderItemRepository orderItemRepository;
     private final ProductRepository productRepository;
-    // private final CartRepository cartRepository;
+    private final CartItemRepository cartRepository;
+    private final UserReceivedCouponRepository userReceivedCouponRepository;
 
     @Transactional
     public Orders registerPendingOrder(User user, OrderAddRequest request) {
+        // 쿠폰 조회
+        UserReceivedCoupon coupon = Optional.ofNullable(request.userReceivedCouponId())
+            .flatMap(userReceivedCouponRepository::findById)
+            .orElse(null);
         // Orders 저장
-        Orders order = Orders.register(user, request.convertPriceAsBigDecimal(),
+        Orders order = Orders.register(user, coupon, request.convertPriceAsBigDecimal(),
             OrderStatus.PENDING);
         Orders savedOrder = ordersRepository.save(order);
 
@@ -69,6 +81,11 @@ public class OrderService {
 
     @Transactional
     public void LockProductItems(Long orderId) {
+        Orders order = getOrderById(orderId);
+        // 이미 완료된 주문인지 확인
+        if (order.getStatus() == OrderStatus.COMPLETED) {
+            throw new CommonException(BError.NOT_VALID, "이미 완료(확정)된 주문입니다.");
+        }
         List<OrderItem> orderItems = getOrderItemsByOrderId(orderId);
 
         orderItems.forEach(orderItem -> {
@@ -84,6 +101,11 @@ public class OrderService {
 
     @Transactional
     public void completeOrder(User user, Long orderId) {
+        Orders order = getOrderById(orderId);
+        // 이미 완료된 주문인지 확인
+        if (order.getStatus() == OrderStatus.COMPLETED) {
+            throw new CommonException(BError.NOT_VALID, "이미 완료(확정)된 주문입니다.");
+        }
         List<OrderItem> orderItems = getOrderItemsByOrderId(orderId);
 
         orderItems.forEach(orderItem -> {
@@ -92,26 +114,32 @@ public class OrderService {
         });
 
         // 주문 확정
-        Orders order = getOrderById(orderId);
-        ordersRepository.save(order.updateStatus(OrderStatus.COMPLETED));
+        Orders savedOrder = ordersRepository.save(order.updateStatus(OrderStatus.COMPLETED));
 
-        // 쿠폰 삭제, 장바구니 비우기
-        clearCartAndDeleteCouponAsync(user, order);
+        // 쿠폰 사용 처리, 장바구니 비우기
+        clearCartAndDeleteCouponAsync(user, savedOrder);
     }
 
     // 비동기 처리
     @Async
     public void clearCartAndDeleteCouponAsync(User user, Orders order) {
-        clearCartAndDeleteCoupons(user, order);
+        clearCartAndDeleteCoupon(user, order);
     }
 
     @Transactional
-    public void clearCartAndDeleteCoupons(User user, Orders order) {
+    public void clearCartAndDeleteCoupon(User user, Orders order) {
+        if (order.getStatus() != OrderStatus.COMPLETED) {
+            throw new CommonException(BError.NOT_VALID, "주문이 완료되지 않았습니다.");
+        }
         // 장바구니 비우기
-        //cartRepository.clearCart(user.getId());
+        List<CartItem> cartItems = cartRepository.findAllByUserId(user.getId());
+        cartItems.forEach(CartItem::remove);
+        cartRepository.saveAll(cartItems);
 
-        // 쿠폰 삭제
-        //couponRepository.deleteByUser(order.getUserReceivedCoupon.getId());
+        // 쿠폰 사용 처리
+        if (order.getUserReceivedCoupon() != null) {
+            userReceivedCouponRepository.save(order.getUserReceivedCoupon().useCoupon());
+        }
     }
 
 
@@ -131,14 +159,20 @@ public class OrderService {
     public OrderDetailGetResponse getOrderDetail(Long orderId) {
 
         Orders order = getOrderById(orderId);
+
         // PENDING 상태 주문은 에러 처리
         if (order.getStatus() == OrderStatus.PENDING) {
             throw new CommonException(BError.NOT_VALID, "PENDING 상태의 주문은 조회할 수 없습니다.");
         }
 
         List<OrderItem> orderItems = getOrderItemsByOrderId(orderId);
+        BigDecimal discountCost = Optional.ofNullable(order.getUserReceivedCoupon())
+            .map(UserReceivedCoupon::getCoupon)
+            .map(Coupon::getDiscountCost)
+            .map(BigDecimal::valueOf)
+            .orElse(BigDecimal.ZERO);
 
-        return OrderDetailGetResponse.from(order, orderItems);
+        return OrderDetailGetResponse.from(order, discountCost, orderItems);
     }
 
     @Transactional(readOnly = true)

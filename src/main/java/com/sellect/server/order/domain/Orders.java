@@ -1,6 +1,7 @@
 package com.sellect.server.order.domain;
 
 import com.sellect.server.auth.domain.User;
+import com.sellect.server.coupon.domain.UserReceivedCoupon;
 import com.sellect.server.order.repository.entity.OrderStatus;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -19,7 +20,7 @@ public class Orders {
 
     private final User user;
 
-//    private final UserReceivedCoupon userReceivedCoupon;
+    private final UserReceivedCoupon userReceivedCoupon;
 
     private final BigDecimal totalPrice;
 
@@ -33,10 +34,11 @@ public class Orders {
 
     private final LocalDateTime deletedAt;
 
-    public static Orders register(User user, BigDecimal totalPrice, OrderStatus status) {
+    public static Orders register(User user, UserReceivedCoupon coupon, BigDecimal totalPrice,
+        OrderStatus status) {
         return Orders.builder()
             .user(user)
-            //            .userReceivedCoupon(userReceivedCoupon)
+            .userReceivedCoupon(coupon)
             .totalPrice(totalPrice)
             // 주문 번호 UUID 생성 (하이픈 제거, 대문자 + 숫자 조합)
             .orderNumber(UUID.randomUUID().toString().replace("-", "").toUpperCase())
@@ -48,7 +50,7 @@ public class Orders {
         return Orders.builder()
             .id(this.id)
             .user(this.user)
-            //            .userReceivedCoupon(this.userReceivedCoupon)
+            .userReceivedCoupon(this.userReceivedCoupon)
             .totalPrice(this.totalPrice)
             .orderNumber(this.orderNumber)
             .status(status)
