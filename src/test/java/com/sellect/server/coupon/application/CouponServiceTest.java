@@ -55,7 +55,7 @@ class CouponServiceTest {
                 .build();
             //when
             Exception exception = assertThrows(CommonException.class, () -> {
-                couponService.issueCoupon(user,
+                couponService.uploadCoupon(user,
                     new IssueCouponRequest(1, 10, LocalDate.now().plusDays(10)));
             });
 
@@ -113,7 +113,7 @@ class CouponServiceTest {
             couponRepository.save(coupon);
 
             //when
-            couponService.registerCoupon(user, couponId);
+            couponService.downloadCoupon(user, couponId);
 
             //then
             assertEquals(9, couponRepository.findById(couponId).get().getQuantity());
@@ -149,11 +149,11 @@ class CouponServiceTest {
             couponRepository.save(coupon);
 
             //when
-            couponService.registerCoupon(user, couponId);
+            couponService.downloadCoupon(user, couponId);
 
             //when & then
             CommonException commonException = assertThrows(CommonException.class,
-                () -> couponService.registerCoupon(anotherUser, couponId));
+                () -> couponService.downloadCoupon(anotherUser, couponId));
 
             assertEquals(String.format("The quantity of the coupon%s is 0", couponId),
                 commonException.getMessage());
@@ -185,7 +185,11 @@ class CouponServiceTest {
             for (int i = 0; i < threadCount; i++) {
                 executorService.submit(() -> {
                     try {
-                        couponService.registerCoupon(register, 1L);
+                        User register = User.builder()
+                            .id(userId)
+                            .nickname("user id_" + userId)
+                            .role(Role.USER).build();
+                        couponService.downloadCoupon(register, 1L);
                     } catch (Exception e) {
                         System.out.println(e.getMessage());
                     } finally {

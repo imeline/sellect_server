@@ -13,6 +13,7 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 public class Coupon {
+
     private Long id;
     private User seller;
     private Integer discountCost;
@@ -20,9 +21,10 @@ public class Coupon {
     private LocalDate expirationDate;
     private final LocalDateTime createdAt;
     private final LocalDateTime updatedAt;
-    private final LocalDateTime deleteAt;
+    private LocalDateTime deleteAt;
 
     public void decreaseQuantity() {
         this.quantity--;
     }
+
 }

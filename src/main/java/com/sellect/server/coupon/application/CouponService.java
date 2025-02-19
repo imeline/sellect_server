@@ -29,7 +29,7 @@ public class CouponService {
     private final CouponRepository couponRepository;
     private final UserReceivedCouponRepository userReceivedCouponRepository;
 
-    public void issueCoupon(User user, IssueCouponRequest issueCouponRequest) {
+    public void uploadCoupon(User user, IssueCouponRequest issueCouponRequest) {
         if (user.getRole() != Role.SELLER) {
             throw new CommonException(BError.NOT_SELLER, user.getNickname());
         }
@@ -51,7 +51,7 @@ public class CouponService {
      * 스케일 아웃을 하면?? -> DB 락????
      * */
     @Transactional
-    public void registerCoupon(User user, Long couponId) {
+    public void downloadCoupon(User user, Long couponId) {
         // TODO: 애플리케이션 락 vs DB 락 vs 큐 성능측정 필요 2025-02-18, 17:7
         Coupon coupon = couponRepository.findById(couponId)
             .orElseThrow(() -> new CommonException(BError.NOT_EXIST, String.valueOf(couponId)));

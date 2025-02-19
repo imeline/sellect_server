@@ -30,13 +30,13 @@ public class CouponController {
         @AuthSeller User user,
         @RequestBody IssueCouponRequest issueCouponRequest
     ) {
-        couponService.issueCoupon(user, issueCouponRequest);
+        couponService.uploadCoupon(user, issueCouponRequest);
         return ApiResponse.ok(null);
     }
 
     @PutMapping("/register/{couponId}")
     public ApiResponse<?> registerCoupon(@AuthUser User user, @PathVariable Long couponId) {
-        couponService.registerCoupon(user, couponId);
+        couponService.downloadCoupon(user, couponId);
         return null;
     }
 
