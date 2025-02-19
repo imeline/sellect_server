@@ -1,5 +1,6 @@
 package com.sellect.server.auth.repository.user;
 
+import com.sellect.server.auth.domain.User;
 import com.sellect.server.auth.domain.UserAuth;
 import java.util.Optional;
 
@@ -8,4 +9,5 @@ public interface UserAuthRepository {
 
     Optional<UserAuth> findByEmail(String email);
     boolean existsByEmail(String email);
+    UserAuth findByUser(User user);
 }

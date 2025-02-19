@@ -62,10 +62,10 @@ public class CouponService {
             if (userReceivedCouponRepository.existsByUserAndCoupon(user, coupon)) {
                 throw new CommonException(BError.ALREADY_RECEIVED, couponId.toString());
             }
-            coupon.decreaseQuantity();
-            UserReceivedCoupon userReceivedCoupon = UserReceivedCoupon.create(user, coupon);
+            Coupon decreasedCoupon = coupon.decreaseQuantity();
+            UserReceivedCoupon userReceivedCoupon = UserReceivedCoupon.create(user, decreasedCoupon);
             userReceivedCouponRepository.save(userReceivedCoupon);
-                couponRepository.save(coupon);
+            couponRepository.save(decreasedCoupon);
         } finally {
             lock.unlock();
         }
@@ -95,9 +95,9 @@ public class CouponService {
         UserReceivedCoupon userReceivedCoupon = userReceivedCouponRepository.findByUserAndCoupon(
                 user, coupon)
             .orElseThrow(() -> new CommonException(BError.NOT_EXIST, String.valueOf(couponId)));
-        userReceivedCoupon.useCoupon();
+        UserReceivedCoupon usedCoupon = userReceivedCoupon.useCoupon();
 
-        userReceivedCouponRepository.save(userReceivedCoupon);
+        userReceivedCouponRepository.save(usedCoupon);
     }
 
 }

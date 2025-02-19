@@ -4,6 +4,9 @@ package com.sellect.server.auth.repository.user;
 import com.sellect.server.auth.domain.User;
 import com.sellect.server.auth.domain.UserAuth;
 import com.sellect.server.auth.repository.entity.UserAuthEntity;
+import com.sellect.server.auth.repository.entity.UserEntity;
+import com.sellect.server.common.exception.CommonException;
+import com.sellect.server.common.exception.enums.BError;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -33,5 +36,14 @@ public class UserAuthRepositoryImpl implements UserAuthRepository {
     @Override
     public boolean existsByEmail(String email) {
         return userAuthJpaRepository.existsByEmailAndDeleteAtIsNull(email);
+    }
+
+    @Override
+    public UserAuth findByUser(User user) {
+        UserAuthEntity userAuthEntity = userAuthJpaRepository.findByUserAndDeleteAtIsNull(
+                UserEntity.from(user))
+            .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "User"));
+
+        return userAuthEntity.toModel();
     }
 }
