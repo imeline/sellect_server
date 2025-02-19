@@ -1,6 +1,8 @@
 package com.sellect.server.order.application;
 
 import com.sellect.server.auth.domain.User;
+import com.sellect.server.cart.domain.CartItem;
+import com.sellect.server.cart.repository.CartItemRepository;
 import com.sellect.server.common.exception.CommonException;
 import com.sellect.server.common.exception.enums.BError;
 import com.sellect.server.order.controller.request.OrderAddRequest;
@@ -31,7 +33,7 @@ public class OrderService {
     private final OrdersRepository ordersRepository;
     private final OrderItemRepository orderItemRepository;
     private final ProductRepository productRepository;
-    // private final CartRepository cartRepository;
+    private final CartItemRepository cartRepository;
 
     @Transactional
     public Orders registerPendingOrder(User user, OrderAddRequest request) {
@@ -93,7 +95,7 @@ public class OrderService {
 
         // 주문 확정
         Orders order = getOrderById(orderId);
-        ordersRepository.save(order.updateStatus(OrderStatus.COMPLETED));
+        order = ordersRepository.save(order.updateStatus(OrderStatus.COMPLETED));
 
         // 쿠폰 삭제, 장바구니 비우기
         clearCartAndDeleteCouponAsync(user, order);
@@ -107,8 +109,13 @@ public class OrderService {
 
     @Transactional
     public void clearCartAndDeleteCoupons(User user, Orders order) {
+        if (order.getStatus() != OrderStatus.COMPLETED) {
+            throw new CommonException(BError.NOT_VALID, "주문이 완료되지 않았습니다.");
+        }
         // 장바구니 비우기
-        //cartRepository.clearCart(user.getId());
+        List<CartItem> cartItems = cartRepository.findAllByUserId(user.getId());
+        cartItems.forEach(CartItem::remove);
+        cartRepository.saveAll(cartItems);
 
         // 쿠폰 삭제
         //couponRepository.deleteByUser(order.getUserReceivedCoupon.getId());

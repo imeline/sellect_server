@@ -29,4 +29,11 @@ public class CartItemRepositoryImpl implements CartItemRepository {
             .map(CartItemEntity::toModel)
             .toList();
     }
+
+    @Override
+    public void saveAll(List<CartItem> cartItems) {
+        cartItemJpaRepository.saveAll(cartItems.stream()
+            .map(CartItemEntity::from)
+            .toList());
+    }
 }
