@@ -15,13 +15,13 @@ public record OrderDetailGetResponse(
 
 ) {
 
-    public static OrderDetailGetResponse from(Orders order, int discountCost,
+    public static OrderDetailGetResponse from(Orders order, BigDecimal discountCost,
         List<OrderItem> orderItems) {
 
         List<OrderItemGetResponse> orderItemResponses = OrderItemGetResponse.fromList(orderItems);
         return new OrderDetailGetResponse(
             order.getOrderNumber(),
-            BigDecimal.valueOf(discountCost),
+            discountCost,
             order.getTotalPrice(),
             orderItemResponses,
             order.getCreatedAt()

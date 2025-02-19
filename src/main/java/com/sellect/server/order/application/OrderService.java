@@ -17,8 +17,10 @@ import com.sellect.server.order.repository.OrdersRepository;
 import com.sellect.server.order.repository.entity.OrderStatus;
 import com.sellect.server.product.domain.Product;
 import com.sellect.server.product.repository.ProductRepository;
+import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,9 +42,12 @@ public class OrderService {
 
     @Transactional
     public Orders registerPendingOrder(User user, OrderAddRequest request) {
-        UserReceivedCoupon coupon = userReceivedCouponRepository.findById(
-                request.userReceivedCouponId())
-            .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "userReceivedCoupon"));
+        // 쿠폰 조회
+        UserReceivedCoupon coupon = null;
+        if (request.userReceivedCouponId() != null) {
+            coupon = userReceivedCouponRepository.findById(request.userReceivedCouponId())
+                .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "userReceivedCoupon"));
+        }
         // Orders 저장
         Orders order = Orders.register(user, coupon, request.convertPriceAsBigDecimal(),
             OrderStatus.PENDING);
@@ -144,12 +149,18 @@ public class OrderService {
     public OrderDetailGetResponse getOrderDetail(Long orderId) {
 
         Orders order = getOrderById(orderId);
+
         // PENDING 상태 주문은 에러 처리
         if (order.getStatus() == OrderStatus.PENDING) {
             throw new CommonException(BError.NOT_VALID, "PENDING 상태의 주문은 조회할 수 없습니다.");
         }
+
         List<OrderItem> orderItems = getOrderItemsByOrderId(orderId);
-        int discountCost = order.getUserReceivedCoupon().getCoupon().getDiscountCost();
+        BigDecimal discountCost = Optional.ofNullable(order.getUserReceivedCoupon())
+            .map(UserReceivedCoupon::getCoupon)
+            .map(Coupon::getDiscountCost)
+            .map(BigDecimal::valueOf)
+            .orElse(BigDecimal.ZERO);
 
         return OrderDetailGetResponse.from(order, discountCost, orderItems);
     }

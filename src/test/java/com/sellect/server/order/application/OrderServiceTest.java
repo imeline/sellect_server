@@ -86,7 +86,7 @@ class OrderServiceTest {
             assertThat(savedOrder.getStatus()).isEqualTo(OrderStatus.PENDING);
             List<OrderItem> orderItems = orderItemRepository.findAllByOrdersId(savedOrder.getId());
             assertThat(orderItems).hasSize(2);
-            //assertThat(savedOrder.getUserReceivedCoupon().getId()).isEqualTo(1L);
+//            assertThat(savedOrder.getUserReceivedCoupon().getId()).isEqualTo(1L);
         }
     }
 
