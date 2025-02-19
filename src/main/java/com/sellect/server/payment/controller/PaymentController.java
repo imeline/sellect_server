@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/v1/payment")
+@RequestMapping("/api/v1/payment")
 @RequiredArgsConstructor
 @Slf4j
 public class PaymentController {
@@ -59,6 +59,7 @@ public class PaymentController {
         return "success";
     }
 
+    // TODO:  2025-02-19, 16:31  
     @GetMapping("/cancel")
     public String cancelPayment() {
         return "cancel";
