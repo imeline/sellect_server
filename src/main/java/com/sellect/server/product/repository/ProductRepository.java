@@ -20,4 +20,5 @@ public interface ProductRepository {
 
     Page<Product> findContainingName(String keyword, Pageable pageable);
 
+    Optional<Product> findByIdWithLock(Long id);
 }

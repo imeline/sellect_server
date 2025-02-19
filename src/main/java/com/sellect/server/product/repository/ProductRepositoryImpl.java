@@ -43,4 +43,10 @@ public class ProductRepositoryImpl implements ProductRepository {
         return productJpaRepository.findContainingName(keyword, pageable)
             .map(ProductEntity::toModel);
     }
+
+    @Override
+    public Optional<Product> findByIdWithLock(Long id) {
+        return productJpaRepository.findWithLockById(id)
+            .map(ProductEntity::toModel);
+    }
 }
