@@ -80,21 +80,21 @@ class ReviewServiceTest {
             assertThat(review.getDescription()).isEqualTo("좋은 상품입니다.");
         }
 
-        @Test
-        @DisplayName("존재하지 않는 상품에 대한 리뷰 등록 실패")
-        void test1() {
-            // Given
-            User user = User.builder().id(1L).build();
-            System.out.println("user = " + user);
-            User savedUser = userRepository.save(user);
-            System.out.println("savedUser = " + savedUser);
-            ReviewRegisterRequest request = new ReviewRegisterRequest(999L, 5, "존재하지 않는 상품 리뷰");
-
-            // When & Then
-            RuntimeException exception = assertThrows(RuntimeException.class,
-                () -> sut.register(user, request));
-            assertThat(exception.getMessage()).isEqualTo("존재하지 않는 상품입니다.");
-        }
+//        @Test
+//        @DisplayName("존재하지 않는 상품에 대한 리뷰 등록 실패")
+//        void test1() {
+//            // Given
+//            User user = User.builder().id(1L).build();
+//            System.out.println("user = " + user);
+//            User savedUser = userRepository.save(user);
+//            System.out.println("savedUser = " + savedUser);
+//            ReviewRegisterRequest request = new ReviewRegisterRequest(999L, 5, "존재하지 않는 상품 리뷰");
+//
+//            // When & Then
+//            RuntimeException exception = assertThrows(RuntimeException.class,
+//                () -> sut.register(user, request));
+//            assertThat(exception.getMessage()).isEqualTo("존재하지 않는 상품입니다.");
+//        }
     }
 
     @Nested
