@@ -21,19 +21,21 @@ public class Product {
     private final Brand brand;
     private final BigDecimal price;
     private final String name;
+    private final String description;
     private final Integer stock;
     private final LocalDateTime createdAt;
     private final LocalDateTime updatedAt;
     private final LocalDateTime deleteAt;
 
     public static Product register(User seller, Category category, Brand brand, BigDecimal price,
-        String name, Integer stock) {
+        String name, String description, Integer stock) {
         return Product.builder()
             .seller(seller)
             .category(category)
             .brand(brand)
             .price(price)
             .name(name)
+            .description(description)
             .stock(stock)
             .createdAt(LocalDateTime.now())
             .updatedAt(LocalDateTime.now())
@@ -47,7 +49,7 @@ public class Product {
     /**
      * 상품 정보 업데이트 메서드
      */
-    public Product modify(BigDecimal price, String name, Integer stock) {
+    public Product modify(BigDecimal price, String name, String description, Integer stock) {
         return Product.builder()
             .id(this.id)
             .seller(this.seller)
@@ -55,6 +57,7 @@ public class Product {
             .brand(this.brand)
             .price(price)
             .name(name)
+            .description(description)
             .stock(stock)
             .createdAt(this.createdAt)
             .updatedAt(LocalDateTime.now()) // 수정 시간 업데이트
@@ -75,6 +78,7 @@ public class Product {
             .brand(this.brand)
             .price(this.price)
             .name(this.name)
+            .description(this.description)
             .stock(this.stock - quantity) // 변경된 값 적용
             .createdAt(this.createdAt)
             .updatedAt(LocalDateTime.now()) // 변경 시간 업데이트
@@ -93,6 +97,7 @@ public class Product {
             .brand(this.brand)
             .price(this.price)
             .name(this.name)
+            .description(this.description)
             .stock(this.stock)
             .createdAt(this.createdAt)
             .updatedAt(this.updatedAt)
