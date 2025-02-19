@@ -4,6 +4,7 @@ import com.sellect.server.search.domain.AutoCompleteKeyword;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
 public class FakeAutoCompleteKeywordRepository implements AutoCompleteKeywordRepository {
 
@@ -20,9 +21,18 @@ public class FakeAutoCompleteKeywordRepository implements AutoCompleteKeywordRep
             .toList();
     }
 
-    public void save(AutoCompleteKeyword autoCompleteKeyword) {
-        data.add(autoCompleteKeyword);
+    // todo: 테스트 코드 작성 시 구현
+    @Override
+    public Optional<AutoCompleteKeyword> findByKeyword(String keyword) {
+        return Optional.empty();
     }
+
+    // todo: 테스트 코드 작성 시 구현
+    @Override
+    public AutoCompleteKeyword save(AutoCompleteKeyword autoCompleteKeyword) {
+        return null;
+    }
+
 
     public void saveAll(List<AutoCompleteKeyword> autoCompleteKeywords) {
         data.addAll(autoCompleteKeywords);

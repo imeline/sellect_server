@@ -2,7 +2,7 @@ package com.sellect.server.search.event;
 
 import com.sellect.server.search.domain.SearchLog;
 import com.sellect.server.search.repository.SearchLogEntity;
-import com.sellect.server.search.repository.SearchLogJpaRepository;
+import com.sellect.server.search.repository.SearchLogRepository;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.event.EventListener;
@@ -12,8 +12,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class SearchLogEventListener {
 
-    // todo: JPA 의존성 끊기??! SearchLogRepository 를 통해서 .
-    private final SearchLogJpaRepository searchLogJpaRepository;
+    private final SearchLogRepository searchLogRepository;
 
     @EventListener
     public void handleSearchLogEvent(SearchLogEvent event) {
@@ -30,6 +29,6 @@ public class SearchLogEventListener {
             .build();
 
         // 도메인 객체 → JPA 엔티티 변환 후 저장
-        searchLogJpaRepository.save(SearchLogEntity.from(searchLog));
+        searchLogRepository.save(SearchLogEntity.from(searchLog).toModel());
     }
 }
