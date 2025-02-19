@@ -53,6 +53,7 @@ class CouponServiceTest {
                 .uuid("uuid")
                 .role(Role.USER)
                 .build();
+
             //when
             Exception exception = assertThrows(CommonException.class, () -> {
                 couponService.uploadCoupon(user,
@@ -78,7 +79,7 @@ class CouponServiceTest {
                 LocalDate.now().plusDays(10));
 
             //when
-            couponService.issueCoupon(user, request);
+            couponService.uploadCoupon(user, request);
 
             //then
             assertEquals(10, couponRepository.findById(1L).get().getQuantity());
@@ -159,6 +160,45 @@ class CouponServiceTest {
                 commonException.getMessage());
         }
 
+        @Test
+        @DisplayName("한 사용자가 쿠폰을 중복으로 등록하면 exception을 던진다")
+        void whenUserTriesToRegisterCouponTwice_thenThrowsException() {
+            //given
+            long couponId = 1L;
+            User seller = User.builder()
+                .id(5L)
+                .nickname("test")
+                .uuid("uuid")
+                .role(Role.SELLER)
+                .build();
+
+            User user = User.builder()
+                .id(1L)
+                .nickname("test")
+                .uuid("uuid")
+                .role(Role.USER)
+                .build();
+
+            Coupon coupon = Coupon.builder()
+                .id(couponId)
+                .seller(seller)
+                .discountCost(3000)
+                .quantity(10)
+                .expirationDate(LocalDate.now().plusDays(10))
+                .build();
+
+            couponRepository.save(coupon);
+            //when
+            couponService.downloadCoupon(user, couponId);
+
+            CommonException exception = assertThrows(CommonException.class, () -> {
+                couponService.downloadCoupon(user, couponId);
+            });
+
+            //then
+            assertEquals(String.format("The coupon%s has already been registered", couponId), exception.getMessage());
+        }
+
 
         @ParameterizedTest
         @CsvSource({"10, 10", "300, 100", "10000, 10000"})
@@ -170,7 +210,6 @@ class CouponServiceTest {
             ExecutorService executorService = Executors.newFixedThreadPool(10);
             CountDownLatch latch = new CountDownLatch(threadCount);
             User seller = User.builder().id(1L).nickname("test").role(Role.SELLER).build();
-            User register = User.builder().id(3L).nickname("regist tester").role(Role.USER).build();
 
             Coupon coupon = Coupon.builder()
                 .id(couponId)
@@ -183,6 +222,7 @@ class CouponServiceTest {
 
             //when
             for (int i = 0; i < threadCount; i++) {
+                final long userId = i;
                 executorService.submit(() -> {
                     try {
                         User register = User.builder()

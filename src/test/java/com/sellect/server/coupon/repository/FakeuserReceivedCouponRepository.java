@@ -1,11 +1,13 @@
 package com.sellect.server.coupon.repository;
 
 import com.sellect.server.auth.domain.User;
+import com.sellect.server.coupon.domain.Coupon;
 import com.sellect.server.coupon.domain.UserReceivedCoupon;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -42,7 +44,8 @@ public class FakeuserReceivedCouponRepository implements UserReceivedCouponRepos
     }
 
     @Override
-    public List<UserReceivedCoupon> findByUserAndIsUsed(User user, PageRequest pageRequest, Boolean isUsed) {
+    public List<UserReceivedCoupon> findByUserAndIsUsed(User user, PageRequest pageRequest,
+        Boolean isUsed) {
         return table.values().stream()
             .filter(coupon -> coupon.getUser().getId().equals(user.getId()))
             .filter(coupon -> coupon.getIsUsed().equals(isUsed))
@@ -50,6 +53,20 @@ public class FakeuserReceivedCouponRepository implements UserReceivedCouponRepos
             .skip((long) pageRequest.getPageNumber() * pageRequest.getPageSize())
             .limit(pageRequest.getPageSize())
             .collect(Collectors.toList());
+    }
+
+    @Override
+    public Optional<UserReceivedCoupon> findByUserAndCoupon(User user, Coupon coupon) {
+        return Optional.empty();
+    }
+
+    @Override
+    public Boolean existsByUserAndCoupon(User user, Coupon coupon) {
+        return table.values().stream().anyMatch(
+            coupon1 ->
+                coupon1.getUser().getId().equals(user.getId()) &&
+                coupon1.getCoupon().getId()
+                    .equals(coupon.getId()));
     }
 
     private Comparator<UserReceivedCoupon> getComparator(Pageable pageable) {
@@ -62,7 +79,8 @@ public class FakeuserReceivedCouponRepository implements UserReceivedCouponRepos
                         case "updatedAt":
                             return coupon.getUpdatedAt();
                         default:
-                            throw new IllegalArgumentException("Unsupported sorting field: " + order.getProperty());
+                            throw new IllegalArgumentException(
+                                "Unsupported sorting field: " + order.getProperty());
                     }
                 });
                 return order.isDescending() ? comparator.reversed() : comparator;
@@ -70,7 +88,6 @@ public class FakeuserReceivedCouponRepository implements UserReceivedCouponRepos
             .reduce(Comparator::thenComparing)
             .orElse(Comparator.comparing(UserReceivedCoupon::getId));
     }
-
 
 
 }
