@@ -1,6 +1,6 @@
 package com.sellect.server.category.application;
 
-import com.sellect.server.category.controller.request.CategoryReadResponse;
+import com.sellect.server.category.controller.response.CategoryReadResponse;
 import com.sellect.server.category.domain.Category;
 import com.sellect.server.category.repository.CategoryRepository;
 import java.util.*;
@@ -15,7 +15,7 @@ public class CategoryService {
     private final CategoryRepository categoryRepository;
 
     @Transactional(readOnly = true)
-    public List<CategoryReadResponse> readCategories() {
+    public List<CategoryReadResponse> readAll() {
         List<Category> categories = categoryRepository.findAllOrderByDepth();
         return buildCategoryTree(categories);
     }

@@ -1,4 +1,4 @@
-package com.sellect.server.category.controller.request;
+package com.sellect.server.category.controller.response;
 
 import com.sellect.server.category.domain.Category;
 import java.util.Collections;
