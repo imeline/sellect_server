@@ -8,6 +8,7 @@ import com.sellect.server.product.application.ProductService;
 import com.sellect.server.product.controller.request.ProductImageModifyRequest;
 import com.sellect.server.product.controller.request.ProductModifyRequest;
 import com.sellect.server.product.controller.request.ProductRegisterRequest;
+import com.sellect.server.product.controller.response.ProductDetailReadResponse;
 import com.sellect.server.product.controller.response.ProductModifyResponse;
 import com.sellect.server.product.controller.response.ProductMultipleRegisterResponse;
 import com.sellect.server.product.controller.response.ProductRegisterResponse;
@@ -15,6 +16,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -96,4 +98,12 @@ public class ProductController {
         return ApiResponse.ok();
     }
 
+
+    @GetMapping("/products/{productId}")
+    public ApiResponse<ProductDetailReadResponse> readDetail(
+        @PathVariable Long productId
+    ) {
+        ProductDetailReadResponse result = productService.readDetail(productId);
+        return ApiResponse.ok(result);
+    }
 }
