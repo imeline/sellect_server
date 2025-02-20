@@ -27,6 +27,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -58,28 +59,33 @@ public class PaymentService {
 
     @Transactional(propagation = Propagation.REQUIRED)
     public void approvePayment(String pid, String token) {
+        Payment payment = paymentRepository.findByPid(pid)
+            .orElseThrow(
+                () -> new CommonException(BError.NOT_EXIST, String.format("Payment %s", pid)));
+        try {
+            log.info("Starting payment approval for pid: {}", pid);
+            ApproveRequest approveRequest = createApproveRequest(payment, token);
+            Long orderId = Long.valueOf(payment.getOrderId());
+            orderService.lockProductItems(orderId);
+            ResponseEntity<Map> response = sendKakaoPayApproveRequest(approveRequest);
+            handleKakaoPayApproveResponse(response, payment);
+            User user = userRepository.findByUuid(payment.getUid())
+                .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "user"));
+            orderService.completeOrder(user, orderId);
+            log.info("Payment approved for pid: {}", pid);
+        } catch (Exception e) {
+            log.error("Payment approval failed for pid: {}", pid, e);
+            failPayment(pid); // 비동기 실패 처리
+            throw new CommonException(BError.PAYMENT_FAILED, e.getMessage());
+        }
+
         // todo
         // 결제 승인 전 (한 트랜잭션으로 묶는 단위)
         // 1. 재고차감
         // 2. 주문 확정
         // 3. 결제 확정
+        // TODO: 실패시 카카오 페이 서버에게 결제 실패 요청 보내기 2025-02-20, 13:30
 
-        Payment payment = paymentRepository.findByPid(pid);
-        ApproveRequest approveRequest = createApproveRequest(payment, token);
-
-        orderService.lockProductItems(Long.valueOf(payment.getOrderId()));
-
-        // 재고에 대해서 락을 걸어야함
-        ResponseEntity<Map> response = sendKakaoPayApproveRequest(approveRequest);
-        handleKakaoPayApproveResponse(response, payment);
-
-        User user = userRepository.findByUuid(payment.getUid())
-            .orElseThrow(() -> new CommonException(
-                BError.NOT_EXIST));
-
-        orderService.completeOrder(user, Long.parseLong(payment.getOrderId()));
-
-        // 락 해제
     }
 
     // 기본 최신순서
@@ -102,6 +108,24 @@ public class PaymentService {
                     .createdAt(payment.getCreatedAt().toString())
                     .build()).toList();
         return responses;
+    }
+
+    @Async
+    @Transactional
+    public void cancelPayment(String pid) {
+        Payment payment = paymentRepository.findByPid(pid).orElseThrow(
+            () -> new CommonException(BError.NOT_EXIST, String.format("Payment %s", pid)));
+        Payment cancelledPayment = payment.cancelPayment();
+        paymentRepository.save(cancelledPayment);
+    }
+
+    @Async
+    @Transactional
+    public void failPayment(String pid) {
+        Payment payment = paymentRepository.findByPid(pid).orElseThrow(
+            () -> new CommonException(BError.NOT_EXIST, String.format("Payment %s", pid)));
+        Payment failedPayment = payment.failPayment();
+        paymentRepository.save(failedPayment);
     }
 
     private String generatePaymentId() {
@@ -181,6 +205,5 @@ public class PaymentService {
         headers.setContentType(MediaType.APPLICATION_JSON);
         return headers;
     }
-
 }
 
