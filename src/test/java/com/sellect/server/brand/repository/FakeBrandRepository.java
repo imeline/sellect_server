@@ -4,30 +4,22 @@ import com.sellect.server.brand.domain.Brand;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 public class FakeBrandRepository implements BrandRepository {
 
     private final List<Brand> data = new ArrayList<>();
-
-    @Override
-    public List<Brand> findContainingName(String keyword) {
-        return data.stream()
-            .filter(brand -> brand.getName().contains(keyword))
-            .collect(Collectors.toList());
-    }
-
-    @Override
-    public Boolean existsByName(String name) {
-        return data.stream()
-            .anyMatch(brand -> brand.getName().equals(name));
-    }
 
     public Optional<Brand> findById(Long brandId) {
         return data.stream()
             .filter(brand -> brand.getId().equals(brandId))
             .filter(brand -> brand.getDeleteAt() == null)
             .findFirst();
+    }
+
+    // todo: MVP 이후 테스트 작성 시 구현
+    @Override
+    public List<Brand> findAll() {
+        return null;
     }
 
     public Brand save(Brand brand) {
