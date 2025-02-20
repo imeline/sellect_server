@@ -3,11 +3,13 @@ package com.sellect.server.cart.application;
 import com.sellect.server.auth.domain.User;
 import com.sellect.server.cart.controller.request.CartItemAddRequest;
 import com.sellect.server.cart.controller.request.CartItemQuantityChangeRequest;
+import com.sellect.server.cart.controller.response.CartItemReadResponse;
 import com.sellect.server.cart.domain.CartItem;
 import com.sellect.server.cart.repository.CartItemRepository;
 import com.sellect.server.common.exception.CommonException;
 import com.sellect.server.common.exception.enums.BError;
 import com.sellect.server.product.domain.Product;
+import com.sellect.server.product.repository.ProductImageRepository;
 import com.sellect.server.product.repository.ProductRepository;
 import java.util.List;
 import java.util.Objects;
@@ -22,6 +24,30 @@ public class CartService {
 
     private final CartItemRepository cartItemRepository;
     private final ProductRepository productRepository;
+    private final ProductImageRepository productImageRepository;
+
+    @Transactional(readOnly = true)
+    public List<CartItemReadResponse> readAll(User user) {
+        // 장바구니 상품 조회
+        List<CartItem> cartItems = cartItemRepository.findAllByUserId(user.getId());
+
+        // todo: N+1 문제 발생
+        return cartItems.stream()
+            .map(cartItem -> {
+                // todo: getProduct().getId()로 인해 같은 쿼리 2번 나갈거라고 예상
+                Product product = productRepository.findById(cartItem.getProduct().getId())
+                    .orElseThrow(() -> new RuntimeException("유효하지 않은 상품 번호입니다."));
+
+                // todo: 여기서도 N+1 발생
+                // 대표 이미지 가져오기 (한 개만)
+                String thumbnailImageUrl = productImageRepository.findByThumbnailImage(
+                        product.getId())
+                    .getImageUrl();
+
+                return CartItemReadResponse.from(cartItem, product, thumbnailImageUrl);
+            })
+            .toList();
+    }
 
     @Transactional
     public CartItem addCartItem(User user, CartItemAddRequest request) {
@@ -71,5 +97,4 @@ public class CartService {
         }
         cartItemRepository.save(cartItem.remove());
     }
-
 }

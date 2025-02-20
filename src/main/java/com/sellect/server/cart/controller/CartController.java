@@ -5,6 +5,7 @@ import com.sellect.server.cart.application.CartService;
 import com.sellect.server.cart.controller.request.CartItemAddRequest;
 import com.sellect.server.cart.controller.request.CartItemQuantityChangeRequest;
 import com.sellect.server.cart.controller.response.CardAddItemResponse;
+import com.sellect.server.cart.controller.response.CartItemReadResponse;
 import com.sellect.server.cart.controller.response.CartItemRetrieveResponse;
 import com.sellect.server.cart.domain.CartItem;
 import com.sellect.server.common.infrastructure.annotation.AuthUser;
@@ -27,7 +28,24 @@ public class CartController {
 
     private final CartService cartService;
 
+    /*
+    * 장바구니 상품 조회
+    * */
+    @GetMapping("/carts")
+    public ApiResponse<List<CartItemReadResponse>> readAll(
+        @AuthUser User user
+    ) {
+        List<CartItemReadResponse> result = cartService.readAll(user);
+        return ApiResponse.ok(result);
+    }
+
+
+    /*
+     * 장바구니 상품 추가 (기존 장바구니 없을 경우)
+     * 장바구니 수량 +1 추가 (기존 장바구니에 있을 경우)
+     * */
     @PutMapping("/cart")
+
     public ApiResponse<CardAddItemResponse> addCartItem(
         @AuthUser User user,
         @RequestBody CartItemAddRequest request) {
