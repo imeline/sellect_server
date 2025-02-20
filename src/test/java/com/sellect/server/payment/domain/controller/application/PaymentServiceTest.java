@@ -58,8 +58,8 @@ class PaymentServiceTest {
             .uuid(USER_UUID)
             .build();
 
-        paymentRequest = new PaymentRequest("order-123", "test item", 1, 1000);
-        payment = Payment.readyPayment("order-123", "test-pid", USER_UUID, 1000, "test-tid");
+        paymentRequest = new PaymentRequest("1032", "test item", 1, 1000);
+        payment = Payment.readyPayment("1032", "test-pid", USER_UUID, 1000, "test-tid");
         orderService = mock(OrderService.class);
         paymentService = new PaymentService(orderService, paymentRepository, userRepository,
             restTemplate);
@@ -111,6 +111,7 @@ class PaymentServiceTest {
         @DisplayName("결제 승인 성공")
         void approvePayment_Success() {
             // Arrange
+            userRepository.save(user);
             paymentRepository.save(payment);
             when(restTemplate.exchange(any(String.class),
                 eq(HttpMethod.POST),
@@ -154,6 +155,7 @@ class PaymentServiceTest {
         @DisplayName("결제 승인 성공")
         void approvePayment_Success() {
             // given
+            userRepository.save(user);
             paymentRepository.save(payment); // 테스트용 결제 데이터 저장
             when(restTemplate.exchange(
                 any(String.class),
