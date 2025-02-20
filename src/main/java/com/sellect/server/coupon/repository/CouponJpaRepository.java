@@ -10,4 +10,7 @@ public interface CouponJpaRepository extends JpaRepository<CouponEntity, Long> {
 
     Page<CouponEntity> findByCreatedAtNullAndQuantityGreaterThanAndExpirationDateAfter(
         Integer quantity, LocalDate expirationDate, Pageable pageable);
+
+    Page<CouponEntity> findByDeleteAtNullAndQuantityGreaterThanAndExpirationDateAfter(
+        Integer quantity, LocalDate expirationDate, Pageable pageable);
 }

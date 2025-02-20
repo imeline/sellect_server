@@ -27,14 +27,10 @@ public class CouponRepositoryImpl implements CouponRepository {
     }
 
     @Override
-    public List<Coupon> findAllActiveCouponList(PageRequest request) {
-        Page<CouponEntity> activeCouponList = couponJpaRepository.findByCreatedAtNullAndQuantityGreaterThanAndExpirationDateAfter(
+    public Page<Coupon> findAllActiveCouponList(PageRequest request) {
+        Page<CouponEntity> activeCouponList = couponJpaRepository.findByDeleteAtNullAndQuantityGreaterThanAndExpirationDateAfter(
             0,
             LocalDate.now(), request);
-        List<CouponEntity> content = activeCouponList.getContent();
-
-        return content.stream()
-            .map(CouponEntity::toModel)
-            .toList();
+        return activeCouponList.map(CouponEntity::toModel);
     }
 }
