@@ -31,4 +31,10 @@ public class ProductImageRepositoryImpl implements ProductImageRepository {
             .toList();
     }
 
+    @Override
+    public ProductImage findByThumbnailImage(Long productId) {
+        return productImageJpaRepository.findFirstByProductEntityIdAndRepresentativeIsTrueAndDeleteAtIsNull(
+            productId).toModel();
+    }
+
 }

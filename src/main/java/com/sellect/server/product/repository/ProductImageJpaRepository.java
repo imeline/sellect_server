@@ -20,4 +20,8 @@ public interface ProductImageJpaRepository extends JpaRepository<ProductImageEnt
         + "WHERE p.productEntity.id = :productId "
         + "AND p.deleteAt IS NULL")
     List<ProductImageEntity> findByProductId(@Param("productId") Long productId);
+
+    ProductImageEntity findFirstByProductEntityIdAndRepresentativeIsTrueAndDeleteAtIsNull(
+        Long productId)
+        ;
 }

@@ -180,6 +180,7 @@ public class ProductService {
         productRepository.save(product.remove());
     }
 
+    @Transactional(readOnly = true)
     public ProductDetailReadResponse readDetail(Long productId) {
         // 상품 정보 조회
         Product product = productRepository.findById(productId)
