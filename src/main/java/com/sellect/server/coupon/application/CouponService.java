@@ -101,23 +101,29 @@ public class CouponService {
         userReceivedCouponRepository.save(usedCoupon);
     }
 
-    private CouponResponse toCouponResponse(UserReceivedCoupon coupon) {
-        return new CouponResponse(coupon.getIsUsed(),
-            toCouponInfo(coupon.getCoupon(), coupon.getUser()));
-
+    @Transactional(readOnly = true)
+    public List<CouponInfo> getActiveCouponList(int page, int size) {
+        PageRequest pageRequest = PageRequest.of(page, size, DEFAULT_SORT);
+        List<Coupon> activeCouponList = couponRepository.findAllActiveCouponList(pageRequest);
+        return activeCouponList.stream()
+            .map(this::toCouponInfo)
+            .toList();
     }
 
-    private CouponInfo toCouponInfo(Coupon coupon, User user) {
+    private CouponResponse toCouponResponse(UserReceivedCoupon coupon) {
+        return new CouponResponse(coupon.getIsUsed(), toCouponInfo(coupon.getCoupon()));
+    }
+
+    private CouponInfo toCouponInfo(Coupon coupon) {
         return new CouponInfo(
             coupon.getDiscountCost(),
             coupon.getExpirationDate(),
-            toSellerInfo(user)
+            toSellerInfo(coupon.getSeller())
         );
     }
 
     private SellerInfo toSellerInfo(User user) {
         return new SellerInfo(user.getId(), user.getNickname());
     }
-
 }
 

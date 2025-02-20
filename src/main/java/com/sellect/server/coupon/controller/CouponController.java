@@ -6,6 +6,7 @@ import com.sellect.server.common.infrastructure.annotation.AuthUser;
 import com.sellect.server.common.response.ApiResponse;
 import com.sellect.server.coupon.application.CouponService;
 import com.sellect.server.coupon.controller.request.IssueCouponRequest;
+import com.sellect.server.coupon.controller.response.CouponInfo;
 import com.sellect.server.coupon.controller.response.CouponResponse;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -50,6 +51,12 @@ public class CouponController {
         return ApiResponse.ok(couponList);
     }
 
-    // TODO: 현재 활성화 되어있는 쿠폰 2025-02-20, 9:43
+    @GetMapping("/actives")
+    public ApiResponse<List<CouponInfo>> getActiveCouponList(
+        @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "5") int size
+    ){
+        List<CouponInfo> activeCouponList = couponService.getActiveCouponList(page, size);
+        return ApiResponse.ok(activeCouponList);
+    }
 
 }
