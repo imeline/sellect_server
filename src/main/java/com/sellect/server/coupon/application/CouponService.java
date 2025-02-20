@@ -7,6 +7,7 @@ import com.sellect.server.common.exception.enums.BError;
 import com.sellect.server.coupon.controller.request.IssueCouponRequest;
 import com.sellect.server.coupon.controller.response.CouponInfo;
 import com.sellect.server.coupon.controller.response.CouponResponse;
+import com.sellect.server.coupon.controller.response.SellerInfo;
 import com.sellect.server.coupon.domain.Coupon;
 import com.sellect.server.coupon.domain.UserReceivedCoupon;
 import com.sellect.server.coupon.repository.CouponRepository;
@@ -15,6 +16,7 @@ import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class CouponService {
 
     ReentrantLock lock = new ReentrantLock();
+    private static final Sort DEFAULT_SORT = Sort.by(Direction.DESC, "createdAt");
 
     private final CouponRepository couponRepository;
     private final UserReceivedCouponRepository userReceivedCouponRepository;
@@ -49,9 +52,10 @@ public class CouponService {
      * 단일 인스턴스인 경우 가능한 부분
      * 스케일 아웃을 하면?? -> DB 락????
      * */
+
+    // TODO: 애플리케이션 락 vs DB 락 vs 큐 성능측정 필요 2025-02-18, 17:7
     @Transactional
     public void downloadCoupon(User user, Long couponId) {
-        // TODO: 애플리케이션 락 vs DB 락 vs 큐 성능측정 필요 2025-02-18, 17:7
         lock.lock();
         try {
             Coupon coupon = couponRepository.findById(couponId)
@@ -63,7 +67,8 @@ public class CouponService {
                 throw new CommonException(BError.ALREADY_RECEIVED, couponId.toString());
             }
             Coupon decreasedCoupon = coupon.decreaseQuantity();
-            UserReceivedCoupon userReceivedCoupon = UserReceivedCoupon.create(user, decreasedCoupon);
+            UserReceivedCoupon userReceivedCoupon = UserReceivedCoupon.create(user,
+                decreasedCoupon);
             userReceivedCouponRepository.save(userReceivedCoupon);
             couponRepository.save(decreasedCoupon);
         } finally {
@@ -73,18 +78,14 @@ public class CouponService {
 
     @Transactional(readOnly = true)
     public List<CouponResponse> getCouponList(User user, int page, int size, Boolean isUsed) {
-        PageRequest pageRequest = PageRequest.of(page, size, Direction.DESC, "createdAt");
+        PageRequest pageRequest = PageRequest.of(page, size, DEFAULT_SORT);
 
         List<UserReceivedCoupon> receivedCoupons = (isUsed != null)
             ? userReceivedCouponRepository.findByUserAndIsUsed(user, pageRequest, isUsed)
             : userReceivedCouponRepository.findByUser(user, pageRequest);
 
         return receivedCoupons.stream()
-            .map(coupon -> new CouponResponse(
-                coupon.getIsUsed(),
-                new CouponInfo(coupon.getCoupon().getDiscountCost(),
-                    coupon.getCoupon().getExpirationDate())
-            ))
+            .map(this::toCouponResponse)
             .toList();
     }
 
@@ -98,6 +99,24 @@ public class CouponService {
         UserReceivedCoupon usedCoupon = userReceivedCoupon.useCoupon();
 
         userReceivedCouponRepository.save(usedCoupon);
+    }
+
+    private CouponResponse toCouponResponse(UserReceivedCoupon coupon) {
+        return new CouponResponse(coupon.getIsUsed(),
+            toCouponInfo(coupon.getCoupon(), coupon.getUser()));
+
+    }
+
+    private CouponInfo toCouponInfo(Coupon coupon, User user) {
+        return new CouponInfo(
+            coupon.getDiscountCost(),
+            coupon.getExpirationDate(),
+            toSellerInfo(user)
+        );
+    }
+
+    private SellerInfo toSellerInfo(User user) {
+        return new SellerInfo(user.getId(), user.getNickname());
     }
 
 }

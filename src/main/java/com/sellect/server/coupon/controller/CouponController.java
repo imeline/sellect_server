@@ -40,6 +40,8 @@ public class CouponController {
         return null;
     }
 
+
+    // reponse 데이터에 seller id, 이름 나오게 추가
     @GetMapping
     public ApiResponse<List<CouponResponse>> getCoupon(@AuthUser User user,
         @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "5") int size,
@@ -47,5 +49,7 @@ public class CouponController {
         List<CouponResponse> couponList = couponService.getCouponList(user, page, size, isUsed);
         return ApiResponse.ok(couponList);
     }
+
+    // TODO: 현재 활성화 되어있는 쿠폰 2025-02-20, 9:43
 
 }
