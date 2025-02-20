@@ -4,7 +4,8 @@ import java.time.LocalDate;
 
 public record CouponInfo(
     Integer discountCost,
-    LocalDate expirationDate
+    LocalDate expirationDate,
+    SellerInfo sellerInfo
 ) {
 
 }

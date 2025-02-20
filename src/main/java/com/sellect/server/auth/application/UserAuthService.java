@@ -2,6 +2,7 @@ package com.sellect.server.auth.application;
 
 import com.sellect.server.auth.controller.request.LoginRequest;
 import com.sellect.server.auth.controller.request.UserSignUpRequest;
+import com.sellect.server.auth.controller.response.LoginDto;
 import com.sellect.server.auth.domain.User;
 import com.sellect.server.auth.domain.UserAuth;
 import com.sellect.server.auth.repository.entity.Role;
@@ -36,7 +37,7 @@ public class UserAuthService {
         userAuthRepository.save(userAuth);
     }
 
-    public String login(LoginRequest loginRequest, Role expectedRole) {
+    public LoginDto login(LoginRequest loginRequest) {
         UserAuth userAuth = userAuthRepository.findByEmail(loginRequest.email())
             .orElseThrow(() -> new IllegalArgumentException("Invalid email"));
 
@@ -47,12 +48,11 @@ public class UserAuthService {
         User user = userRepository.findById(userAuth.getUser().getId())
             .orElseThrow(() -> new IllegalArgumentException("Invalid user"));
 
-        // 역할이 맞지 않으면 로그인 실패 처리
-        if (user.getRole() != expectedRole) {
-            throw new IllegalArgumentException("Unauthorized role");
-        }
+        String accessToken = jwtUtil.generateAccessToken(user.getUuid(), user.getRole().name());
+        String role = String.valueOf(user.getRole());
+        String nickname = user.getNickname();
 
-        return jwtUtil.generateAccessToken(user.getUuid(), user.getRole().name());
+        return new LoginDto(accessToken, role, nickname);
     }
 
 }
