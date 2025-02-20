@@ -1,7 +1,6 @@
 package com.sellect.server.brand.repository;
 
 import com.sellect.server.brand.domain.Brand;
-import com.sellect.server.brand.mapper.BrandMapper;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +11,6 @@ import org.springframework.stereotype.Repository;
 public class BrandRepositoryImpl implements BrandRepository {
 
     private final BrandJpaRepository brandJpaRepository;
-    private final BrandMapper brandMapper;
 
     @Override
     public Optional<Brand> findById(Long brandId) {
@@ -21,14 +19,10 @@ public class BrandRepositoryImpl implements BrandRepository {
     }
 
     @Override
-    public List<Brand> findContainingName(String keyword) {
-        return brandJpaRepository.findContainingName(keyword).stream()
-            .map(brandMapper::toModel)
-            .toList();
+    public List<Brand> findAll() {
+        return brandJpaRepository.findAllByDeleteAtIsNull().stream().map(
+            BrandEntity::toModel
+        ).toList();
     }
 
-    @Override
-    public Boolean existsByName(String name) {
-        return brandJpaRepository.existsByName(name);
-    }
 }

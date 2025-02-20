@@ -1,6 +1,7 @@
 package com.sellect.server.category.repository;
 
 import com.sellect.server.category.domain.Category;
+import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -17,4 +18,9 @@ public class CategoryRepositoryImpl implements CategoryRepository {
             .map(CategoryEntity::toModel);
     }
 
+    @Override
+    public List<Category> findAllOrderByDepth() {
+        return categoryJpaRepository.findAllByOrderByDepthAsc()
+            .stream().map(CategoryEntity::toModel).toList();
+    }
 }
