@@ -1,6 +1,7 @@
 package com.sellect.server.cart.repository;
 
 import com.sellect.server.cart.domain.CartItem;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -12,8 +13,25 @@ public class FakeCartItemRepository implements CartItemRepository {
     private final Map<Long, CartItem> data = new HashMap<>();
 
     @Override
-    public void save(CartItem cartItem) {
-        data.put(cartItem.getId(), cartItem);
+    public CartItem save(CartItem cartItem) {
+        if (cartItem.getId() == null) {
+            // 새로운 ID 자동 생성 (현재 데이터 개수 + 1)
+            long newId = data.size() + 1;
+            cartItem = CartItem.builder()
+                .id(newId)
+                .user(cartItem.getUser())
+                .product(cartItem.getProduct())
+                .quantity(cartItem.getQuantity())
+                .createdAt(cartItem.getCreatedAt() != null ? cartItem.getCreatedAt() : LocalDateTime.now())
+                .updatedAt(LocalDateTime.now()) // 저장 시점 업데이트
+                .deleteAt(cartItem.getDeleteAt())
+                .build();
+        } else {
+            // 기존 데이터가 있으면 업데이트 (Map은 put()으로 덮어쓰기 가능)
+            data.put(cartItem.getId(), cartItem);
+        }
+
+        return cartItem;
     }
 
     @Override
@@ -37,6 +55,12 @@ public class FakeCartItemRepository implements CartItemRepository {
         for (CartItem item : cartItems) {
             data.put(item.getId(), item);
         }
+    }
+
+    // todo: MVP 개발 후에 테스트 코드 작성 시 구현
+    @Override
+    public Optional<CartItem> findByProductId(Long productId) {
+        throw new RuntimeException("아직 fakeRepository 구현하지 않음");
     }
 
     public void clear() {
