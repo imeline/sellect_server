@@ -6,7 +6,7 @@ import java.util.Optional;
 
 public interface CartItemRepository {
 
-    void save(CartItem cartItem);
+    CartItem save(CartItem cartItem);
 
     Optional<CartItem> findById(Long cartItemId);
 
@@ -14,4 +14,5 @@ public interface CartItemRepository {
 
     void saveAll(List<CartItem> cartItems);
 
+    Optional<CartItem> findByProductId(Long productId);
 }

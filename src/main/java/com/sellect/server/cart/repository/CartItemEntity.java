@@ -11,7 +11,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -33,28 +32,35 @@ public class CartItemEntity extends BaseTimeEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
-    private UserEntity user;
+    private UserEntity userEntity;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id")
-    private ProductEntity product;
+    private ProductEntity productEntity;
 
     private Integer quantity;
 
     public static CartItemEntity from(CartItem cartItem) {
         return CartItemEntity.builder()
-            .user(UserEntity.from(cartItem.getUser()))
-            .product(ProductEntity.from(cartItem.getProduct()))
+            .id(cartItem.getId())
+            .userEntity(UserEntity.from(cartItem.getUser()))
+            .productEntity(ProductEntity.from(cartItem.getProduct()))
             .quantity(cartItem.getQuantity())
+            .createdAt(cartItem.getCreatedAt())
+            .updatedAt(cartItem.getUpdatedAt())
+            .deleteAt(cartItem.getDeleteAt())
             .build();
     }
 
     public CartItem toModel() {
         return CartItem.builder()
             .id(this.id)
-            .user(this.user.toModel())
-            .product(this.product.toModel())
+            .user(this.userEntity.toModel())
+            .product(this.productEntity.toModel())
             .quantity(this.quantity)
+            .createdAt(this.getCreatedAt())
+            .updatedAt(this.getUpdatedAt())
+            .deleteAt(this.getDeleteAt())
             .build();
     }
 }
