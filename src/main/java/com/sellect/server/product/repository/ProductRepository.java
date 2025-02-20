@@ -13,7 +13,7 @@ public interface ProductRepository {
     // 중복 상품 검사 체크
     boolean isDuplicateProduct(Long sellerId, String name);
 
-    // 상품 단건 조회
+    // 상품 단건 조회 (상품 페이지)
     Optional<Product> findById(Long productId);
 
     Product save(Product product);
@@ -21,4 +21,5 @@ public interface ProductRepository {
     Page<Product> findContainingName(String keyword, Pageable pageable);
 
     Optional<Product> findByIdWithLock(Long id);
+
 }

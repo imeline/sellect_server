@@ -11,8 +11,6 @@ public interface BrandJpaRepository extends JpaRepository<BrandEntity, Long> {
 
     Optional<BrandEntity> findByIdAndDeleteAtIsNull(Long brandId);
 
-    Optional<BrandEntity> findByName(String name);
-
     @Query("SELECT b FROM BrandEntity b WHERE b.name LIKE %:keyword%")
     List<BrandEntity> findContainingName(@Param("keyword") String keyword);
 
