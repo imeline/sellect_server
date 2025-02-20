@@ -8,6 +8,7 @@ import com.sellect.server.cart.repository.FakeCartItemRepository;
 import com.sellect.server.common.exception.CommonException;
 import com.sellect.server.common.exception.enums.BError;
 import com.sellect.server.product.domain.Product;
+import com.sellect.server.product.repository.FakeProductImageRepository;
 import com.sellect.server.product.repository.FakeProductRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -18,7 +19,8 @@ class CartServiceTest {
 
     private final FakeCartItemRepository cartItemRepository = new FakeCartItemRepository();
     private final FakeProductRepository productRepository = new FakeProductRepository();
-    private final CartService sut = new CartService(cartItemRepository, productRepository);
+    private final FakeProductImageRepository productImageRepository = new FakeProductImageRepository();
+    private final CartService sut = new CartService(cartItemRepository, productRepository, productImageRepository);
 
     private final Long userId = 1L;
     private final Long productId = 1L;
