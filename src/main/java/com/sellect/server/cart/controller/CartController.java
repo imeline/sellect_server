@@ -4,6 +4,7 @@ import com.sellect.server.auth.domain.User;
 import com.sellect.server.cart.application.CartService;
 import com.sellect.server.cart.controller.request.CartItemAddRequest;
 import com.sellect.server.cart.controller.request.CartItemQuantityChangeRequest;
+import com.sellect.server.cart.controller.response.CardAddItemResponse;
 import com.sellect.server.cart.controller.response.CartItemRetrieveResponse;
 import com.sellect.server.cart.domain.CartItem;
 import com.sellect.server.common.infrastructure.annotation.AuthUser;
@@ -27,12 +28,12 @@ public class CartController {
     private final CartService cartService;
 
     @PutMapping("/cart")
-    public ApiResponse<CartItem> addCartItem(
+    public ApiResponse<CardAddItemResponse> addCartItem(
         @AuthUser User user,
         @RequestBody CartItemAddRequest request) {
 
         CartItem result = cartService.addCartItem(user, request);
-        return ApiResponse.ok(result);
+        return ApiResponse.ok(CardAddItemResponse.from(result));
     }
 
     @PatchMapping("/cart")

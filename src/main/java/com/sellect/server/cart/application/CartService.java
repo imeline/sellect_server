@@ -36,7 +36,6 @@ public class CartService {
         // 도메인 클래스에서 비즈니스 로직 다룸
         CartItem cartItem = CartItem.add(user, product, optionalCartItem.orElse(null));
 
-        System.out.println("cartItem = " + cartItem);
         return cartItemRepository.save(cartItem);
     }
 
