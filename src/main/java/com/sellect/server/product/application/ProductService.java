@@ -69,7 +69,8 @@ public class ProductService {
 
         // todo: service 에서 service??? 추후 체크
         // 이미지 저장
-        productImageService.registerProductImage(product, request.imageContextCreateRequest(), images);
+        productImageService.registerProductImage(product, request.imageContextCreateRequest(),
+            images);
 
         return ProductRegisterResponse.from(product);
     }
@@ -182,26 +183,22 @@ public class ProductService {
     public ProductDetailReadResponse readDetail(Long productId) {
         // 상품 정보 조회
         Product product = productRepository.findById(productId)
-            .orElseThrow(() -> {
-                throw new RuntimeException("존재하지 않는 상품입니다.");
-            });
+            .orElseThrow(() -> new RuntimeException("존재하지 않는 상품입니다."));
 
         // todo: 일단 하나의 카ㅔ고리만 보내도록 한다. (추후 변경) List<String> or 조합해서 String 으로
         Category category = categoryRepository.findById(product.getCategory().getId())
-            .orElseThrow(() -> {
-                throw new RuntimeException("존재하지 않는 카테고리입니다.");
-            });
+            .orElseThrow(() ->
+                new RuntimeException("존재하지 않는 카테고리입니다."));
 
         // 브랜드명 조회
         Brand brand = brandRepository.findById(product.getBrand().getId())
-            .orElseThrow(() -> {
-                throw new RuntimeException("존재하지 않는 브랜드입니다.");
-            });
+            .orElseThrow(() -> new RuntimeException("존재하지 않는 브랜드입니다."));
 
         // 이미지들 조회
         List<ProductImage> productImages = productImageRepository.findByProductId(productId);
 
         // todo: JPA가 알아서 조회
-        return ProductDetailReadResponse.from(product, category, product.getSeller(), brand, productImages);
+        return ProductDetailReadResponse.from(product, category, product.getSeller(), brand,
+            productImages);
     }
 }
