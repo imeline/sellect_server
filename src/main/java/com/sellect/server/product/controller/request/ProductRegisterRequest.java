@@ -27,9 +27,17 @@ public record ProductRegisterRequest(
     @Size(min = 10, message = "상품명은 최소 10글자 이상이어야 합니다.")
     String name,
 
+    String description,
+
     @NotNull(message = "재고(stock)는 필수 입력값입니다.")
     @Min(value = 1, message = "재고(stock)는 1 이상이어야 합니다.")
-    Integer stock
+    Integer stock,
+
+    @NotNull(message = "상품 시퀀스는 필수 입력값입니다.")
+    Integer sequence,
+
+    @NotNull(message = "이미지 컨텍스트 정보는 필수 입력값입니다.")
+    ImageContextCreateRequest imageContextCreateRequest
 
 ) {
 

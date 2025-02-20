@@ -30,9 +30,8 @@ public class JwtFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
         FilterChain filterChain) throws ServletException, IOException {
-        String token = jwtUtil.extractToken(request);
+        String token = jwtUtil.extractTokenFromCookie(request);
         if (token != null && jwtUtil.isTokenValid(token)) {
-
             String uuid = jwtUtil.extractUuid(token);
 
             // todo: exception 던지기

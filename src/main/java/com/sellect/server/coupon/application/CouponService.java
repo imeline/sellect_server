@@ -1,0 +1,123 @@
+package com.sellect.server.coupon.application;
+
+import com.sellect.server.auth.domain.User;
+import com.sellect.server.auth.repository.entity.Role;
+import com.sellect.server.common.exception.CommonException;
+import com.sellect.server.common.exception.enums.BError;
+import com.sellect.server.coupon.controller.request.IssueCouponRequest;
+import com.sellect.server.coupon.controller.response.CouponInfo;
+import com.sellect.server.coupon.controller.response.CouponResponse;
+import com.sellect.server.coupon.controller.response.SellerInfo;
+import com.sellect.server.coupon.domain.Coupon;
+import com.sellect.server.coupon.domain.UserReceivedCoupon;
+import com.sellect.server.coupon.repository.CouponRepository;
+import com.sellect.server.coupon.repository.UserReceivedCouponRepository;
+import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+@RequiredArgsConstructor
+public class CouponService {
+
+    ReentrantLock lock = new ReentrantLock();
+    private static final Sort DEFAULT_SORT = Sort.by(Direction.DESC, "createdAt");
+
+    private final CouponRepository couponRepository;
+    private final UserReceivedCouponRepository userReceivedCouponRepository;
+
+    public void uploadCoupon(User user, IssueCouponRequest issueCouponRequest) {
+        if (user.getRole() != Role.SELLER) {
+            throw new CommonException(BError.NOT_SELLER, user.getNickname());
+        }
+        Coupon coupon = Coupon.builder()
+            .seller(user)
+            .discountCost(issueCouponRequest.discount())
+            .quantity(issueCouponRequest.quantity())
+            .expirationDate(issueCouponRequest.expirationDate())
+            .build();
+
+        couponRepository.save(coupon);
+    }
+
+    /*
+     * 쿠폰 등록기능
+     * 쿠폰 수량 삭감 - 동시성 이슈 발생
+     * ReentrantLock을 사용하여 해결 -> 애플리케이션에서 해결
+     * 단일 인스턴스인 경우 가능한 부분
+     * 스케일 아웃을 하면?? -> DB 락????
+     * */
+
+    // TODO: 애플리케이션 락 vs DB 락 vs 큐 성능측정 필요 2025-02-18, 17:7
+    @Transactional
+    public void downloadCoupon(User user, Long couponId) {
+        lock.lock();
+        try {
+            Coupon coupon = couponRepository.findById(couponId)
+                .orElseThrow(() -> new CommonException(BError.NOT_EXIST, String.valueOf(couponId)));
+            if (coupon.getQuantity() <= 0) {
+                throw new CommonException(BError.COUPON_QUANTITY_ZERO, couponId.toString());
+            }
+            if (userReceivedCouponRepository.existsByUserAndCoupon(user, coupon)) {
+                throw new CommonException(BError.ALREADY_RECEIVED, couponId.toString());
+            }
+            Coupon decreasedCoupon = coupon.decreaseQuantity();
+            UserReceivedCoupon userReceivedCoupon = UserReceivedCoupon.create(user,
+                decreasedCoupon);
+            userReceivedCouponRepository.save(userReceivedCoupon);
+            couponRepository.save(decreasedCoupon);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public List<CouponResponse> getCouponList(User user, int page, int size, Boolean isUsed) {
+        PageRequest pageRequest = PageRequest.of(page, size, DEFAULT_SORT);
+
+        List<UserReceivedCoupon> receivedCoupons = (isUsed != null)
+            ? userReceivedCouponRepository.findByUserAndIsUsed(user, pageRequest, isUsed)
+            : userReceivedCouponRepository.findByUser(user, pageRequest);
+
+        return receivedCoupons.stream()
+            .map(this::toCouponResponse)
+            .toList();
+    }
+
+    @Transactional
+    public void useCoupon(User user, Long couponId) {
+        Coupon coupon = couponRepository.findById(couponId)
+            .orElseThrow(() -> new CommonException(BError.NOT_EXIST, String.valueOf(couponId)));
+        UserReceivedCoupon userReceivedCoupon = userReceivedCouponRepository.findByUserAndCoupon(
+                user, coupon)
+            .orElseThrow(() -> new CommonException(BError.NOT_EXIST, String.valueOf(couponId)));
+        UserReceivedCoupon usedCoupon = userReceivedCoupon.useCoupon();
+
+        userReceivedCouponRepository.save(usedCoupon);
+    }
+
+    private CouponResponse toCouponResponse(UserReceivedCoupon coupon) {
+        return new CouponResponse(coupon.getIsUsed(),
+            toCouponInfo(coupon.getCoupon(), coupon.getUser()));
+
+    }
+
+    private CouponInfo toCouponInfo(Coupon coupon, User user) {
+        return new CouponInfo(
+            coupon.getDiscountCost(),
+            coupon.getExpirationDate(),
+            toSellerInfo(user)
+        );
+    }
+
+    private SellerInfo toSellerInfo(User user) {
+        return new SellerInfo(user.getId(), user.getNickname());
+    }
+
+}
+

@@ -16,6 +16,10 @@ spring:
     enabled: false
     baseline-on-migrate: true  # 기존 DB가 있을 경우 필요한 설정
     locations: classpath:db/migration  # 마이그레이션 SQL 파일 위치
+#  batch:
+#    job:
+#      name: ${BATCH_JOB_NAME:NONE}
+#      enabled: true
 
 jwt:
   secret: ${JWT_SECRET}  # JWT 시크릿 키 설정
@@ -32,4 +36,3 @@ storage:
     access-key: ${S3_ACCESS_KEY}
     secret-key: ${S3_SECRET_KEY}
     region: ${S3_REGION}
-

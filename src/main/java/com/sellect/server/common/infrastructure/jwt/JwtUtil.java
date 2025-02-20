@@ -4,6 +4,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Date;
 import javax.crypto.SecretKey;
@@ -59,6 +60,7 @@ public class JwtUtil {
             .getBody();
     }
 
+    @Deprecated
     public String extractToken(HttpServletRequest request) {
         String authHeader = request.getHeader("Authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
@@ -66,6 +68,19 @@ public class JwtUtil {
         }
 
         return null;
+    }
+
+    public String extractTokenFromCookie(HttpServletRequest request) {
+        String token = null;
+        if (request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                if ("access_token".equals(cookie.getName())) {
+                    token = cookie.getValue();
+                    break;
+                }
+            }
+        }
+        return token;
     }
 
 

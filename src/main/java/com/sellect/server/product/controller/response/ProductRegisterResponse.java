@@ -1,20 +1,19 @@
 package com.sellect.server.product.controller.response;
 
 import com.sellect.server.product.domain.Product;
-import java.util.List;
+import lombok.Builder;
 
+@Builder
 public record ProductRegisterResponse(
-    List<ProductRegisterSuccessResponse> successProducts,
-    List<ProductRegisterFailureResponse> failedProducts
+    Long productId,
+    String name
 ) {
 
-    public static ProductRegisterResponse from(
-        List<Product> successProducts,
-        List<ProductRegisterFailureResponse> failedProducts
-    ) {
+    public static ProductRegisterResponse from(Product product) {
         return new ProductRegisterResponse(
-            ProductRegisterSuccessResponse.fromList(successProducts), // 성공 상품 리스트 반환
-            failedProducts
+            product.getId(),
+            product.getName()
         );
     }
+
 }

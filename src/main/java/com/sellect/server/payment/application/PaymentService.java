@@ -1,13 +1,16 @@
 package com.sellect.server.payment.application;
 
 import com.sellect.server.auth.domain.User;
-import com.sellect.server.payment.domain.Payment;
+import com.sellect.server.auth.repository.user.UserRepository;
+import com.sellect.server.common.exception.CommonException;
+import com.sellect.server.common.exception.enums.BError;
+import com.sellect.server.order.application.OrderService;
 import com.sellect.server.payment.controller.request.ApproveRequest;
 import com.sellect.server.payment.controller.request.KakaoPayReadyRequest;
 import com.sellect.server.payment.controller.request.PaymentRequest;
 import com.sellect.server.payment.controller.response.KakaoPayReadyResponse;
 import com.sellect.server.payment.controller.response.PaymentHistoryResponse;
-import com.sellect.server.payment.mapper.PaymentMapper;
+import com.sellect.server.payment.domain.Payment;
 import com.sellect.server.payment.repository.PaymentRepository;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +28,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
@@ -39,7 +43,9 @@ public class PaymentService {
     private static final String KAKAO_PAY_API_URL = "https://open-api.kakaopay.com/online/v1/payment/ready";
     private static final String KAKAO_PAY_APPROVE_API_URL = "https://open-api.kakaopay.com/online/v1/payment/approve";
 
+    private final OrderService orderService;
     private final PaymentRepository paymentRepository;
+    private final UserRepository userRepository;
     private final RestTemplate restTemplate;
 
     public String initialPayment(User user, PaymentRequest paymentRequest) {
@@ -50,7 +56,7 @@ public class PaymentService {
         return handleKakaoPayReadyResponse(response, paymentRequest, user, pid);
     }
 
-    @Transactional()
+    @Transactional(propagation = Propagation.REQUIRED)
     public void approvePayment(String pid, String token) {
         // todo
         // 결제 승인 전 (한 트랜잭션으로 묶는 단위)
@@ -60,8 +66,20 @@ public class PaymentService {
 
         Payment payment = paymentRepository.findByPid(pid);
         ApproveRequest approveRequest = createApproveRequest(payment, token);
+
+        orderService.lockProductItems(Long.valueOf(payment.getOrderId()));
+
+        // 재고에 대해서 락을 걸어야함
         ResponseEntity<Map> response = sendKakaoPayApproveRequest(approveRequest);
         handleKakaoPayApproveResponse(response, payment);
+
+        User user = userRepository.findByUuid(payment.getUid())
+            .orElseThrow(() -> new CommonException(
+                BError.NOT_EXIST));
+
+        orderService.completeOrder(user, Long.parseLong(payment.getOrderId()));
+
+        // 락 해제
     }
 
     // 기본 최신순서
@@ -100,9 +118,9 @@ public class PaymentService {
             .quantity(paymentRequest.quantity())
             .totalAmount(paymentRequest.totalAmount())
             .taxFreeAmount(0)
-            .approvalUrl(String.format("http://localhost:8080/v1/payment/success/%s", pid))
-            .cancelUrl("http://localhost:8080/v1/payment/cancel")
-            .failUrl("http://localhost:8080/v1/payment/fail")
+            .approvalUrl(String.format("http://localhost:8080/api/v1/payment/success/%s", pid))
+            .cancelUrl("http://localhost:8080/api/v1/payment/cancel")
+            .failUrl("http://localhost:8080/api/v1/payment/fail")
             .build();
     }
 

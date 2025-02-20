@@ -11,13 +11,6 @@ public class FakeBrandRepository implements BrandRepository {
     private final List<Brand> data = new ArrayList<>();
 
     @Override
-    public Brand findByName(String name) {
-        return data.stream()
-            .filter(brand -> brand.getName().equals(name))
-            .findFirst().orElse(null);
-    }
-
-    @Override
     public List<Brand> findContainingName(String keyword) {
         return data.stream()
             .filter(brand -> brand.getName().contains(keyword))
