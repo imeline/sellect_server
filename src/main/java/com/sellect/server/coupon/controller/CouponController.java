@@ -39,7 +39,7 @@ public class CouponController {
     @PutMapping("/register/{couponId}")
     public ApiResponse<?> registerCoupon(@AuthUser User user, @PathVariable Long couponId) {
         couponService.downloadCoupon(user, couponId);
-        return null;
+        return ApiResponse.ok();
     }
 
 

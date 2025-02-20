@@ -126,6 +126,7 @@ public class CouponService {
 
     private CouponInfo toCouponInfo(Coupon coupon) {
         return new CouponInfo(
+            coupon.getId(),
             coupon.getDiscountCost(),
             coupon.getExpirationDate(),
             toSellerInfo(coupon.getSeller())

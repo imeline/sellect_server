@@ -23,7 +23,8 @@ public class CouponRepositoryImpl implements CouponRepository {
 
     @Override
     public Optional<Coupon> findById(Long couponId) {
-        return Optional.empty();
+        Optional<CouponEntity> couponEntity = couponJpaRepository.findById(couponId);
+        return couponEntity.map(CouponEntity::toModel);
     }
 
     @Override
