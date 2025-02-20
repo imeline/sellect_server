@@ -71,20 +71,19 @@ public class OrderService {
         // todo: N+1 발생
         // todo: BrandRepository를 Response에서 brandName 가져올 때 JPA에서 조회를 통해 가져옴
         // todo: N+1 문제 발생 (일단 임시로 구현)
-        List<OrderItemPendingReadResponse> results = orders.stream()
+        return orders.stream()
             .map(orderItem -> {
                 Product product = productRepository.findById(orderItem.getProduct().getId())
                     .orElseThrow(() -> new RuntimeException("유효하지 않은 상품 번호입니다."));
 
                 // 대표 이미지 가져오기 (한 개만)
-                String thumbnailImageUrl = productImageRepository.findByThumbnailImage(product.getId())
+                String thumbnailImageUrl = productImageRepository.findByThumbnailImage(
+                        product.getId())
                     .getImageUrl();
 
                 return OrderItemPendingReadResponse.from(orderItem, product, thumbnailImageUrl);
             })
             .toList();
-
-        return results;
     }
 
 
@@ -223,7 +222,7 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
-    protected List<OrderItem> getOrderItemsByOrderId(Long orderId) {
+    public List<OrderItem> getOrderItemsByOrderId(Long orderId) {
         List<OrderItem> orderItems = orderItemRepository.findAllByOrdersId(orderId);
         // 주문 아이템이 없을 경우
         if (orderItems.isEmpty()) {
