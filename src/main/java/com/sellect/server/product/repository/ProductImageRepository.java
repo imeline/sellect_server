@@ -14,4 +14,7 @@ public interface ProductImageRepository {
 
     List<ProductImage> findByProductId(Long productId);
 
+    // Optional 일 수 없음 정책 상
+    ProductImage findByThumbnailImage(Long productId);
+
 }

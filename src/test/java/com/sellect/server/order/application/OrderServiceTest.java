@@ -20,6 +20,7 @@ import com.sellect.server.order.repository.FakeOrderItemRepository;
 import com.sellect.server.order.repository.FakeOrdersRepository;
 import com.sellect.server.order.repository.entity.OrderStatus;
 import com.sellect.server.product.domain.Product;
+import com.sellect.server.product.repository.FakeProductImageRepository;
 import com.sellect.server.product.repository.FakeProductRepository;
 import java.math.BigDecimal;
 import java.util.List;
@@ -35,8 +36,9 @@ class OrderServiceTest {
     private final FakeProductRepository productRepository = new FakeProductRepository();
     private final FakeCartItemRepository cartRepository = new FakeCartItemRepository();
     private final FakeuserReceivedCouponRepository userReceivedCouponRepository = new FakeuserReceivedCouponRepository();
+    private final FakeProductImageRepository productImageRepository = new FakeProductImageRepository();
     private final OrderService sut = new OrderService(ordersRepository, orderItemRepository,
-        productRepository, cartRepository, userReceivedCouponRepository);
+        productRepository, cartRepository, userReceivedCouponRepository, productImageRepository);
     private User user;
 
     @BeforeEach
