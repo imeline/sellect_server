@@ -11,6 +11,7 @@ import com.sellect.server.product.domain.Product;
 import com.sellect.server.product.repository.ProductRepository;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,15 +23,23 @@ public class CartService {
     private final CartItemRepository cartItemRepository;
     private final ProductRepository productRepository;
 
-
     @Transactional
-    public void addCartItem(User user, CartItemAddRequest request) {
+    public CartItem addCartItem(User user, CartItemAddRequest request) {
 
+        // 상품이 있는지 없는지 체크
         Product product = productRepository.findById(request.productId())
             .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "product"));
-        CartItem cartItem = CartItem.register(user, product, request.quantity());
-        cartItemRepository.save(cartItem);
+
+        // 현재 장바구니에 있는지 체크
+        Optional<CartItem> optionalCartItem = cartItemRepository.findByProductId(product.getId());
+
+        // 도메인 클래스에서 비즈니스 로직 다룸
+        CartItem cartItem = CartItem.add(user, product, optionalCartItem.orElse(null));
+
+        System.out.println("cartItem = " + cartItem);
+        return cartItemRepository.save(cartItem);
     }
+
 
     @Transactional
     public void changeCartItemQuantity(Long userId, CartItemQuantityChangeRequest request) {
