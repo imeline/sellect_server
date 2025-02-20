@@ -7,6 +7,7 @@ import com.sellect.server.order.application.OrderService;
 import com.sellect.server.order.controller.request.OrderAddRequest;
 import com.sellect.server.order.controller.response.OrderDetailGetResponse;
 import com.sellect.server.order.controller.response.OrderGetResponse;
+import com.sellect.server.order.controller.response.OrderItemPendingReadResponse;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,20 @@ import org.springframework.web.bind.annotation.RestController;
 public class OrderController {
 
     private final OrderService orderService;
+
+    /**
+    * 주문 페이지 조회용 (결제 전)
+    * */
+    @GetMapping("/orders/{orderId}/pending")
+    public ApiResponse<List<OrderItemPendingReadResponse>> readPending(
+        @AuthUser User user,
+        @PathVariable Long orderId
+    ) {
+        List<OrderItemPendingReadResponse> result = orderService.readPending(
+            user, orderId);
+
+        return ApiResponse.ok(result);
+    }
 
     /**
      * 주문 생성(pending)
