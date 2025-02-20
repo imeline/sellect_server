@@ -27,6 +27,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -79,8 +80,8 @@ public class OrderService {
         return savedOrder;
     }
 
-    @Transactional
-    public void LockProductItems(Long orderId) {
+    @Transactional(propagation = Propagation.REQUIRED)
+    public void lockProductItems(Long orderId) {
         Orders order = getOrderById(orderId);
         // 이미 완료된 주문인지 확인
         if (order.getStatus() == OrderStatus.COMPLETED) {
@@ -99,7 +100,7 @@ public class OrderService {
         });
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRED)
     public void completeOrder(User user, Long orderId) {
         Orders order = getOrderById(orderId);
         // 이미 완료된 주문인지 확인

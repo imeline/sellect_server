@@ -118,7 +118,7 @@ class OrderServiceTest {
 
             // When & Then
             CommonException exception = assertThrows(CommonException.class,
-                () -> sut.LockProductItems(savedOrder.getId()));
+                () -> sut.lockProductItems(savedOrder.getId()));
             assertEquals("재고 부족 is not valid", exception.getMessage());
         }
 

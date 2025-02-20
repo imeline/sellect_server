@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.sellect.server.auth.controller.request.LoginRequest;
 import com.sellect.server.auth.controller.request.UserSignUpRequest;
+import com.sellect.server.auth.controller.response.LoginDto;
 import com.sellect.server.auth.domain.UserAuth;
 import com.sellect.server.auth.repository.FakeUserAuthRepository;
 import com.sellect.server.auth.repository.FakeUserRepository;
@@ -137,7 +138,9 @@ class UserAuthServiceTest {
             LoginRequest loginRequest = new LoginRequest(email, password);
 
             // when
-            String token = userAuthService.login(loginRequest, role);
+            LoginDto login = userAuthService.login(loginRequest);
+            String token = login.accessToken();
+
 
             // then
             assertNotNull(token);
@@ -163,7 +166,7 @@ class UserAuthServiceTest {
 
             // when & then
             IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, () -> {
-                userAuthService.login(loginRequest, Role.USER);
+                userAuthService.login(loginRequest);
             });
 
             assertEquals("Invalid password", thrown.getMessage());
@@ -176,7 +179,7 @@ class UserAuthServiceTest {
 
             // when & then
             IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, () -> {
-                userAuthService.login(loginRequest, role);
+                userAuthService.login(loginRequest);
             });
 
             assertEquals(expectedMessage, thrown.getMessage());
