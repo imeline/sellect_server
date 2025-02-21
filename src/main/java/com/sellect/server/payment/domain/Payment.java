@@ -39,19 +39,55 @@ public class Payment {
     }
 
     public Payment approvePayment() {
-        return Payment.builder()
-            .id(this.id)
-            .orderId(this.orderId)
-            .price(this.price)
-            .pid(this.pid)
-            .uid(this.uid)
-            .status(PaymentStatus.APPROVE)
-            .tid(this.tid)
-            .createdAt(this.createdAt)
-            .updatedAt(LocalDateTime.now())
-            .build();
+        if (status.equals(PaymentStatus.READY)) {
+            return Payment.builder()
+                .id(this.id)
+                .orderId(this.orderId)
+                .price(this.price)
+                .pid(this.pid)
+                .uid(this.uid)
+                .status(PaymentStatus.APPROVE)
+                .tid(this.tid)
+                .createdAt(this.createdAt)
+                .updatedAt(LocalDateTime.now())
+                .build();
+        }
+        return this;
     }
 
+    public Payment failPayment() {
+        if (status.equals(PaymentStatus.READY)) {
+            return Payment.builder()
+                .id(this.id)
+                .orderId(this.orderId)
+                .price(this.price)
+                .pid(this.pid)
+                .uid(this.uid)
+                .status(PaymentStatus.FAIL)
+                .tid(this.tid)
+                .createdAt(this.createdAt)
+                .updatedAt(LocalDateTime.now())
+                .build();
+        }
+        return this;
+    }
+
+    public Payment cancelPayment() {
+        if (status.equals(PaymentStatus.READY)) {
+            return Payment.builder()
+                .id(this.id)
+                .orderId(this.orderId)
+                .price(this.price)
+                .pid(this.pid)
+                .uid(this.uid)
+                .status(PaymentStatus.CANCEL)
+                .tid(this.tid)
+                .createdAt(this.createdAt)
+                .updatedAt(LocalDateTime.now())
+                .build();
+        }
+        return this;
+    }
 }
 
 

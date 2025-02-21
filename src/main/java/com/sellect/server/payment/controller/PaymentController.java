@@ -54,19 +54,23 @@ public class PaymentController {
         @PathVariable String pid,
         @RequestParam("pg_token") String token) {
         paymentService.approvePayment(pid, token);
-
         // todo: home redirect
         return "success";
     }
 
-    // TODO:  2025-02-19, 16:31  
-    @GetMapping("/cancel")
-    public String cancelPayment() {
-        return "cancel";
+    @GetMapping("/cancel/{pid}")
+    public ApiResponse<Object> cancelPayment(
+        @PathVariable String pid
+    ) {
+        paymentService.cancelPayment(pid);
+        return ApiResponse.ok();
     }
 
-    @GetMapping("/fail")
-    public String failPayment() {
-        return "fail";
+    @GetMapping("/fail/{pid}")
+    public ApiResponse<Object> failPayment(
+        @PathVariable String pid
+    ) {
+        paymentService.failPayment(pid);
+        return ApiResponse.ok();
     }
 }

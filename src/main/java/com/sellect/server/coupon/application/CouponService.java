@@ -5,6 +5,7 @@ import com.sellect.server.auth.repository.entity.Role;
 import com.sellect.server.common.exception.CommonException;
 import com.sellect.server.common.exception.enums.BError;
 import com.sellect.server.coupon.controller.request.IssueCouponRequest;
+import com.sellect.server.coupon.controller.response.ActiveCouponResponse;
 import com.sellect.server.coupon.controller.response.CouponInfo;
 import com.sellect.server.coupon.controller.response.CouponResponse;
 import com.sellect.server.coupon.controller.response.SellerInfo;
@@ -15,6 +16,7 @@ import com.sellect.server.coupon.repository.UserReceivedCouponRepository;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
@@ -101,23 +103,38 @@ public class CouponService {
         userReceivedCouponRepository.save(usedCoupon);
     }
 
-    private CouponResponse toCouponResponse(UserReceivedCoupon coupon) {
-        return new CouponResponse(coupon.getIsUsed(),
-            toCouponInfo(coupon.getCoupon(), coupon.getUser()));
-
+    @Transactional(readOnly = true)
+    public Page<ActiveCouponResponse> getActiveCouponList(User user, int page, int size) {
+        PageRequest pageRequest = PageRequest.of(page, size, DEFAULT_SORT);
+        Page<Coupon> activeCoupons = couponRepository.findAllActiveCouponList(pageRequest);
+        return activeCoupons.map(coupon -> createActiveCouponResponse(user, coupon));
     }
 
-    private CouponInfo toCouponInfo(Coupon coupon, User user) {
+    private ActiveCouponResponse createActiveCouponResponse(User user, Coupon coupon) {
+        boolean isRegistered = isCouponRegistered(user, coupon);
+        CouponInfo couponInfo = toCouponInfo(coupon);
+        return new ActiveCouponResponse(isRegistered, couponInfo);
+    }
+
+    private boolean isCouponRegistered(User user, Coupon coupon) {
+        return user != null && userReceivedCouponRepository.existsByUserAndCoupon(user, coupon);
+    }
+
+    private CouponResponse toCouponResponse(UserReceivedCoupon coupon) {
+        return new CouponResponse(coupon.getIsUsed(), toCouponInfo(coupon.getCoupon()));
+    }
+
+    private CouponInfo toCouponInfo(Coupon coupon) {
         return new CouponInfo(
+            coupon.getId(),
             coupon.getDiscountCost(),
             coupon.getExpirationDate(),
-            toSellerInfo(user)
+            toSellerInfo(coupon.getSeller())
         );
     }
 
     private SellerInfo toSellerInfo(User user) {
         return new SellerInfo(user.getId(), user.getNickname());
     }
-
 }
 
