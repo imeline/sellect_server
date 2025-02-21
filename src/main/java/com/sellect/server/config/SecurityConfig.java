@@ -39,7 +39,8 @@ public class SecurityConfig {
         "/api/v1/payment/cancel",
         "/api/v1/coupon/actives",
         "/api/v1/search/**",
-        "/api/v1/products/**"
+        "/api/v1/products/**",
+        "/api/v1/cart"
     };
     private final JwtFilter jwtFilter;
 
