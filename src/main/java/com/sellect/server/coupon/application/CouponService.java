@@ -7,12 +7,16 @@ import com.sellect.server.common.exception.enums.BError;
 import com.sellect.server.coupon.controller.request.IssueCouponRequest;
 import com.sellect.server.coupon.controller.response.ActiveCouponResponse;
 import com.sellect.server.coupon.controller.response.CouponInfo;
+import com.sellect.server.coupon.controller.response.CouponPossibleOrderResponse;
 import com.sellect.server.coupon.controller.response.CouponResponse;
 import com.sellect.server.coupon.controller.response.SellerInfo;
 import com.sellect.server.coupon.domain.Coupon;
 import com.sellect.server.coupon.domain.UserReceivedCoupon;
 import com.sellect.server.coupon.repository.CouponRepository;
 import com.sellect.server.coupon.repository.UserReceivedCouponRepository;
+import com.sellect.server.product.domain.Product;
+import com.sellect.server.product.repository.ProductRepository;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +36,7 @@ public class CouponService {
 
     private final CouponRepository couponRepository;
     private final UserReceivedCouponRepository userReceivedCouponRepository;
+    private final ProductRepository productRepository;
 
     public void uploadCoupon(User user, IssueCouponRequest issueCouponRequest) {
         if (user.getRole() != Role.SELLER) {
@@ -101,6 +106,33 @@ public class CouponService {
         UserReceivedCoupon usedCoupon = userReceivedCoupon.useCoupon();
 
         userReceivedCouponRepository.save(usedCoupon);
+    }
+
+    @Transactional(readOnly = true)
+    public List<CouponPossibleOrderResponse> getCouponsByMatchingSeller(User user,
+        List<Long> productIds) {
+        // 1. productIds를 통해 판매자 리스트 가져오기
+        List<User> sellers = productIds.stream()
+            .map(productId -> productRepository.findById(productId)
+                .orElseThrow(
+                    () -> new CommonException(BError.NOT_EXIST, String.valueOf(productId))))
+            .map(Product::getSeller)
+            .toList();
+
+        // 2. 사용하지 않은 쿠폰 중 유효기간이 남아 있는 것 필터링
+        List<UserReceivedCoupon> validCoupons = userReceivedCouponRepository.findAllByUserAndIsUsed(
+                user, false).stream()
+            .filter(c -> c.getCoupon().getExpirationDate().isAfter(LocalDate.now().minusDays(1)))
+            .toList();
+
+        // 3. 판매자가 일치하는 쿠폰만 선택하여 변환
+        return validCoupons.stream()
+            .filter(c -> sellers.contains(c.getCoupon().getSeller()))
+            .map(c -> new CouponPossibleOrderResponse(
+                c.getId(),
+                c.getCoupon().getDiscountCost(),
+                c.getCoupon().getExpirationDate())
+            ).toList();
     }
 
     @Transactional(readOnly = true)

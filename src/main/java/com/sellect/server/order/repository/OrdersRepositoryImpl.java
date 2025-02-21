@@ -27,8 +27,8 @@ public class OrdersRepositoryImpl implements OrdersRepository {
     }
 
     @Override
-    public List<Orders> findAllByUserEntityAndStatus(User user, OrderStatus status) {
-        List<OrdersEntity> ordersEntities = ordersJpaRepository.findAllByUserEntityAndStatus(
+    public List<Orders> findCompletedOrdersByUser(User user, OrderStatus status) {
+        List<OrdersEntity> ordersEntities = ordersJpaRepository.findCompletedOrdersByUser(
             UserEntity.from(user), status);
 
         return ordersEntities.stream().map(OrdersEntity::toModel).toList();

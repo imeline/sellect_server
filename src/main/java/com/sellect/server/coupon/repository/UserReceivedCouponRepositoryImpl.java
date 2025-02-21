@@ -33,6 +33,16 @@ public class UserReceivedCouponRepositoryImpl implements UserReceivedCouponRepos
     }
 
     @Override
+    public List<UserReceivedCoupon> findAllByUserAndIsUsed(User user, boolean isUsed) {
+        List<UserReceivedCouponEntity> receivedCouponEntityList = userReceivedCouponJpaRepository.findAllByUserAndIsUsed(
+            UserEntity.from(user), isUsed);
+
+        return receivedCouponEntityList.stream()
+            .map(UserReceivedCouponEntity::toModel)
+            .toList();
+    }
+
+    @Override
     public List<UserReceivedCoupon> findByUserAndIsUsed(User user, PageRequest pageRequest,
         Boolean isUsed) {
         List<UserReceivedCouponEntity> receivedCouponEntityList = userReceivedCouponJpaRepository.findByUserAndIsUsed(

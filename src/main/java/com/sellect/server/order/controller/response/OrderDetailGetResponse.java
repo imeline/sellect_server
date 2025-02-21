@@ -11,7 +11,7 @@ public record OrderDetailGetResponse(
     BigDecimal discountCost,
     BigDecimal totalPrice,
     List<OrderItemGetResponse> orderItems,
-    LocalDateTime createdAt
+    LocalDateTime updateAt
 
 ) {
 
@@ -24,7 +24,7 @@ public record OrderDetailGetResponse(
             discountCost,
             order.getTotalPrice(),
             orderItemResponses,
-            order.getCreatedAt()
+            order.getUpdatedAt()
         );
     }
 }

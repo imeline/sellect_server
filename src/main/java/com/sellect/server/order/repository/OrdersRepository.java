@@ -12,5 +12,5 @@ public interface OrdersRepository {
 
     Optional<Orders> findById(Long id);
 
-    List<Orders> findAllByUserEntityAndStatus(User user, OrderStatus status);
+    List<Orders> findCompletedOrdersByUser(User user, OrderStatus status);
 }

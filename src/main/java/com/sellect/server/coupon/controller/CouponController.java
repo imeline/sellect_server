@@ -7,6 +7,7 @@ import com.sellect.server.common.response.ApiResponse;
 import com.sellect.server.coupon.application.CouponService;
 import com.sellect.server.coupon.controller.request.IssueCouponRequest;
 import com.sellect.server.coupon.controller.response.ActiveCouponResponse;
+import com.sellect.server.coupon.controller.response.CouponPossibleOrderResponse;
 import com.sellect.server.coupon.controller.response.CouponResponse;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -56,9 +57,19 @@ public class CouponController {
     public ApiResponse<Page<ActiveCouponResponse>> getActiveCouponList(
         @AuthUser User user,
         @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "5") int size
-    ){
-        Page<ActiveCouponResponse> activeCouponList = couponService.getActiveCouponList(user, page, size);
+    ) {
+        Page<ActiveCouponResponse> activeCouponList = couponService.getActiveCouponList(user, page,
+            size);
         return ApiResponse.ok(activeCouponList);
+    }
+
+    @GetMapping("/possible-order")
+    public ApiResponse<List<CouponPossibleOrderResponse>> getPossibleOrderCouponList(
+        @AuthUser User user, @RequestBody List<Long> productIds
+    ) {
+        List<CouponPossibleOrderResponse> couponList = couponService.getCouponsByMatchingSeller(
+            user, productIds);
+        return ApiResponse.ok(couponList);
     }
 
 }
