@@ -89,12 +89,8 @@ public class OrderService {
 
     @Transactional
     public Orders registerPendingOrder(User user, OrderAddRequest request) {
-        // 쿠폰 조회
-        UserReceivedCoupon coupon = Optional.ofNullable(request.userReceivedCouponId())
-            .flatMap(userReceivedCouponRepository::findById)
-            .orElse(null);
         // Orders 저장
-        Orders order = Orders.register(user, coupon, request.convertPriceAsBigDecimal(),
+        Orders order = Orders.register(user, request.convertPriceAsBigDecimal(),
             OrderStatus.PENDING);
         Orders savedOrder = ordersRepository.save(order);
 
@@ -241,6 +237,7 @@ public class OrderService {
         }
         // 쿠폰 적용
         ordersRepository.save(order.updateCoupon(coupon));
+        userReceivedCouponRepository.save(coupon.useCoupon());
     }
 
     @Transactional(readOnly = true)

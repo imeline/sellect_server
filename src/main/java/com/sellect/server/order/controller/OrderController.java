@@ -88,10 +88,10 @@ public class OrderController {
         return ApiResponse.ok(orderService.getOrderDetail(orderId));
     }
 
-    @PatchMapping("/order/{orderId}/appied-coupon/{couponId}")
+    @PatchMapping("/order/{orderId}/appied-coupon/{userReceivedCouponId}")
     public ApiResponse<Void> applyCoupon(@AuthUser User user, @PathVariable Long orderId,
-        @PathVariable Long couponId) {
-        orderService.applyCouponToOrder(user, orderId, couponId);
+        @PathVariable Long userReceivedCouponId) {
+        orderService.applyCouponToOrder(user, orderId, userReceivedCouponId);
         return ApiResponse.ok(null);
     }
 }
