@@ -3,6 +3,7 @@ package com.sellect.server.config;
 import com.sellect.server.common.infrastructure.jwt.JwtFilter;
 import java.util.Arrays;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -17,6 +18,8 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+
+@Slf4j
 @Configuration
 @RequiredArgsConstructor
 public class SecurityConfig {
@@ -39,7 +42,9 @@ public class SecurityConfig {
         "/api/v1/payment/cancel",
         "/api/v1/coupon/actives",
         "/api/v1/search/**",
-        "/api/v1/products/**"
+        "/api/v1/products/**",
+        "/api/v1/categories/**",
+        "/api/v1/brands/**",
     };
     private final JwtFilter jwtFilter;
 
@@ -57,13 +62,14 @@ public class SecurityConfig {
         http = commonConfig(http);
         http
             .securityMatcher(request -> Arrays.stream(NO_JWT_PATHS)
-                .anyMatch(path -> path.equals(request.getRequestURI())))
+                .anyMatch(path -> new AntPathMatcher().match(path, request.getRequestURI())))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(NO_JWT_PATHS).permitAll()
                 .anyRequest().denyAll()
             );
         return http.build();
     }
+
 
     @Order(2)
     @Bean
@@ -112,4 +118,5 @@ public class SecurityConfig {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
+
 }

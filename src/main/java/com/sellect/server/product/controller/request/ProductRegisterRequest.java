@@ -8,6 +8,7 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
+import java.util.List;
 
 public record ProductRegisterRequest(
 
@@ -37,7 +38,7 @@ public record ProductRegisterRequest(
     Integer sequence,
 
     @NotNull(message = "이미지 컨텍스트 정보는 필수 입력값입니다.")
-    ImageContextCreateRequest imageContextCreateRequest
+    List<ImageContextCreateRequest> imageContexts
 
 ) {
 

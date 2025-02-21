@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -69,8 +71,9 @@ public class ProductService {
 
         // todo: service 에서 service??? 추후 체크
         // 이미지 저장
-        productImageService.registerProductImage(product, request.imageContextCreateRequest(),
-            images);
+        request.imageContexts().forEach(imageContext -> {
+            productImageService.registerProductImage(product, imageContext, images);
+        });
 
         return ProductRegisterResponse.from(product);
     }
@@ -201,5 +204,22 @@ public class ProductService {
         // todo: JPA가 알아서 조회
         return ProductDetailReadResponse.from(product, category, product.getSeller(), brand,
             productImages);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ProductDetailReadResponse> readAllBySeller(User seller, int page, int size) {
+
+        Page<Product> products = productRepository.findBySellerId(seller.getId(), PageRequest.of(page, size));
+
+        return products.map(product -> {
+            Category category = categoryRepository.findById(product.getCategory().getId())
+                .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "category"));
+            Brand brand = brandRepository.findById(product.getBrand().getId())
+                .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "brand"));
+
+            List<ProductImage> productImages = productImageRepository.findByProductId(product.getId());
+            return ProductDetailReadResponse.from(product, category, product.getSeller(), brand,
+                productImages);
+        });
     }
 }

@@ -62,6 +62,12 @@ public class FakeProductRepository implements ProductRepository {
         return Optional.empty();
     }
 
+    @Override
+    public Page<Product> findBySellerId(Long sellerId, Pageable pageable) {
+        // TODO: 구현 필요
+        return null;
+    }
+
     public void clear() {
         data.clear();
     }

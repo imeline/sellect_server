@@ -22,4 +22,6 @@ public interface ProductRepository {
 
     Optional<Product> findByIdWithLock(Long id);
 
+    Page<Product> findBySellerId(Long sellerId, Pageable pageable);
+
 }

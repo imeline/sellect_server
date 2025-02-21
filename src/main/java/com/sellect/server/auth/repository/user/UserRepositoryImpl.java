@@ -17,8 +17,9 @@ public class UserRepositoryImpl implements UserRepository {
     public Optional<User> findByUuid(String uuid) {
         // todo: Exception 처리 업데이트
         Optional<UserEntity> userEntity = userJpaRepository.findByUuid(uuid);
-        Optional<User> user = Optional.of(userEntity.get().toModel());
-        return user;
+        return userEntity.map(UserEntity::toModel);
+        /*Optional<User> user = Optional.of(userEntity.get().toModel());
+        return user;*/
     }
 
     @Override
