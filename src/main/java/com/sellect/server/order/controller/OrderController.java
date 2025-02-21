@@ -8,6 +8,7 @@ import com.sellect.server.order.controller.request.OrderAddRequest;
 import com.sellect.server.order.controller.response.OrderDetailGetResponse;
 import com.sellect.server.order.controller.response.OrderGetResponse;
 import com.sellect.server.order.controller.response.OrderItemPendingReadResponse;
+import com.sellect.server.order.controller.response.PendingOrderRegisterResponse;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -43,11 +44,13 @@ public class OrderController {
      * 주문 생성(pending)
      */
     @PostMapping("/order/pending")
-    public ApiResponse<Long> registerPendingOrder(@AuthUser User user,
+    public ApiResponse<PendingOrderRegisterResponse> registerPendingOrder(@AuthUser User user,
         @Valid @RequestBody OrderAddRequest requests) {
 
         Long orderId = orderService.registerPendingOrder(user, requests).getId();
-        return ApiResponse.ok(orderId);
+        return ApiResponse.ok(PendingOrderRegisterResponse.builder()
+            .orderId(orderId)
+            .build());
     }
 
 //    /**

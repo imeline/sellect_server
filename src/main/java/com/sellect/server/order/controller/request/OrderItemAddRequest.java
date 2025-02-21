@@ -9,7 +9,7 @@ import java.math.BigDecimal;
 public record OrderItemAddRequest(
     Long productId,
     @Positive(message = "가격은 1원 이상이어야 합니다.")
-    @Pattern(regexp = "^[0-9]+$", message = "가격은 정수만 입력 가능합니다.")
+//    @Pattern(regexp = "^[0-9]+$", message = "가격은 정수만 입력 가능합니다.")
     String price,
     @Positive(message = "수량은 1개 이상이어야 합니다.")
     int quantity
