@@ -43,10 +43,10 @@ public class UserEntity extends BaseTimeEntity {
 
     public User toModel() {
         return User.builder()
-            .id(this.id)
-            .uuid(this.uuid)
-            .nickname(this.nickname)
-            .role(this.role)
+            .id(this.getId())
+            .uuid(this.getUuid())
+            .nickname(this.getNickname())
+            .role(this.getRole())
             .createdAt(this.getCreatedAt())
             .updatedAt(this.getUpdatedAt())
             .deleteAt(this.getDeleteAt())
