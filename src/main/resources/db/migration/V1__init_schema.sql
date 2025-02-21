@@ -96,9 +96,11 @@ CREATE TABLE `orders`
     `id`                      BIGINT         NOT NULL AUTO_INCREMENT,
     `user_id`                 BIGINT         NOT NULL,
     `user_received_coupon_id` BIGINT NULL,
-    `price`                   DECIMAL(10, 2) NOT NULL,
+    `total_price`             DECIMAL(10, 2) NOT NULL,
     `order_number`            VARCHAR(50)    NOT NULL,
+    `status`                  ENUM('PENDING', 'COMPLETED', 'CANCELED') NOT NULL,
     `created_at`              DATETIME       NOT NULL,
+    `updated_at`              DATETIME       NOT NULL,
     `delete_at`               DATETIME NULL,
     PRIMARY KEY (`id`)
 );
@@ -121,6 +123,7 @@ CREATE TABLE `order_item`
     `id`         BIGINT NOT NULL AUTO_INCREMENT,
     `orders_id`  BIGINT NOT NULL,
     `product_id` BIGINT NOT NULL,
+    `price`      DECIMAL(10, 2) NOT NULL,
     `quantity`   INT UNSIGNED NOT NULL,
     `created_at` DATETIME NULL,
     `delete_at`  DATETIME NULL,

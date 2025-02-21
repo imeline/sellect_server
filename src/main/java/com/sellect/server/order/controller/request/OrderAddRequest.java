@@ -9,7 +9,7 @@ import java.util.List;
 public record OrderAddRequest(
 
     @Positive(message = "가격은 1원 이상이어야 합니다.")
-    @Pattern(regexp = "^[0-9]+$", message = "가격은 정수만 입력 가능합니다.")
+//    @Pattern(regexp = "^[0-9]+$", message = "가격은 정수만 입력 가능합니다.")
     String totalPrice,
     @NotNull(message = "주문 아이템 목록은 필수 값입니다.")
     List<OrderItemAddRequest> orderItems
