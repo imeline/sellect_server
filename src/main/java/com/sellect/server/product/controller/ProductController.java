@@ -40,7 +40,7 @@ public class ProductController {
     @PostMapping("/product")
     public ApiResponse<ProductRegisterResponse> register(
         @AuthSeller User seller,
-        @RequestPart("requests") ProductRegisterRequest request,
+        @RequestPart("register_request") ProductRegisterRequest request,
         @RequestPart("images") List<MultipartFile> images) {
 
         ProductRegisterResponse response = productService.register(seller, request, images);

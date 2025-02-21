@@ -69,8 +69,9 @@ public class ProductService {
 
         // todo: service 에서 service??? 추후 체크
         // 이미지 저장
-        productImageService.registerProductImage(product, request.imageContextCreateRequest(),
-            images);
+        request.imageContexts().forEach(imageContext -> {
+            productImageService.registerProductImage(product, imageContext, images);
+        });
 
         return ProductRegisterResponse.from(product);
     }
