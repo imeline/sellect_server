@@ -59,4 +59,20 @@ public class Orders {
             .deletedAt(this.deletedAt)
             .build();
     }
+
+    public Orders updateCoupon(UserReceivedCoupon coupon) {
+        return Orders.builder()
+            .id(this.id)
+            .user(this.user)
+            .userReceivedCoupon(coupon)
+            // 할인 가격 적용
+            .totalPrice(
+                this.totalPrice.subtract(BigDecimal.valueOf(coupon.getCoupon().getDiscountCost())))
+            .orderNumber(this.orderNumber)
+            .status(this.status)
+            .createdAt(this.createdAt)
+            .updatedAt(LocalDateTime.now())
+            .deletedAt(this.deletedAt)
+            .build();
+    }
 }

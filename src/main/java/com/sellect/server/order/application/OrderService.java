@@ -191,7 +191,7 @@ public class OrderService {
 
     public List<OrderGetResponse> getOrdersByUser(User user) {
         // 완료된 주문만 조회
-        List<Orders> orderList = ordersRepository.findAllByUserEntityAndStatus(user,
+        List<Orders> orderList = ordersRepository.findCompletedOrdersByUser(user,
             OrderStatus.COMPLETED);
         // 주문 목록이 없을 경우
         if (orderList.isEmpty()) {
@@ -219,6 +219,28 @@ public class OrderService {
             .orElse(BigDecimal.ZERO);
 
         return OrderDetailGetResponse.from(order, discountCost, orderItems);
+    }
+
+    @Transactional
+    public void applyCouponToOrder(User user, Long orderId, Long couponId) {
+        Orders order = getOrderById(orderId);
+        // 이미 완료된 주문인지 확인
+        if (order.getStatus() == OrderStatus.COMPLETED) {
+            throw new CommonException(BError.NOT_VALID, "이미 완료(확정)된 주문입니다.");
+        }
+        // 쿠폰 조회
+        UserReceivedCoupon coupon = userReceivedCouponRepository.findById(couponId)
+            .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "쿠폰"));
+        // 쿠폰 사용 여부 확인
+        if (coupon.getIsUsed()) {
+            throw new CommonException(BError.NOT_VALID, "이미 사용된 쿠폰입니다.");
+        }
+        // 쿠폰 소유자 확인
+        if (!coupon.getUser().getId().equals(user.getId())) {
+            throw new CommonException(BError.NOT_VALID, "쿠폰 소유자가 아닙니다.");
+        }
+        // 쿠폰 적용
+        ordersRepository.save(order.updateCoupon(coupon));
     }
 
     @Transactional(readOnly = true)

@@ -12,6 +12,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -26,8 +27,8 @@ public class OrderController {
     private final OrderService orderService;
 
     /**
-    * 주문 페이지 조회용 (결제 전)
-    * */
+     * 주문 페이지 조회용 (결제 전)
+     */
     @GetMapping("/orders/{orderId}/pending")
     public ApiResponse<List<OrderItemPendingReadResponse>> readPending(
         @AuthUser User user,
@@ -85,5 +86,12 @@ public class OrderController {
     @GetMapping("/orders/{orderId}")
     public ApiResponse<OrderDetailGetResponse> getOrdersByUser(@PathVariable Long orderId) {
         return ApiResponse.ok(orderService.getOrderDetail(orderId));
+    }
+
+    @PatchMapping("/order/{orderId}/appied-coupon/{couponId}")
+    public ApiResponse<Void> applyCoupon(@AuthUser User user, @PathVariable Long orderId,
+        @PathVariable Long couponId) {
+        orderService.applyCouponToOrder(user, orderId, couponId);
+        return ApiResponse.ok(null);
     }
 }
