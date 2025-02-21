@@ -4,6 +4,7 @@ import com.sellect.server.auth.domain.User;
 import com.sellect.server.cart.application.CartService;
 import com.sellect.server.cart.controller.request.CartItemAddRequest;
 import com.sellect.server.cart.controller.request.CartItemQuantityChangeRequest;
+import com.sellect.server.cart.controller.response.CartItemQuantityChangeResponse;
 import com.sellect.server.cart.controller.response.CardAddItemResponse;
 import com.sellect.server.cart.controller.response.CartItemReadResponse;
 import com.sellect.server.cart.controller.response.CartItemRetrieveResponse;
@@ -54,13 +55,14 @@ public class CartController {
         return ApiResponse.ok(CardAddItemResponse.from(result));
     }
 
-    @PatchMapping("/cart")
-    public ApiResponse<Void> changeCartItemQuantity(
+    @PatchMapping("/carts/{cartId}")
+    public ApiResponse<CartItemQuantityChangeResponse> changeCartItemQuantity(
         @AuthUser User user,
+        @PathVariable Long cartId,
         @RequestBody CartItemQuantityChangeRequest request) {
 
-        cartService.changeCartItemQuantity(user.getId(), request);
-        return ApiResponse.ok();
+        CartItem result = cartService.changeCartItemQuantity(user.getId(), cartId, request);
+        return ApiResponse.ok(CartItemQuantityChangeResponse.from(result));
     }
 
     @GetMapping("/cart")
@@ -74,9 +76,9 @@ public class CartController {
         );
     }
 
-    @DeleteMapping("/cart/{cartItemId}")
-    public ApiResponse<Void> deleteCartItems(@AuthUser User user, @PathVariable Long cartItemId) {
-        cartService.deleteCartItem(user.getId(), cartItemId);
+    @DeleteMapping("/carts/{cartId}")
+    public ApiResponse<Void> deleteCartItems(@AuthUser User user, @PathVariable Long cartId) {
+        cartService.deleteCartItem(user.getId(), cartId);
         return ApiResponse.ok();
     }
 }

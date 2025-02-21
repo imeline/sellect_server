@@ -57,7 +57,7 @@ public class CartService {
             .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "product"));
 
         // 현재 장바구니에 있는지 체크
-        Optional<CartItem> optionalCartItem = cartItemRepository.findByProductId(product.getId());
+        Optional<CartItem> optionalCartItem = cartItemRepository.findByUserIdAndProductId(user.getId(), product.getId());
 
         // 도메인 클래스에서 비즈니스 로직 다룸
         CartItem cartItem = CartItem.add(user, product, optionalCartItem.orElse(null));
@@ -66,10 +66,13 @@ public class CartService {
     }
 
 
+    // todo : 감소한 결과가 0이 되면 안된다는 로직 추가할 것
     @Transactional
-    public void changeCartItemQuantity(Long userId, CartItemQuantityChangeRequest request) {
+    public CartItem changeCartItemQuantity(Long userId, Long cartId, CartItemQuantityChangeRequest request) {
 
-        CartItem cartItem = cartItemRepository.findById(request.cartItemId())
+
+
+        CartItem cartItem = cartItemRepository.findById(cartId)
             .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "cart item"));
         if (!Objects.equals(cartItem.getUser().getId(), userId)) {
             throw new CommonException(BError.FAIL_FOR_REASON,
@@ -77,7 +80,7 @@ public class CartService {
                 "user doesn't have permission to change cart item");
         }
 
-        cartItemRepository.save(cartItem.changeQuantity(request.quantity()));
+        return cartItemRepository.save(cartItem.changeQuantity(request.quantity()));
     }
 
     @Transactional(readOnly = true)
