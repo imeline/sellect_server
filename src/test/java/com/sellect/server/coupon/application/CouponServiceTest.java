@@ -12,6 +12,8 @@ import com.sellect.server.coupon.repository.CouponRepository;
 import com.sellect.server.coupon.repository.FakeCouponRepository;
 import com.sellect.server.coupon.repository.FakeuserReceivedCouponRepository;
 import com.sellect.server.coupon.repository.UserReceivedCouponRepository;
+import com.sellect.server.product.repository.FakeProductRepository;
+import com.sellect.server.product.repository.ProductRepository;
 import java.time.LocalDate;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -28,12 +30,15 @@ class CouponServiceTest {
     CouponService couponService;
     CouponRepository couponRepository;
     UserReceivedCouponRepository userReceivedCouponRepository;
+    ProductRepository productRepository;
 
     @BeforeEach
     void setUp() {
         couponRepository = new FakeCouponRepository();
         userReceivedCouponRepository = new FakeuserReceivedCouponRepository();
-        couponService = new CouponService(couponRepository, userReceivedCouponRepository);
+        productRepository = new FakeProductRepository();
+        couponService = new CouponService(couponRepository, userReceivedCouponRepository,
+            productRepository);
     }
 
 
@@ -194,7 +199,8 @@ class CouponServiceTest {
             });
 
             //then
-            assertEquals(String.format("The coupon%s has already been registered", couponId), exception.getMessage());
+            assertEquals(String.format("The coupon%s has already been registered", couponId),
+                exception.getMessage());
         }
 
 
@@ -244,7 +250,6 @@ class CouponServiceTest {
         }
 
     }
-
 
 //    @Nested
 //    @DisplayName("쿠폰 내역 가져오기 테스트")
