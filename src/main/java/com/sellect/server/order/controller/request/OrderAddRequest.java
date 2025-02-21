@@ -7,7 +7,8 @@ import java.math.BigDecimal;
 import java.util.List;
 
 public record OrderAddRequest(
-    Long userReceivedCouponId,
+
+    // todo: 총 가격이 String 인 이유 체크
     @Positive(message = "가격은 1원 이상이어야 합니다.")
     @Pattern(regexp = "^[0-9]+$", message = "가격은 정수만 입력 가능합니다.")
     String totalPrice,
