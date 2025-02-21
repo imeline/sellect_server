@@ -67,9 +67,9 @@ public class CartService {
 
 
     @Transactional
-    public void changeCartItemQuantity(Long userId, CartItemQuantityChangeRequest request) {
+    public CartItem changeCartItemQuantity(Long userId, Long cartId, CartItemQuantityChangeRequest request) {
 
-        CartItem cartItem = cartItemRepository.findById(request.cartItemId())
+        CartItem cartItem = cartItemRepository.findById(cartId)
             .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "cart item"));
         if (!Objects.equals(cartItem.getUser().getId(), userId)) {
             throw new CommonException(BError.FAIL_FOR_REASON,
@@ -77,7 +77,7 @@ public class CartService {
                 "user doesn't have permission to change cart item");
         }
 
-        cartItemRepository.save(cartItem.changeQuantity(request.quantity()));
+        return cartItemRepository.save(cartItem.changeQuantity(request.quantity()));
     }
 
     @Transactional(readOnly = true)
