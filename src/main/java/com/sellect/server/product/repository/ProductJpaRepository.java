@@ -22,4 +22,7 @@ public interface ProductJpaRepository extends JpaRepository<ProductEntity, Long>
     @Lock(LockModeType.PESSIMISTIC_READ)
     @Query("SELECT p FROM ProductEntity p WHERE p.id = :id")
     Optional<ProductEntity> findWithLockById(@Param("id") Long id);
+
+    // 판매자 아이디로 상품 조회
+    Page<ProductEntity> findBySellerEntityId(Long sellerId, Pageable pageable);
 }

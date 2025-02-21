@@ -49,4 +49,10 @@ public class ProductRepositoryImpl implements ProductRepository {
         return productJpaRepository.findWithLockById(id)
             .map(ProductEntity::toModel);
     }
+
+    @Override
+    public Page<Product> findBySellerId(Long sellerId, Pageable pageable) {
+        return productJpaRepository.findBySellerEntityId(sellerId, pageable)
+            .map(ProductEntity::toModel);
+    }
 }
