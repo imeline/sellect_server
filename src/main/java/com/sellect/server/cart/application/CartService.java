@@ -57,7 +57,7 @@ public class CartService {
             .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "product"));
 
         // 현재 장바구니에 있는지 체크
-        Optional<CartItem> optionalCartItem = cartItemRepository.findByProductId(product.getId());
+        Optional<CartItem> optionalCartItem = cartItemRepository.findByUserIdAndProductId(user.getId(), product.getId());
 
         // 도메인 클래스에서 비즈니스 로직 다룸
         CartItem cartItem = CartItem.add(user, product, optionalCartItem.orElse(null));

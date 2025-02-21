@@ -38,8 +38,8 @@ public class CartItemRepositoryImpl implements CartItemRepository {
     }
 
     @Override
-    public Optional<CartItem> findByProductId(Long productId) {
-        return cartItemJpaRepository.findByProductEntityIdAndDeleteAtIsNull(productId)
+    public Optional<CartItem> findByUserIdAndProductId(Long userId, Long productId) {
+        return cartItemJpaRepository.findByUserEntityIdAndProductEntityIdAndDeleteAtIsNull(userId, productId)
             .map(CartItemEntity::toModel);
     }
 }

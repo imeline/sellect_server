@@ -12,5 +12,5 @@ public interface CartItemJpaRepository extends JpaRepository<CartItemEntity, Lon
         + "AND c.deleteAt IS NULL")
     List<CartItemEntity> findByUserId(Long userId);
 
-    Optional<CartItemEntity> findByProductEntityIdAndDeleteAtIsNull(Long productId);
+    Optional<CartItemEntity> findByUserEntityIdAndProductEntityIdAndDeleteAtIsNull(Long userId, Long productId);
 }
