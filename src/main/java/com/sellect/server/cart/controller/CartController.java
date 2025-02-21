@@ -76,9 +76,9 @@ public class CartController {
         );
     }
 
-    @DeleteMapping("/cart/{cartItemId}")
-    public ApiResponse<Void> deleteCartItems(@AuthUser User user, @PathVariable Long cartItemId) {
-        cartService.deleteCartItem(user.getId(), cartItemId);
+    @DeleteMapping("/carts/{cartId}")
+    public ApiResponse<Void> deleteCartItems(@AuthUser User user, @PathVariable Long cartId) {
+        cartService.deleteCartItem(user.getId(), cartId);
         return ApiResponse.ok();
     }
 }

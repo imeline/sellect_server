@@ -66,8 +66,11 @@ public class CartService {
     }
 
 
+    // todo : 감소한 결과가 0이 되면 안된다는 로직 추가할 것
     @Transactional
     public CartItem changeCartItemQuantity(Long userId, Long cartId, CartItemQuantityChangeRequest request) {
+
+
 
         CartItem cartItem = cartItemRepository.findById(cartId)
             .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "cart item"));
