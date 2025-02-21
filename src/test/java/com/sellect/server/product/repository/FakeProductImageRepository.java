@@ -28,4 +28,10 @@ public class FakeProductImageRepository implements ProductImageRepository {
     public List<ProductImage> findByProductId(Long productId) {
         return new ArrayList<>(storage.getOrDefault(productId, Collections.emptyMap()).values());
     }
+
+    // todo: MVP 이후
+    @Override
+    public ProductImage findByThumbnailImage(Long productId) {
+        return null;
+    }
 }

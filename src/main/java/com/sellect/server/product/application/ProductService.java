@@ -9,16 +9,18 @@ import com.sellect.server.common.exception.CommonException;
 import com.sellect.server.common.exception.enums.BError;
 import com.sellect.server.product.controller.request.ProductModifyRequest;
 import com.sellect.server.product.controller.request.ProductRegisterRequest;
+import com.sellect.server.product.controller.response.ProductDetailReadResponse;
 import com.sellect.server.product.controller.response.ProductModifyResponse;
 import com.sellect.server.product.controller.response.ProductMultipleRegisterResponse;
 import com.sellect.server.product.controller.response.ProductRegisterFailureResponse;
 import com.sellect.server.product.controller.response.ProductRegisterResponse;
 import com.sellect.server.product.domain.Product;
+import com.sellect.server.product.domain.ProductImage;
+import com.sellect.server.product.repository.ProductImageRepository;
 import com.sellect.server.product.repository.ProductRepository;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +36,7 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final BrandRepository brandRepository;
     private final CategoryRepository categoryRepository;
+    private final ProductImageRepository productImageRepository;
 
     @Transactional
     public ProductRegisterResponse register(
@@ -60,11 +63,14 @@ public class ProductService {
             brand,
             request.getPriceAsBigDecimal(), // String -> BigDecimal 변환
             request.name(),
+            request.description(),
             request.stock()
         ));
 
+        // todo: service 에서 service??? 추후 체크
         // 이미지 저장
-        productImageService.registerProductImage(product, request.imageContextCreateRequest(), images);
+        productImageService.registerProductImage(product, request.imageContextCreateRequest(),
+            images);
 
         return ProductRegisterResponse.from(product);
     }
@@ -119,6 +125,7 @@ public class ProductService {
                 optionalBrand.get(),
                 request.getPriceAsBigDecimal(), // String -> BigDecimal 변환
                 request.name(),
+                request.description(),
                 request.stock()
             ));
         }
@@ -138,7 +145,7 @@ public class ProductService {
 
         // 수정할 상품이 존재하는지 확인
         Product product = productRepository.findById(productId)
-            .orElseThrow(() -> new RuntimeException("상품이 존제하지 않습니다."));
+            .orElseThrow(() -> new RuntimeException("상품이 존재하지 않습니다."));
 
         // 유저의 상품이 맞는지 확인
         if (!product.getSeller().getId().equals(sellerId)) {
@@ -149,6 +156,7 @@ public class ProductService {
         Product modifiedProduct = product.modify(
             Optional.ofNullable(request.getPriceAsBigDecimal()).orElse(product.getPrice()),
             Optional.ofNullable(request.name()).orElse(product.getName()),
+            Optional.ofNullable(request.description()).orElse(product.getDescription()),
             Optional.ofNullable(request.stock()).orElse(product.getStock())
         );
 
@@ -162,7 +170,7 @@ public class ProductService {
 
         // 삭제할 상품이 존재하는지 확인
         Product product = productRepository.findById(productId)
-            .orElseThrow(() -> new RuntimeException("상품이 존제하지 않습니다."));
+            .orElseThrow(() -> new RuntimeException("상품이 존재하지 않습니다."));
 
         // 유저의 상품이 맞는지 확인
         if (!product.getSeller().getId().equals(sellerId)) {
@@ -172,4 +180,26 @@ public class ProductService {
         productRepository.save(product.remove());
     }
 
+    @Transactional(readOnly = true)
+    public ProductDetailReadResponse readDetail(Long productId) {
+        // 상품 정보 조회
+        Product product = productRepository.findById(productId)
+            .orElseThrow(() -> new RuntimeException("존재하지 않는 상품입니다."));
+
+        // todo: 일단 하나의 카ㅔ고리만 보내도록 한다. (추후 변경) List<String> or 조합해서 String 으로
+        Category category = categoryRepository.findById(product.getCategory().getId())
+            .orElseThrow(() ->
+                new RuntimeException("존재하지 않는 카테고리입니다."));
+
+        // 브랜드명 조회
+        Brand brand = brandRepository.findById(product.getBrand().getId())
+            .orElseThrow(() -> new RuntimeException("존재하지 않는 브랜드입니다."));
+
+        // 이미지들 조회
+        List<ProductImage> productImages = productImageRepository.findByProductId(productId);
+
+        // todo: JPA가 알아서 조회
+        return ProductDetailReadResponse.from(product, category, product.getSeller(), brand,
+            productImages);
+    }
 }

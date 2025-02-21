@@ -8,9 +8,5 @@ public interface BrandRepository {
 
     Optional<Brand> findById(Long brandId);
 
-    Brand findByName(String name);
-
-    List<Brand> findContainingName(String keyword);
-
-    Boolean existsByName(String name);
+    List<Brand> findAll();
 }

@@ -1,14 +1,16 @@
 package com.sellect.server.cart.repository;
 
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 public interface CartItemJpaRepository extends JpaRepository<CartItemEntity, Long> {
 
     @Query("SELECT c FROM CartItemEntity c "
-        + "WHERE c.user.id = :userId "
+        + "WHERE c.userEntity.id = :userId "
         + "AND c.deleteAt IS NULL")
     List<CartItemEntity> findByUserId(Long userId);
 
+    Optional<CartItemEntity> findByProductEntityIdAndDeleteAtIsNull(Long productId);
 }

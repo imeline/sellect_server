@@ -18,4 +18,5 @@ public interface AutoCompleteKeywordJpaRepository extends JpaRepository<AutoComp
 
     Optional<AutoCompleteKeywordEntity> findByKeywordAndDeleteAtIsNull(String keyword);
 
+    Optional<AutoCompleteKeywordEntity> findByKeyword(String keyword);
 }

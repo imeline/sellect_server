@@ -11,12 +11,14 @@ import com.sellect.server.coupon.repository.UserReceivedCouponRepository;
 import com.sellect.server.order.controller.request.OrderAddRequest;
 import com.sellect.server.order.controller.response.OrderDetailGetResponse;
 import com.sellect.server.order.controller.response.OrderGetResponse;
+import com.sellect.server.order.controller.response.OrderItemPendingReadResponse;
 import com.sellect.server.order.domain.OrderItem;
 import com.sellect.server.order.domain.Orders;
 import com.sellect.server.order.repository.OrderItemRepository;
 import com.sellect.server.order.repository.OrdersRepository;
 import com.sellect.server.order.repository.entity.OrderStatus;
 import com.sellect.server.product.domain.Product;
+import com.sellect.server.product.repository.ProductImageRepository;
 import com.sellect.server.product.repository.ProductRepository;
 import java.math.BigDecimal;
 import java.util.HashSet;
@@ -41,6 +43,49 @@ public class OrderService {
     private final ProductRepository productRepository;
     private final CartItemRepository cartRepository;
     private final UserReceivedCouponRepository userReceivedCouponRepository;
+    private final ProductImageRepository productImageRepository;
+
+    @Transactional(readOnly = true)
+    public List<OrderItemPendingReadResponse> readPending(User user, Long orderId) {
+        // 주문이 실제로 존재하는지 체크
+        Orders order = ordersRepository.findById(orderId)
+            .orElseThrow(() -> new RuntimeException("존재하지 않는 주문입니다."));
+
+        // 유저의 주문이 맞는지 체크
+        if (!order.getUser().getId().equals(user.getId())) {
+            throw new RuntimeException("해당 주문에 접근 권한이 없습니다.");
+        }
+
+        // 결제 대기 주문인지 체크
+        if (!order.getStatus().equals(OrderStatus.PENDING)) {
+            throw new RuntimeException("결제 대기 주문이 아닙니다.");
+        }
+
+        List<OrderItem> orders = orderItemRepository.findAllByOrdersId(orderId);
+
+        // 주문에 상품이 하나도 없는 경우라면 조회 x
+        if (orders.isEmpty()) {
+            throw new RuntimeException("올바르지 않은 orderId 입니다.");
+        }
+
+        // todo: N+1 발생
+        // todo: BrandRepository를 Response에서 brandName 가져올 때 JPA에서 조회를 통해 가져옴
+        // todo: N+1 문제 발생 (일단 임시로 구현)
+        return orders.stream()
+            .map(orderItem -> {
+                Product product = productRepository.findById(orderItem.getProduct().getId())
+                    .orElseThrow(() -> new RuntimeException("유효하지 않은 상품 번호입니다."));
+
+                // 대표 이미지 가져오기 (한 개만)
+                String thumbnailImageUrl = productImageRepository.findByThumbnailImage(
+                        product.getId())
+                    .getImageUrl();
+
+                return OrderItemPendingReadResponse.from(orderItem, product, thumbnailImageUrl);
+            })
+            .toList();
+    }
+
 
     @Transactional
     public Orders registerPendingOrder(User user, OrderAddRequest request) {
@@ -177,7 +222,7 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
-    protected List<OrderItem> getOrderItemsByOrderId(Long orderId) {
+    public List<OrderItem> getOrderItemsByOrderId(Long orderId) {
         List<OrderItem> orderItems = orderItemRepository.findAllByOrdersId(orderId);
         // 주문 아이템이 없을 경우
         if (orderItems.isEmpty()) {

@@ -12,7 +12,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import lombok.AccessLevel;
@@ -34,17 +34,17 @@ public class ProductEntity extends BaseTimeEntity {
     private Long id;
 
     // todo: 관계 체크
-    @OneToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "seller_id") // ERD 기준
     private UserEntity sellerEntity;
 
     // todo: 관계 체크
-    @OneToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
     private CategoryEntity categoryEntity;
 
     // todo: 관계 체크
-    @OneToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "brand_id")
     private BrandEntity brandEntity;
 
@@ -53,6 +53,9 @@ public class ProductEntity extends BaseTimeEntity {
 
     @Column(nullable = false, length = 255)
     private String name;
+
+    @Column(length = 5000)
+    private String description;
 
     @Column(nullable = false)
     private Integer stock;
@@ -66,6 +69,7 @@ public class ProductEntity extends BaseTimeEntity {
             .brandEntity(BrandEntity.from(product.getBrand()))
             .price(product.getPrice())
             .name(product.getName())
+            .description(product.getDescription())
             .stock(product.getStock())
             .createdAt(product.getCreatedAt()) // BaseTimeEntity 필드 포함
             .updatedAt(product.getUpdatedAt()) // BaseTimeEntity 필드 포함
@@ -82,6 +86,7 @@ public class ProductEntity extends BaseTimeEntity {
             .brand(this.brandEntity.toModel())
             .price(this.price)
             .name(this.name)
+            .description(this.description)
             .stock(this.stock)
             .createdAt(this.getCreatedAt()) // BaseTimeEntity 필드 포함
             .updatedAt(this.getUpdatedAt()) // BaseTimeEntity 필드 포함

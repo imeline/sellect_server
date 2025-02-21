@@ -29,7 +29,7 @@ public class FakeCategoryRepository implements CategoryRepository {
             .findFirst();
     }
 
-    public List<Category> findAll() {
+    public List<Category> findAllOrderByDepth() {
         return new ArrayList<>(data);
     }
 

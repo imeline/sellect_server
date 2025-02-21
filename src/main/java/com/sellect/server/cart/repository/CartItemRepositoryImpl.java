@@ -13,8 +13,8 @@ public class CartItemRepositoryImpl implements CartItemRepository {
     private final CartItemJpaRepository cartItemJpaRepository;
 
     @Override
-    public void save(CartItem cartItem) {
-        cartItemJpaRepository.save(CartItemEntity.from(cartItem));
+    public CartItem save(CartItem cartItem) {
+        return cartItemJpaRepository.save(CartItemEntity.from(cartItem)).toModel();
     }
 
     @Override
@@ -35,5 +35,11 @@ public class CartItemRepositoryImpl implements CartItemRepository {
         cartItemJpaRepository.saveAll(cartItems.stream()
             .map(CartItemEntity::from)
             .toList());
+    }
+
+    @Override
+    public Optional<CartItem> findByProductId(Long productId) {
+        return cartItemJpaRepository.findByProductEntityIdAndDeleteAtIsNull(productId)
+            .map(CartItemEntity::toModel);
     }
 }
