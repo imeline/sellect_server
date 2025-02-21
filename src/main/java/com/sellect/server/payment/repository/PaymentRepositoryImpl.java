@@ -2,6 +2,7 @@ package com.sellect.server.payment.repository;
 
 import com.sellect.server.payment.domain.Payment;
 import com.sellect.server.payment.repository.entity.PaymentEntity;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -20,9 +21,9 @@ public class PaymentRepositoryImpl implements PaymentRepository {
     }
 
     @Override
-    public Payment findByPid(String pid) {
-        PaymentEntity paymentEntity = paymentJpaRepository.findByPid(pid);
-        return paymentEntity.toModel();
+    public Optional<Payment> findByPid(String pid) {
+        Optional<PaymentEntity> paymentEntity = paymentJpaRepository.findByPid(pid);
+        return paymentEntity.map(PaymentEntity::toModel);
     }
 
     @Override

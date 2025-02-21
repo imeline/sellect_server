@@ -1,10 +1,12 @@
 package com.sellect.server.coupon.repository;
 
 import com.sellect.server.coupon.domain.Coupon;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.ReentrantLock;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 
 public class FakeCouponRepository implements CouponRepository {
 
@@ -32,5 +34,10 @@ public class FakeCouponRepository implements CouponRepository {
     @Override
     public Optional<Coupon> findById(Long couponId) {
         return Optional.ofNullable(storage.get(couponId));
+    }
+
+    @Override
+    public Page<Coupon> findAllActiveCouponList(PageRequest request) {
+        return Page.empty();
     }
 }

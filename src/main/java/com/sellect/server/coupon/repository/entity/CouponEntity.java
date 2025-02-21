@@ -32,7 +32,6 @@ public class CouponEntity extends BaseTimeEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     private UserEntity seller;
     private Integer discountCost;
-    @Version
     private Integer quantity;
     private LocalDate expirationDate;
 

@@ -122,7 +122,7 @@ class PaymentServiceTest {
             paymentService.approvePayment("test-pid", "test-token");
 
             // Assert
-            Payment approvedPayment = paymentRepository.findByPid("test-pid");
+            Payment approvedPayment = paymentRepository.findByPid("test-pid").get();
             assertNotNull(approvedPayment);
             assertEquals("test-pid", approvedPayment.getPid());
         }
@@ -168,7 +168,7 @@ class PaymentServiceTest {
             paymentService.approvePayment("test-pid", "test-token");
 
             // then
-            Payment approvedPayment = paymentRepository.findByPid("test-pid");
+            Payment approvedPayment = paymentRepository.findByPid("test-pid").get();
             assertNotNull(approvedPayment);
             assertEquals("test-pid", approvedPayment.getPid());
         }
