@@ -27,7 +27,7 @@ public class UserAuthRepositoryImpl implements UserAuthRepository {
 
     @Override
     public Optional<UserAuth> findByEmail(String email) {
-        UserAuthEntity userAuthEntity = userAuthJpaRepository.findByEmail(email)
+        UserAuthEntity userAuthEntity = userAuthJpaRepository.findByEmailAndDeleteAtIsNull(email)
             // todo: User not found exception
             .orElseThrow(() -> new IllegalArgumentException("User not found"));
         return Optional.of(userAuthEntity.toModel());
