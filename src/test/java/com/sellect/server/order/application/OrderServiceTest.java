@@ -73,7 +73,6 @@ class OrderServiceTest {
                 .build());
 
             OrderAddRequest request = new OrderAddRequest(
-                1L,
                 "200000",
                 List.of(
                     new OrderItemAddRequest(1L, "10000", 10),
