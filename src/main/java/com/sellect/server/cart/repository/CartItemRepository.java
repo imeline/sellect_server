@@ -14,5 +14,5 @@ public interface CartItemRepository {
 
     void saveAll(List<CartItem> cartItems);
 
-    Optional<CartItem> findByProductId(Long productId);
+    Optional<CartItem> findByUserIdAndProductId(Long userId, Long productId);
 }

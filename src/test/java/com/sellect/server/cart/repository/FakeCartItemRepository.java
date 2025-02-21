@@ -59,7 +59,7 @@ public class FakeCartItemRepository implements CartItemRepository {
 
     // todo: MVP 개발 후에 테스트 코드 작성 시 구현
     @Override
-    public Optional<CartItem> findByProductId(Long productId) {
+    public Optional<CartItem> findByUserIdAndProductId(Long userId, Long productId) {
         throw new RuntimeException("아직 fakeRepository 구현하지 않음");
     }
 
