@@ -12,6 +12,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -20,7 +21,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private static final String[] AUTH_WHITELIST = {
+    private static final String[] SWAGGER_PATHS = {
         "/swagger-resources/**", "/swagger-ui/**", "/v3/api-docs/**"
     };
     private static final String[] NO_JWT_PATHS = {
@@ -60,13 +61,28 @@ public class SecurityConfig {
         http = commonConfig(http);
         http
             .securityMatcher(request -> Arrays.stream(NO_JWT_PATHS)
-                .noneMatch(path -> path.equals(request.getRequestURI())))
+                .noneMatch(path -> path.equals(request.getRequestURI())) &&
+                Arrays.stream(SWAGGER_PATHS)
+                    .noneMatch(path -> new AntPathMatcher().match(path, request.getRequestURI())))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers(AUTH_WHITELIST).permitAll()
                 .requestMatchers(PUBLIC_PATHS).permitAll()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+        return http.build();
+    }
+
+    @Order(3)
+    @Bean
+    public SecurityFilterChain swaggerFilterChain(HttpSecurity http) throws Exception {
+        http = commonConfig(http);
+        http
+            .securityMatcher(request -> Arrays.stream(SWAGGER_PATHS)
+                .anyMatch(path -> new AntPathMatcher().match(path, request.getRequestURI())))
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers(SWAGGER_PATHS).permitAll()
+                .anyRequest().denyAll()
+            );
         return http.build();
     }
 
