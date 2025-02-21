@@ -24,12 +24,22 @@ public class SecurityConfig {
     private static final String[] SWAGGER_PATHS = {
         "/swagger-resources/**", "/swagger-ui/**", "/v3/api-docs/**"
     };
+
+    // 인증 x JWT x
     private static final String[] NO_JWT_PATHS = {
-        "/api/v1/auth/login", "/api/v1/auth/signup", "/api/v1/auth/seller/signup"
+        "/api/v1/auth/signup",
+        "/api/v1/auth/login",
+        "/api/v1/auth/seller/signup",
     };
+
+    // 인증 x JWT o
     private static final String[] PUBLIC_PATHS = {
-        "/api/v1/payment/success/**", "/api/v1/payment/fail", "/api/v1/payment/cancel",
-        "/api/v1/coupon/actives", "/api/v1/auth/seller/login"
+        "/api/v1/payment/success/**",
+        "/api/v1/payment/fail",
+        "/api/v1/payment/cancel",
+        "/api/v1/coupon/actives",
+        "/api/v1/search/**",
+        "/api/v1/products/**"
     };
     private final JwtFilter jwtFilter;
 
