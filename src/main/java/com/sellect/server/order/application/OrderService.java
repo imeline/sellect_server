@@ -235,9 +235,10 @@ public class OrderService {
         if (!coupon.getUser().getId().equals(user.getId())) {
             throw new CommonException(BError.NOT_VALID, "쿠폰 소유자가 아닙니다.");
         }
-        // 쿠폰 적용
+        // 주문에 쿠폰 정보 저장
         ordersRepository.save(order.updateCoupon(coupon));
-        userReceivedCouponRepository.save(coupon.useCoupon());
+        // 쿠폰 사용 처리는 주문 확정 후 적용
+        //userReceivedCouponRepository.save(coupon.useCoupon());
     }
 
     @Transactional(readOnly = true)
