@@ -46,7 +46,6 @@ public class CartController {
      * 장바구니 수량 +1 추가 (기존 장바구니에 있을 경우)
      * */
     @PutMapping("/cart")
-
     public ApiResponse<CardAddItemResponse> addCartItem(
         @AuthUser User user,
         @RequestBody CartItemAddRequest request) {
@@ -74,6 +73,12 @@ public class CartController {
                 .map(CartItemRetrieveResponse::from)
                 .toList()
         );
+    }
+
+    @GetMapping("/carts/count")
+    public ApiResponse<Long> getTotalCount(@AuthUser User user) {
+        Long result = cartService.getTotalCount(user.getId());
+        return ApiResponse.ok(result);
     }
 
     @DeleteMapping("/carts/{cartId}")

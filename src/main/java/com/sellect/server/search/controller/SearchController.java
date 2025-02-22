@@ -27,7 +27,7 @@ public class SearchController {
 
     @GetMapping("/auto-complete")
     public ApiResponse<AutoCompleteResponse> autoCompleteSearch(
-        @RequestParam(value = "q") String query) {
+        @RequestParam(value = "query") String query) {
         return ApiResponse.ok(
             new AutoCompleteResponse(autoCompleteService.getAutoCompleteResult(query)));
     }
