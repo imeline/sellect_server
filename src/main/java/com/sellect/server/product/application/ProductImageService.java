@@ -27,14 +27,11 @@ public class ProductImageService {
     private final ProductImageRepository productImageRepository;
 
     @Transactional
-    public void registerProductImage(Product product, ImageContextCreateRequest request, List<MultipartFile> images) {
-        images.forEach(image -> {
-            String fileName = generateFileName(image.getName(),
-                Objects.requireNonNull(image.getOriginalFilename()));
-            storageService.store(image, fileName);
-            ProductImage productImage = ProductImage.register(product, storageService.loadAsPath(fileName), request);
-            productImageRepository.save(productImage, product);
-        });
+    public void registerProductImage(Product product, ImageContextCreateRequest request, MultipartFile image) {
+        String fileName = generateFileName(image);
+        storageService.store(image, fileName);
+        ProductImage productImage = ProductImage.register(product, storageService.loadAsPath(fileName), request);
+        productImageRepository.save(productImage, product);
     }
 
     @Transactional
@@ -69,8 +66,7 @@ public class ProductImageService {
         images.forEach(image -> {
             // TODO: 클라이언트 측에서 input 태그의 name 을 uuid 로 설정해야만 정상 동작하는데,
             //  추후 클라이언트에 의존적이지 않은 방법으로 수정해야 함
-            String newFileName = generateFileName(image.getName(),
-                Objects.requireNonNull(image.getOriginalFilename()));
+            String newFileName = generateFileName(image);
             newFileNames.put(image.getName(), newFileName);
             storageService.store(image, newFileName);
         });
@@ -90,8 +86,12 @@ public class ProductImageService {
         });
     }
 
-    private String generateFileName(String fileName, String originalFileName) {
-        String fileExtension = originalFileName.substring(originalFileName.lastIndexOf("."));
-        return fileName + "_" + System.currentTimeMillis() + fileExtension;
+    private String generateFileName(MultipartFile image) {
+        String filename = image.getOriginalFilename();
+        assert filename != null;
+
+        String identifier = filename.substring(0, filename.lastIndexOf("."));
+        String fileExtension = filename.substring(filename.lastIndexOf("."));
+        return identifier + "_" + System.currentTimeMillis() + fileExtension;
     }
 }

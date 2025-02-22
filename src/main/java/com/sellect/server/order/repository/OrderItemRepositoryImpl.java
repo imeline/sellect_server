@@ -2,6 +2,7 @@ package com.sellect.server.order.repository;
 
 import com.sellect.server.order.domain.OrderItem;
 import com.sellect.server.order.repository.entity.OrderItemEntity;
+import java.math.BigDecimal;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -32,5 +33,15 @@ public class OrderItemRepositoryImpl implements OrderItemRepository {
             orderId);
 
         return orderItemEntities.stream().map(OrderItemEntity::toModel).toList();
+    }
+
+    @Override
+    public BigDecimal calculateTotalSalesByProductId(Long productId) {
+        return orderItemJpaRepository.calculateTotalSalesByProductId(productId);
+    }
+
+    @Override
+    public Integer countCompleteOrdersByProductId(Long productId) {
+        return orderItemJpaRepository.countCompletedOrdersByProductId(productId);
     }
 }

@@ -1,6 +1,7 @@
 package com.sellect.server.order.repository;
 
 import com.sellect.server.order.domain.OrderItem;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,6 +35,18 @@ public class FakeOrderItemRepository implements OrderItemRepository {
         return data.stream()
             .filter(item -> item.getOrders().getId().equals(orderId))
             .toList();
+    }
+
+    @Override
+    public BigDecimal calculateTotalSalesByProductId(Long orderItemId) {
+        // TODO: Implement this method
+        return null;
+    }
+
+    @Override
+    public Integer countCompleteOrdersByProductId(Long productId) {
+        // TODO: Implement this method
+        return null;
     }
 
     public void clear() {
