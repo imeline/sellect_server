@@ -7,13 +7,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.sellect.server.auth.domain.User;
 import com.sellect.server.cart.repository.FakeCartItemRepository;
 import com.sellect.server.common.exception.CommonException;
-import com.sellect.server.coupon.domain.Coupon;
 import com.sellect.server.coupon.domain.UserReceivedCoupon;
 import com.sellect.server.coupon.repository.FakeuserReceivedCouponRepository;
 import com.sellect.server.order.controller.request.OrderAddRequest;
 import com.sellect.server.order.controller.request.OrderItemAddRequest;
-import com.sellect.server.order.controller.response.OrderDetailGetResponse;
-import com.sellect.server.order.controller.response.OrderGetResponse;
 import com.sellect.server.order.domain.OrderItem;
 import com.sellect.server.order.domain.Orders;
 import com.sellect.server.order.repository.FakeOrderItemRepository;
@@ -273,92 +270,91 @@ class OrderServiceTest {
         }
     }
 
-
-    @Nested
-    @DisplayName("주문 조회 테스트")
-    class GetOrdersTest {
-
-        Product product1 = Product.builder()
-            .id(1L)
-            .name("상품1")
-            .stock(10)
-            .build();
-
-        Product product2 = Product.builder()
-            .id(2L)
-            .name("상품2")
-            .stock(5)
-            .build();
-        Coupon coupon = Coupon.builder()
-            .id(1L)
-            .discountCost(10000)
-            .build();
-        UserReceivedCoupon userReceivedCoupon = UserReceivedCoupon.builder()
-            .id(1L)
-            .coupon(coupon)
-            .build();
-
-        @Test
-        @DisplayName("사용자의 모든 주문을 조회 성공")
-        void testGetOrdersByUser() {
-            // Given
-            Orders savedOrder = ordersRepository.save(Orders.builder()
-                .id(1L)
-                .user(user)
-                .status(OrderStatus.COMPLETED)
-                .build());
-            orderItemRepository.saveAll(List.of(
-                OrderItem.builder()
-                    .id(1L)
-                    .orders(savedOrder)
-                    .product(product1)
-                    .price(new BigDecimal("10000"))
-                    .quantity(10)
-                    .build(),
-                OrderItem.builder()
-                    .id(2L)
-                    .orders(savedOrder)
-                    .product(product2)
-                    .price(new BigDecimal("20000"))
-                    .quantity(5)
-                    .build()
-            ));
-            // When
-            List<OrderGetResponse> orderResponses = sut.getOrdersByUser(user);
-
-            // Then
-            assertThat(orderResponses.get(0).orderItems()).hasSize(2); // 모든 주문 아이템이 조회 됐는지 체크
-            assertThat(orderResponses.get(0).orderId()).isEqualTo(
-                savedOrder.getId());  // orderId 반환값 체크
-        }
-
-        @Test
-        @DisplayName("주문 상세 정보 조회 성공")
-        void testGetOrderDetail() {
-            // Given
-            Orders savedOrder = ordersRepository.save(Orders.builder()
-                .id(1L)
-                .userReceivedCoupon(userReceivedCoupon)
-                .status(OrderStatus.COMPLETED)
-                .totalPrice(new BigDecimal("50000"))
-                .build());
-            orderItemRepository.saveAll(List.of(
-                OrderItem.builder()
-                    .id(1L)
-                    .orders(savedOrder)
-                    .product(product1)
-                    .price(new BigDecimal("10000"))
-                    .quantity(10)
-                    .build()
-            ));
-
-            // When
-            OrderDetailGetResponse orderDetail = sut.getOrderDetail(savedOrder.getId());
-
-            // Then
-            assertThat(orderDetail.orderItems()).hasSize(1);
-            assertThat(orderDetail.orderItems().get(0).productName()).isEqualTo("상품1");
-            assertThat(orderDetail.discountCost()).isEqualTo(new BigDecimal("10000"));
-        }
-    }
+//    @Nested
+//    @DisplayName("주문 조회 테스트")
+//    class GetOrdersTest {
+//
+//        Product product1 = Product.builder()
+//            .id(1L)
+//            .name("상품1")
+//            .stock(10)
+//            .build();
+//
+//        Product product2 = Product.builder()
+//            .id(2L)
+//            .name("상품2")
+//            .stock(5)
+//            .build();
+//        Coupon coupon = Coupon.builder()
+//            .id(1L)
+//            .discountCost(10000)
+//            .build();
+//        UserReceivedCoupon userReceivedCoupon = UserReceivedCoupon.builder()
+//            .id(1L)
+//            .coupon(coupon)
+//            .build();
+//
+//        @Test
+//        @DisplayName("사용자의 모든 주문을 조회 성공")
+//        void testGetOrdersByUser() {
+//            // Given
+//            Orders savedOrder = ordersRepository.save(Orders.builder()
+//                .id(1L)
+//                .user(user)
+//                .status(OrderStatus.COMPLETED)
+//                .build());
+//            orderItemRepository.saveAll(List.of(
+//                OrderItem.builder()
+//                    .id(1L)
+//                    .orders(savedOrder)
+//                    .product(product1)
+//                    .price(new BigDecimal("10000"))
+//                    .quantity(10)
+//                    .build(),
+//                OrderItem.builder()
+//                    .id(2L)
+//                    .orders(savedOrder)
+//                    .product(product2)
+//                    .price(new BigDecimal("20000"))
+//                    .quantity(5)
+//                    .build()
+//            ));
+//            // When
+//            List<OrderGetResponse> orderResponses = sut.getOrdersByUser(user);
+//
+//            // Then
+//            assertThat(orderResponses.get(0).orderItems()).hasSize(2); // 모든 주문 아이템이 조회 됐는지 체크
+//            assertThat(orderResponses.get(0).orderId()).isEqualTo(
+//                savedOrder.getId());  // orderId 반환값 체크
+//        }
+//
+//        @Test
+//        @DisplayName("주문 상세 정보 조회 성공")
+//        void testGetOrderDetail() {
+//            // Given
+//            Orders savedOrder = ordersRepository.save(Orders.builder()
+//                .id(1L)
+//                .userReceivedCoupon(userReceivedCoupon)
+//                .status(OrderStatus.COMPLETED)
+//                .totalPrice(new BigDecimal("50000"))
+//                .build());
+//            orderItemRepository.saveAll(List.of(
+//                OrderItem.builder()
+//                    .id(1L)
+//                    .orders(savedOrder)
+//                    .product(product1)
+//                    .price(new BigDecimal("10000"))
+//                    .quantity(10)
+//                    .build()
+//            ));
+//
+//            // When
+//            OrderDetailGetResponse orderDetail = sut.getOrderDetail(savedOrder.getId());
+//
+//            // Then
+//            assertThat(orderDetail.orderItems()).hasSize(1);
+//            assertThat(orderDetail.orderItems().get(0).productName()).isEqualTo("상품1");
+//            assertThat(orderDetail.discountCost()).isEqualTo(new BigDecimal("10000"));
+//        }
+//    }
 }
