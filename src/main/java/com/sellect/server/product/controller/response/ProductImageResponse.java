@@ -5,21 +5,17 @@ import lombok.Builder;
 
 @Builder
 public record ProductImageResponse(
-    Long id,
+    Long productImageId,
     String imageUrl,
-    boolean representative,
-    String uuid,
-    String prev,
-    String next
+    Integer sequence,
+    boolean representative
 ) {
     public static ProductImageResponse from(ProductImage productImage) {
         return ProductImageResponse.builder()
-            .id(productImage.getId())
+            .productImageId(productImage.getId())
             .imageUrl(productImage.getImageUrl())
+            .sequence(productImage.getSequence())
             .representative(productImage.isRepresentative())
-            .uuid(productImage.getUuid())
-            .prev(productImage.getPrev())
-            .next(productImage.getNext())
             .build();
 
     }

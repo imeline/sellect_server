@@ -41,44 +41,40 @@ public class ProductImageService {
         List<MultipartFile> images) {
 
         Long productId = request.productId();
-        List<String> toDelete = request.toDelete();
-        List<ImageContextUpdateRequest> toUpdate = request.toUpdate();
+        List<Long> toDelete = request.productImageIdsToDelete();
+        List<ImageContextUpdateRequest> toUpdate = request.productImagesToUpdate();
 
         Product product = productRepository.findById(productId)
             .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "product"));
 
         if (!Objects.equals(product.getSeller().getId(), sellerId)) {
-            throw new CommonException(BError.FAIL_FOR_REASON,
-                "modify product images",
-                "seller doesn't have permission to modify product images");
+            throw new CommonException(BError.ACCESS_DENIED, "product");
         }
 
         // 상품 이미지 삭제
-        toDelete.forEach(uuid -> {
-            ProductImage productImage = productImageRepository.findByProductIdAndUuid(productId, uuid)
+        toDelete.forEach(productImageId -> {
+            ProductImage productImage = productImageRepository.findByProductImageId(productImageId)
                 .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "product image"));
             productImageRepository.save(productImage.remove(), product);
         });
 
-
-        // 상품 이미지 추가
+        // 새로운 상품 이미지를 이미지 저장소에 저장
         Map<String, String> newFileNames = new HashMap<>();
         images.forEach(image -> {
-            // TODO: 클라이언트 측에서 input 태그의 name 을 uuid 로 설정해야만 정상 동작하는데,
-            //  추후 클라이언트에 의존적이지 않은 방법으로 수정해야 함
             String newFileName = generateFileName(image);
-            newFileNames.put(image.getName(), newFileName);
+            newFileNames.put(Objects.requireNonNull(image.getOriginalFilename())
+                .substring(0, image.getOriginalFilename().lastIndexOf(".")), newFileName);
             storageService.store(image, newFileName);
         });
 
-        // 상품 이미지 수정 (이미지 순서 변경)
+        // 상품 이미지 수정 (이미지 순서 변경 및 새로운 이미지 DB에 추가)
         toUpdate.forEach(updateRequest -> {
             if (updateRequest.isNewImage()) {
-                String imageUrl = storageService.loadAsPath(newFileNames.get(updateRequest.target()));
+                String imageUrl = storageService.loadAsPath(newFileNames.get(updateRequest.uuid()));
                 ProductImage productImage = ProductImage.registerWhenUpdate(product, imageUrl, updateRequest);
                 productImageRepository.save(productImage, product);
             } else {
-                ProductImage productImage = productImageRepository.findByProductIdAndUuid(productId, updateRequest.target())
+                ProductImage productImage = productImageRepository.findByProductImageId(updateRequest.productImageId())
                     .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "product image"));
                 ProductImage updatedProductImage = productImage.update(updateRequest);
                 productImageRepository.save(updatedProductImage, product);

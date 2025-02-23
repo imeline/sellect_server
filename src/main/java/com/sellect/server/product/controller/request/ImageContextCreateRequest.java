@@ -4,9 +4,8 @@ import lombok.Builder;
 
 @Builder
 public record ImageContextCreateRequest(
-    String target,
-    String prev,
-    String next,
+    Integer sequence,
+    String uuid,
     boolean isRepresentative
 ) {
 
