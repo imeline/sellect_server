@@ -8,18 +8,9 @@ import org.springframework.data.repository.query.Param;
 
 public interface ProductImageJpaRepository extends JpaRepository<ProductImageEntity, Long> {
 
-    @Query("SELECT p FROM ProductImageEntity p "
-        + "WHERE p.productEntity.id = :productId "
-        + "AND p.uuid = :uuid "
-        + "AND p.deleteAt IS NULL")
-    Optional<ProductImageEntity> findByProductIdAndUuid(
-        @Param("productId") Long productId,
-        @Param("uuid") String uuid);
+    Optional<ProductImageEntity> findByIdAndDeleteAtIsNull(Long id);
 
-    @Query("SELECT p FROM ProductImageEntity p "
-        + "WHERE p.productEntity.id = :productId "
-        + "AND p.deleteAt IS NULL")
-    List<ProductImageEntity> findByProductId(@Param("productId") Long productId);
+    List<ProductImageEntity> findByProductEntityIdAndDeleteAtIsNull(@Param("productId") Long productId);
 
     ProductImageEntity findFirstByProductEntityIdAndRepresentativeIsTrueAndDeleteAtIsNull(
         Long productId)

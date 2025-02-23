@@ -4,9 +4,9 @@ import lombok.Builder;
 
 @Builder
 public record ImageContextUpdateRequest(
-    String target,
-    String prev,
-    String next,
+    Long productImageId,
+    Integer sequence,
+    String uuid,
     boolean isRepresentative,
     boolean isNewImage
 ) {

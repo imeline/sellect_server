@@ -12,7 +12,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -42,9 +41,7 @@ public class ProductImageEntity extends BaseTimeEntity {
     @Column(nullable = false)
     private boolean representative;
 
-    private String uuid;
-    private String prev;
-    private String next;
+    private Integer sequence;
 
     public static ProductImageEntity from(ProductImage productImage, Product product) {
         return ProductImageEntity.builder()
@@ -52,9 +49,7 @@ public class ProductImageEntity extends BaseTimeEntity {
             .productEntity(ProductEntity.from(product))
             .imageUrl(productImage.getImageUrl())
             .representative(productImage.isRepresentative())
-            .uuid(productImage.getUuid())
-            .prev(productImage.getPrev())
-            .next(productImage.getNext())
+            .sequence(productImage.getSequence())
             .createdAt(productImage.getCreatedAt())
             .updatedAt(productImage.getUpdatedAt())
             .deleteAt(productImage.getDeleteAt())
@@ -67,9 +62,7 @@ public class ProductImageEntity extends BaseTimeEntity {
             .product(this.productEntity.toModel())
             .imageUrl(this.imageUrl)
             .representative(this.representative)
-            .uuid(this.uuid)
-            .prev(this.prev)
-            .next(this.next)
+            .sequence(this.sequence)
             .createdAt(this.getCreatedAt())
             .updatedAt(this.getUpdatedAt())
             .deleteAt(this.getDeleteAt())

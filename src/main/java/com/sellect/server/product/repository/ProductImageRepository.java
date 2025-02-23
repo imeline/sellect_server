@@ -9,8 +9,7 @@ public interface ProductImageRepository {
 
     void save(ProductImage productImage, Product product);
 
-    // todo: uuid 는 받는 이유가 궁금합니다.
-    Optional<ProductImage> findByProductIdAndUuid(Long productId, String uuid);
+    Optional<ProductImage> findByProductImageId(Long productId);
 
     List<ProductImage> findByProductId(Long productId);
 

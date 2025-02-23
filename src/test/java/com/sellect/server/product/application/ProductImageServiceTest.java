@@ -47,24 +47,19 @@ class ProductImageServiceTest {
         // productImage1 -> productImage2 -> productImage3 (순서 보장)
         ProductImage productImage1 = ProductImage.builder()
             .id(1L)
-            .uuid("uuid1")
-            .next("uuid2")
+            .sequence(1)
             .imageUrl("image-url1")
             .product(product)
             .build();
         ProductImage productImage2 = ProductImage.builder()
-            .id(1L)
-            .uuid("uuid2")
-            .prev("uuid1")
-            .next("uuid3")
+            .id(2L)
+            .sequence(2)
             .imageUrl("image-url2")
             .product(product)
             .build();
         ProductImage productImage3 = ProductImage.builder()
-            .id(1L)
-            .uuid("uuid3")
-            .prev("uuid2")
-            .next("uuid4")
+            .id(3L)
+            .sequence(3)
             .imageUrl("image-url3")
             .product(product)
             .build();
@@ -85,23 +80,36 @@ class ProductImageServiceTest {
             // Given
             ProductImageModifyRequest request = ProductImageModifyRequest.builder()
                 .productId(productId)
-                .toDelete(List.of("uuid1"))
-                .toUpdate(List.of(ImageContextUpdateRequest.builder()
-                    .target("uuid2")
-                    .prev(null)
-                    .next("uuid3")
-                    .build()))
+                .productImageIdsToDelete(List.of(1L))
+                .productImagesToUpdate(List.of(
+                    ImageContextUpdateRequest.builder()
+                        .productImageId(2L)
+                        .sequence(1)
+                        .isNewImage(false)
+                        .isRepresentative(true)
+                        .build(),
+                    ImageContextUpdateRequest.builder()
+                        .productImageId(3L)
+                        .sequence(2)
+                        .isNewImage(false)
+                        .isRepresentative(false)
+                        .build()))
                 .build();
 
             // When
             sut.modifyProductImages(sellerId, request, Collections.emptyList());
 
             // Then
-            assertThat(productImageRepository.findByProductIdAndUuid(productId, "uuid1")).isEmpty();
-            assertThat(productImageRepository.findByProductIdAndUuid(productId, "uuid2"))
+            assertThat(productImageRepository.findByProductImageId(1L)).isEmpty();
+            assertThat(productImageRepository.findByProductImageId(2L))
                 .hasValueSatisfying(image -> {
-                    assertThat(image.getPrev()).isNull();
-                    assertThat(image.getNext()).isEqualTo("uuid3");
+                    assertThat(image.getSequence()).isEqualTo(1);
+                    assertThat(image.isRepresentative()).isTrue();
+                });
+            assertThat(productImageRepository.findByProductImageId(3L))
+                .hasValueSatisfying(image -> {
+                    assertThat(image.getSequence()).isEqualTo(2);
+                    assertThat(image.isRepresentative()).isFalse();
                 });
         }
 
@@ -111,50 +119,52 @@ class ProductImageServiceTest {
             // Given
             String newImageUuid = "new-image-uuid";
             MultipartFile newImage = mock(MultipartFile.class);
-            given(newImage.getName()).willReturn(newImageUuid);
-            given(newImage.getOriginalFilename()).willReturn("new-image.jpg");
+            given(newImage.getOriginalFilename()).willReturn("new-image-uuid.jpg");
 
             ProductImageModifyRequest request = ProductImageModifyRequest.builder()
                 .productId(productId)
-                .toDelete(List.of("uuid2"))
-                .toUpdate(List.of(
+                .productImageIdsToDelete(List.of(2L))
+                .productImagesToUpdate(List.of(
                     ImageContextUpdateRequest.builder()
-                        .target("uuid1")
-                        .next(newImageUuid)
+                        .productImageId(1L)
+                        .sequence(1)
+                        .isNewImage(false)
+                        .isRepresentative(true)
                         .build(),
                     ImageContextUpdateRequest.builder()
-                        .target(newImageUuid)
-                        .prev("uuid1")
-                        .next("uuid3")
+                        .uuid(newImageUuid)
+                        .sequence(2)
                         .isNewImage(true)
+                        .isRepresentative(false)
                         .build(),
                     ImageContextUpdateRequest.builder()
-                        .target("uuid3")
-                        .prev(newImageUuid)
-                        .build()
-
-                ))
+                        .productImageId(3L)
+                        .sequence(3)
+                        .isNewImage(false)
+                        .isRepresentative(false)
+                        .build()))
                 .build();
 
             // When
             sut.modifyProductImages(sellerId, request, List.of(newImage));
 
             // Then
-            assertThat(productImageRepository.findByProductIdAndUuid(productId, "uuid2")).isEmpty();
-            assertThat(productImageRepository.findByProductIdAndUuid(productId, "uuid1"))
+            assertThat(productImageRepository.findByProductImageId(2L)).isEmpty();
+            assertThat(productImageRepository.findByProductImageId(1L))
                 .hasValueSatisfying(image -> {
-                    assertThat(image.getPrev()).isNull();
-                    assertThat(image.getNext()).isEqualTo(newImageUuid);
+                    assertThat(image.getSequence()).isEqualTo(1);
+                    assertThat(image.isRepresentative()).isTrue();
                 });
-            assertThat(productImageRepository.findByProductIdAndUuid(productId, newImageUuid))
+            assertThat(productImageRepository.findByProductImageId(3L))
                 .hasValueSatisfying(image -> {
-                    assertThat(image.getPrev()).isEqualTo("uuid1");
-                    assertThat(image.getNext()).isEqualTo("uuid3");
+                    assertThat(image.getSequence()).isEqualTo(3);
+                    assertThat(image.isRepresentative()).isFalse();
                 });
-            assertThat(productImageRepository.findByProductIdAndUuid(productId, "uuid3"))
-                .hasValueSatisfying(image -> {
-                    assertThat(image.getPrev()).isEqualTo(newImageUuid);
-                    assertThat(image.getNext()).isNull();
+            productImageRepository.findByProductId(productId)
+                .forEach(image -> {
+                    if (image.getSequence() == 2) {
+                        assertThat(image.getImageUrl()).contains(newImageUuid);
+                    }
                 });
         }
 
@@ -164,50 +174,62 @@ class ProductImageServiceTest {
             // Given
             String newImageUuid = "new-image-uuid";
             MultipartFile newImage = mock(MultipartFile.class);
-            given(newImage.getName()).willReturn(newImageUuid);
-            given(newImage.getOriginalFilename()).willReturn("new-image.jpg");
+            given(newImage.getOriginalFilename()).willReturn("new-image-uuid.jpg");
 
             ProductImageModifyRequest request = ProductImageModifyRequest.builder()
                 .productId(productId)
-                .toDelete(Collections.emptyList())
-                .toUpdate(List.of(
+                .productImageIdsToDelete(Collections.emptyList())
+                .productImagesToUpdate(List.of(
                     ImageContextUpdateRequest.builder()
-                        .target("uuid1")
-                        .next(newImageUuid)
+                        .productImageId(1L)
+                        .sequence(1)
+                        .isNewImage(false)
+                        .isRepresentative(true)
                         .build(),
                     ImageContextUpdateRequest.builder()
-                        .target(newImageUuid)
-                        .prev("uuid1")
-                        .next("uuid2")
+                        .uuid(newImageUuid)
+                        .sequence(2)
                         .isNewImage(true)
+                        .isRepresentative(false)
                         .build(),
                     ImageContextUpdateRequest.builder()
-                        .target("uuid2")
-                        .prev(newImageUuid)
-                        .next("uuid3")
-                        .build()
-                ))
+                        .productImageId(2L)
+                        .sequence(3)
+                        .isNewImage(false)
+                        .isRepresentative(false)
+                        .build(),
+                    ImageContextUpdateRequest.builder()
+                        .productImageId(3L)
+                        .sequence(4)
+                        .isNewImage(false)
+                        .isRepresentative(false)
+                        .build()))
                 .build();
 
             // When
             sut.modifyProductImages(sellerId, request, List.of(newImage));
 
             // Then
-            assertThat(productImageRepository.findByProductIdAndUuid(productId, "uuid1"))
+            assertThat(productImageRepository.findByProductImageId(1L))
                 .hasValueSatisfying(image -> {
-                    assertThat(image.getPrev()).isNull();
-                    assertThat(image.getNext()).isEqualTo(newImageUuid);
+                    assertThat(image.getSequence()).isEqualTo(1);
+                    assertThat(image.isRepresentative()).isTrue();
                 });
-            assertThat(productImageRepository.findByProductIdAndUuid(productId, newImageUuid))
+            assertThat(productImageRepository.findByProductImageId(2L))
                 .hasValueSatisfying(image -> {
-                    assertThat(image.getPrev()).isEqualTo("uuid1");
-                    assertThat(image.getNext()).isEqualTo("uuid2");
+                    assertThat(image.getSequence()).isEqualTo(3);
+                    assertThat(image.isRepresentative()).isFalse();
                 });
-            assertThat(productImageRepository.findByProductIdAndUuid(productId, "uuid2"))
+            assertThat(productImageRepository.findByProductImageId(3L))
                 .hasValueSatisfying(image -> {
-                    assertThat(image.getPrev()).isEqualTo(newImageUuid);
-                    assertThat(image.getNext()).isEqualTo("uuid3");
+                    assertThat(image.getSequence()).isEqualTo(4);
+                    assertThat(image.isRepresentative()).isFalse();
                 });
+            productImageRepository.findByProductId(productId).forEach(image -> {
+                if (image.getSequence() == 2) {
+                    assertThat(image.getImageUrl()).contains(newImageUuid);
+                }
+            });
         }
 
         @Test
@@ -220,7 +242,8 @@ class ProductImageServiceTest {
                 .build();
 
             // When & Then
-            assertThatThrownBy(() -> sut.modifyProductImages(sellerId, request, Collections.emptyList()))
+            assertThatThrownBy(
+                () -> sut.modifyProductImages(sellerId, request, Collections.emptyList()))
                 .isInstanceOf(CommonException.class)
                 .hasMessageContaining(BError.NOT_EXIST.getMessage("product"));
         }
@@ -244,23 +267,25 @@ class ProductImageServiceTest {
                 .build();
 
             // When & Then
-            assertThatThrownBy(() -> sut.modifyProductImages(sellerId, request, Collections.emptyList()))
+            assertThatThrownBy(
+                () -> sut.modifyProductImages(sellerId, request, Collections.emptyList()))
                 .isInstanceOf(CommonException.class)
-                .hasMessageContaining("seller doesn't have permission");
+                .hasMessageContaining(BError.ACCESS_DENIED.getMessage("product"));
         }
 
         @Test
         @DisplayName("삭제할 이미지가 존재하지 않으면 예외 발생")
         void modifyProductImages_ImageToDeleteNotFound() {
             // Given
-            String nonExistentUuid = "non-existent-uuid";
+            Long nonExistentUuid = 999L;
             ProductImageModifyRequest request = ProductImageModifyRequest.builder()
                 .productId(productId)
-                .toDelete(List.of(nonExistentUuid))
+                .productImageIdsToDelete(List.of(nonExistentUuid))
                 .build();
 
             // When & Then
-            assertThatThrownBy(() -> sut.modifyProductImages(sellerId, request, Collections.emptyList()))
+            assertThatThrownBy(
+                () -> sut.modifyProductImages(sellerId, request, Collections.emptyList()))
                 .isInstanceOf(CommonException.class)
                 .hasMessageContaining(BError.NOT_EXIST.getMessage("product image"));
         }

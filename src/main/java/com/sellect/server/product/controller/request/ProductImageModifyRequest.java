@@ -6,8 +6,8 @@ import lombok.Builder;
 @Builder
 public record ProductImageModifyRequest(
     Long productId,
-    List<String> toDelete,
-    List<ImageContextUpdateRequest> toUpdate
+    List<Long> productImageIdsToDelete,
+    List<ImageContextUpdateRequest> productImagesToUpdate
 ) {
 
 }

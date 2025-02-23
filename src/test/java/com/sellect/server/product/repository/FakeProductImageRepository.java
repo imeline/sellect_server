@@ -4,29 +4,31 @@ import com.sellect.server.product.domain.Product;
 import com.sellect.server.product.domain.ProductImage;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import org.springframework.data.util.Pair;
 
 public class FakeProductImageRepository implements ProductImageRepository {
 
-    private final Map<Long, Map<String, ProductImage>> storage = new ConcurrentHashMap<>();
+    private final Map<Long, Pair<ProductImage, Product>> storage = new HashMap<>();
 
     @Override
     public void save(ProductImage productImage, Product product) {
-        storage.computeIfAbsent(product.getId(), k -> new HashMap<>())
-            .put(productImage.getUuid(), productImage);
+        storage.put(productImage.getId(), Pair.of(productImage, product));
     }
 
     @Override
-    public Optional<ProductImage> findByProductIdAndUuid(Long productId, String uuid) {
-        Optional<ProductImage> productImage = Optional.ofNullable(
-            storage.getOrDefault(productId, Collections.emptyMap()).get(uuid));
-        return productImage.isEmpty() ? Optional.empty()
-            : productImage.get().getDeleteAt() == null ? productImage : Optional.empty();
+    public Optional<ProductImage> findByProductImageId(Long productImageId) {
+        return Optional.ofNullable(storage.get(productImageId))
+            .filter(pair -> pair.getFirst().getDeleteAt() == null)
+            .map(Pair::getFirst);
     }
 
     @Override
     public List<ProductImage> findByProductId(Long productId) {
-        return new ArrayList<>(storage.getOrDefault(productId, Collections.emptyMap()).values());
+        return storage.values().stream()
+            .filter(pair -> pair.getSecond().getId().equals(productId))
+            .filter(pair -> pair.getFirst().getDeleteAt() == null)
+            .map(Pair::getFirst)
+            .toList();
     }
 
     // todo: MVP 이후

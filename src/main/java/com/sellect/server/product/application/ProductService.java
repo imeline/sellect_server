@@ -85,7 +85,7 @@ public class ProductService {
                 .substring(0, image.getOriginalFilename().lastIndexOf(".")), image);
         });
         request.imageContexts().forEach(imageContext -> {
-            productImageService.registerProductImage(product, imageContext, imageMap.get(imageContext.target()));
+            productImageService.registerProductImage(product, imageContext, imageMap.get(imageContext.uuid()));
         });
 
         return ProductRegisterResponse.from(product);
@@ -150,6 +150,8 @@ public class ProductService {
         if (failedProducts.isEmpty()) {
             List<Product> products = productRepository.saveAll(successProducts);
         }
+
+        // TODO: 이미지 저장
 
         // 성공 및 실패 리스트 반환
         return ProductMultipleRegisterResponse.from(successProducts, failedProducts);
@@ -247,7 +249,7 @@ public class ProductService {
 
         // 유저의 상품이 맞는지 확인
         if (!product.getSeller().getId().equals(seller.getId())) {
-            throw new CommonException(BError.NOT_ACCESSIBLE, "product");
+            throw new CommonException(BError.ACCESS_DENIED, "product");
         }
 
         List<ProductImage> productImages = productImageRepository.findByProductId(productId);

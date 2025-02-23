@@ -17,9 +17,7 @@ public class ProductImage {
     private final Product product;
     private final String imageUrl;
     private final boolean representative;
-    private final String uuid;
-    private final String prev;
-    private final String next;
+    private final Integer sequence;
     private final LocalDateTime createdAt;
     private final LocalDateTime updatedAt;
     private final LocalDateTime deleteAt;
@@ -29,9 +27,7 @@ public class ProductImage {
             .product(product)
             .imageUrl(imageUrl)
             .representative(request.isRepresentative())
-            .uuid(request.target())
-            .prev(request.prev())
-            .next(request.next())
+            .sequence(request.sequence())
             .createdAt(LocalDateTime.now())
             .updatedAt(LocalDateTime.now())
             .build();
@@ -42,24 +38,19 @@ public class ProductImage {
             .product(product)
             .imageUrl(imageUrl)
             .representative(request.isRepresentative())
-            .uuid(request.target())
-            .prev(request.prev())
-            .next(request.next())
+            .sequence(request.sequence())
             .createdAt(LocalDateTime.now())
             .updatedAt(LocalDateTime.now())
             .build();
     }
 
-    // TODO: request dto 의존적임 -> 수정 필요
     public ProductImage update(ImageContextUpdateRequest request) {
         return ProductImage.builder()
             .id(this.id)
             .product(this.product)
             .imageUrl(this.imageUrl)
-            .representative(request.isRepresentative())
-            .uuid(request.target())
-            .prev(request.prev())
-            .next(request.next())
+            .representative(request.isRepresentative()) // 대표 이미지 여부 업데이트
+            .sequence(request.sequence()) // 순서 업데이트
             .createdAt(this.getCreatedAt())
             .updatedAt(LocalDateTime.now())
             .deleteAt(this.deleteAt)
@@ -72,9 +63,7 @@ public class ProductImage {
             .product(this.product)
             .imageUrl(imageUrl)
             .representative(this.representative)
-            .uuid(this.uuid)
-            .prev(this.prev)
-            .next(this.next)
+            .sequence(this.sequence)
             .createdAt(this.getCreatedAt())
             .updatedAt(LocalDateTime.now())
             .deleteAt(this.deleteAt)
@@ -87,9 +76,7 @@ public class ProductImage {
             .product(this.product)
             .imageUrl(this.imageUrl)
             .representative(this.representative)
-            .uuid(this.uuid)
-            .prev(this.prev)
-            .next(this.next)
+            .sequence(this.sequence)
             .createdAt(this.getCreatedAt())
             .updatedAt(this.getUpdatedAt())
             .deleteAt(LocalDateTime.now()) // 삭제 시간 업데이트

@@ -113,7 +113,8 @@ public class ProductController {
     }
 
 
-    //== Seller 전용 ==//
+    // TODO: 추후 분리
+    //==================== Seller 전용 ====================//
     @GetMapping("/seller/products")
     public ApiResponse<Page<ProductDetailReadResponse>> retrieveAllBySeller(
         @AuthSeller User seller,

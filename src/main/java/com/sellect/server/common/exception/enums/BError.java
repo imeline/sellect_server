@@ -23,7 +23,7 @@ public enum BError implements Error {
     ALREADY_RECEIVED("COUPON_ALREADY_REGISTERED", "The coupon%1 has already been registered"),
     PAYMENT_FAILED("PAYMENT_FAIL", "%1"),
 
-    NOT_ACCESSIBLE("NOT_ACCESSIBLE", "%1 is not accessible");
+    ACCESS_DENIED("NOT_ACCESSIBLE", "access denied to %1"),;
 
     private final String errCode;
     private final String msg;

@@ -19,14 +19,14 @@ public class ProductImageRepositoryImpl implements ProductImageRepository {
     }
 
     @Override
-    public Optional<ProductImage> findByProductIdAndUuid(Long productId, String uuid) {
-        return productImageJpaRepository.findByProductIdAndUuid(productId, uuid)
+    public Optional<ProductImage> findByProductImageId(Long productId) {
+        return productImageJpaRepository.findByIdAndDeleteAtIsNull(productId)
             .map(ProductImageEntity::toModel);
     }
 
     @Override
     public List<ProductImage> findByProductId(Long productId) {
-        return productImageJpaRepository.findByProductId(productId).stream()
+        return productImageJpaRepository.findByProductEntityIdAndDeleteAtIsNull(productId).stream()
             .map(ProductImageEntity::toModel)
             .toList();
     }
