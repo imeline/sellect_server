@@ -1,8 +1,5 @@
 package com.sellect.server.order.controller.request;
 
-import com.sellect.server.order.controller.response.OrderItemGetResponse;
-import com.sellect.server.order.domain.OrderItem;
-import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
 
@@ -17,14 +14,5 @@ public record OrderItemAddRequest(
 
     public BigDecimal convertPriceAsBigDecimal() {
         return price != null ? new BigDecimal(price) : null;
-    }
-
-    public static OrderItemGetResponse from(OrderItem orderItem) {
-        return new OrderItemGetResponse(
-            orderItem.getProduct().getId(),
-            orderItem.getProduct().getName(),
-            orderItem.getProduct().getPrice(),
-            orderItem.getQuantity()
-        );
     }
 }

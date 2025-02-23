@@ -7,7 +7,7 @@ import com.sellect.server.order.application.OrderService;
 import com.sellect.server.order.controller.request.OrderAddRequest;
 import com.sellect.server.order.controller.response.OrderDetailGetResponse;
 import com.sellect.server.order.controller.response.OrderGetResponse;
-import com.sellect.server.order.controller.response.OrderItemPendingReadResponse;
+import com.sellect.server.order.controller.response.OrderItemGetResponse;
 import com.sellect.server.order.controller.response.PendingOrderRegisterResponse;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -31,11 +31,11 @@ public class OrderController {
      * 주문 페이지 조회용 (결제 전)
      */
     @GetMapping("/orders/{orderId}/pending")
-    public ApiResponse<List<OrderItemPendingReadResponse>> readPending(
+    public ApiResponse<List<OrderItemGetResponse>> readPending(
         @AuthUser User user,
         @PathVariable Long orderId
     ) {
-        List<OrderItemPendingReadResponse> result = orderService.readPending(
+        List<OrderItemGetResponse> result = orderService.readPending(
             user, orderId);
 
         return ApiResponse.ok(result);
