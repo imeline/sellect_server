@@ -38,14 +38,20 @@ public class FakeOrderItemRepository implements OrderItemRepository {
     }
 
     @Override
-    public BigDecimal calculateTotalSalesByProductId(Long orderItemId) {
-        // TODO: Implement this method
+    public BigDecimal calculateSalesByProductId(Long productId) {
+        // TODO: 구현 필요
         return null;
     }
 
     @Override
     public Integer countCompleteOrdersByProductId(Long productId) {
-        // TODO: Implement this method
+        // TODO: 구현 필요
+        return null;
+    }
+
+    @Override
+    public BigDecimal calculateTotalSalesByProductIds(List<Long> productIds) {
+        // TODO: 구현 필요
         return null;
     }
 

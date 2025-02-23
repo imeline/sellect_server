@@ -10,7 +10,9 @@ public interface OrderItemRepository {
 
     List<OrderItem> findAllByOrdersId(Long orderId);
 
-    BigDecimal calculateTotalSalesByProductId(Long orderItemId);
+    BigDecimal calculateSalesByProductId(Long productId);
 
     Integer countCompleteOrdersByProductId(Long productId);
+
+    BigDecimal calculateTotalSalesByProductIds(List<Long> productIds);
 }

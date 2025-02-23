@@ -24,4 +24,5 @@ public interface ProductRepository {
 
     Page<Product> findBySellerId(Long sellerId, Pageable pageable);
 
+    List<Product> findAllBySellerId(Long sellerId);
 }

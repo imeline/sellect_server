@@ -36,12 +36,17 @@ public class OrderItemRepositoryImpl implements OrderItemRepository {
     }
 
     @Override
-    public BigDecimal calculateTotalSalesByProductId(Long productId) {
-        return orderItemJpaRepository.calculateTotalSalesByProductId(productId);
+    public BigDecimal calculateSalesByProductId(Long productId) {
+        return orderItemJpaRepository.calculateSalesByProductId(productId);
     }
 
     @Override
     public Integer countCompleteOrdersByProductId(Long productId) {
         return orderItemJpaRepository.countCompletedOrdersByProductId(productId);
+    }
+
+    @Override
+    public BigDecimal calculateTotalSalesByProductIds(List<Long> productIds) {
+        return orderItemJpaRepository.calculateTotalSalesByProductIds(productIds);
     }
 }

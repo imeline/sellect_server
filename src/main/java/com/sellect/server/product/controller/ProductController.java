@@ -13,6 +13,7 @@ import com.sellect.server.product.controller.response.ProductDetailRetrieveBySel
 import com.sellect.server.product.controller.response.ProductModifyResponse;
 import com.sellect.server.product.controller.response.ProductMultipleRegisterResponse;
 import com.sellect.server.product.controller.response.ProductRegisterResponse;
+import com.sellect.server.product.controller.response.SellerStatsRetrieveResponse;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -39,7 +40,7 @@ public class ProductController {
 
     /**
      * 상품 단건 등록
-     * */
+     */
     @PostMapping("/product")
     public ApiResponse<ProductRegisterResponse> register(
         @AuthSeller User seller,
@@ -59,7 +60,8 @@ public class ProductController {
         @RequestPart("requests") List<ProductRegisterRequest> requests,
         @RequestPart("images") List<MultipartFile> images) {
 
-        ProductMultipleRegisterResponse result = productService.registerMultiple(seller, requests, images);
+        ProductMultipleRegisterResponse result = productService.registerMultiple(seller, requests,
+            images);
         return ApiResponse.ok(result);
     }
 
@@ -90,7 +92,7 @@ public class ProductController {
 
     /**
      * 상품 이미지 수정 API
-     * */
+     */
     @PostMapping("/products/images")
     public ApiResponse<Void> modifyProductImages(
         @AuthSeller User seller,
@@ -118,7 +120,8 @@ public class ProductController {
         @RequestParam(value = "page", defaultValue = "0") int page,
         @RequestParam(value = "size", defaultValue = "20") int size
     ) {
-        Page<ProductDetailReadResponse> result = productService.retrieveAllBySeller(seller, page, size);
+        Page<ProductDetailReadResponse> result = productService.retrieveAllBySeller(seller, page,
+            size);
         return ApiResponse.ok(result);
     }
 
@@ -127,7 +130,16 @@ public class ProductController {
         @AuthSeller User seller,
         @PathVariable Long productId
     ) {
-        ProductDetailRetrieveBySellerResponse result = productService.retrieveDetailBySeller(seller, productId);
+        ProductDetailRetrieveBySellerResponse result = productService.retrieveDetailBySeller(seller,
+            productId);
+        return ApiResponse.ok(result);
+    }
+
+    @GetMapping("/seller/stats")
+    public ApiResponse<SellerStatsRetrieveResponse> retrieveStats(
+        @AuthSeller User seller
+    ) {
+        SellerStatsRetrieveResponse result = productService.retrieveStats(seller);
         return ApiResponse.ok(result);
     }
 }

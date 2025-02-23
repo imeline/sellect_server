@@ -16,6 +16,7 @@ import com.sellect.server.product.controller.response.ProductModifyResponse;
 import com.sellect.server.product.controller.response.ProductMultipleRegisterResponse;
 import com.sellect.server.product.controller.response.ProductRegisterFailureResponse;
 import com.sellect.server.product.controller.response.ProductRegisterResponse;
+import com.sellect.server.product.controller.response.SellerStatsRetrieveResponse;
 import com.sellect.server.product.domain.Product;
 import com.sellect.server.product.domain.ProductImage;
 import com.sellect.server.product.repository.ProductImageRepository;
@@ -251,8 +252,17 @@ public class ProductService {
 
         List<ProductImage> productImages = productImageRepository.findByProductId(productId);
         Integer totalOrders = orderItemRepository.countCompleteOrdersByProductId(productId);
-        BigDecimal totalSales = orderItemRepository.calculateTotalSalesByProductId(productId);
+        BigDecimal totalSales = orderItemRepository.calculateSalesByProductId(productId);
 
         return ProductDetailRetrieveBySellerResponse.from(product, productImages, totalOrders, totalSales);
+    }
+
+    @Transactional(readOnly = true)
+    public SellerStatsRetrieveResponse retrieveStats(User seller) {
+        List<Product> products = productRepository.findAllBySellerId(seller.getId());
+        BigDecimal totalSales = orderItemRepository.calculateTotalSalesByProductIds(
+            products.stream()
+                .map(Product::getId).toList());
+        return SellerStatsRetrieveResponse.from(totalSales, products.size());
     }
 }
