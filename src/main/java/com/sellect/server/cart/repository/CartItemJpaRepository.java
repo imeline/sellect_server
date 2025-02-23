@@ -1,5 +1,6 @@
 package com.sellect.server.cart.repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -13,4 +14,6 @@ public interface CartItemJpaRepository extends JpaRepository<CartItemEntity, Lon
     List<CartItemEntity> findByUserId(Long userId);
 
     Optional<CartItemEntity> findByUserEntityIdAndProductEntityIdAndDeleteAtIsNull(Long userId, Long productId);
+
+    Long countByUserEntityIdAndDeleteAtIsNull(Long userEntityId);
 }

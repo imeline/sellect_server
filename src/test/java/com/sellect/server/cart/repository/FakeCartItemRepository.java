@@ -63,6 +63,12 @@ public class FakeCartItemRepository implements CartItemRepository {
         throw new RuntimeException("아직 fakeRepository 구현하지 않음");
     }
 
+    @Override
+    public Long countByUserId(Long userId) {
+        // TODO: implement this method
+        return 0L;
+    }
+
     public void clear() {
         data.clear();
     }

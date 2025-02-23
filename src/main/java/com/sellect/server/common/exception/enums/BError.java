@@ -21,7 +21,9 @@ public enum BError implements Error {
     NOT_SELLER("NOT_SELLER", "%1 is not a seller"),
     COUPON_QUANTITY_ZERO("COUPON_QUANTITY_ZERO", "The quantity of the coupon%1 is 0"),
     ALREADY_RECEIVED("COUPON_ALREADY_REGISTERED", "The coupon%1 has already been registered"),
-    PAYMENT_FAILED("PAYMENT_FAIL", "%1");
+    PAYMENT_FAILED("PAYMENT_FAIL", "%1"),
+
+    NOT_ACCESSIBLE("NOT_ACCESSIBLE", "%1 is not accessible");
 
     private final String errCode;
     private final String msg;

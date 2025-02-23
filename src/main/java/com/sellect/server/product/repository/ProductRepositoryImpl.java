@@ -55,4 +55,11 @@ public class ProductRepositoryImpl implements ProductRepository {
         return productJpaRepository.findBySellerEntityId(sellerId, pageable)
             .map(ProductEntity::toModel);
     }
+
+    @Override
+    public List<Product> findAllBySellerId(Long sellerId) {
+        return productJpaRepository.findAllBySellerEntityIdAndDeleteAtIsNull(sellerId).stream()
+            .map(ProductEntity::toModel)
+            .toList();
+    }
 }

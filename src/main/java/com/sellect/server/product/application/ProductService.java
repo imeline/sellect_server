@@ -7,20 +7,27 @@ import com.sellect.server.category.domain.Category;
 import com.sellect.server.category.repository.CategoryRepository;
 import com.sellect.server.common.exception.CommonException;
 import com.sellect.server.common.exception.enums.BError;
+import com.sellect.server.order.repository.OrderItemRepository;
 import com.sellect.server.product.controller.request.ProductModifyRequest;
 import com.sellect.server.product.controller.request.ProductRegisterRequest;
 import com.sellect.server.product.controller.response.ProductDetailReadResponse;
+import com.sellect.server.product.controller.response.ProductDetailRetrieveBySellerResponse;
 import com.sellect.server.product.controller.response.ProductModifyResponse;
 import com.sellect.server.product.controller.response.ProductMultipleRegisterResponse;
 import com.sellect.server.product.controller.response.ProductRegisterFailureResponse;
 import com.sellect.server.product.controller.response.ProductRegisterResponse;
+import com.sellect.server.product.controller.response.SellerStatsRetrieveResponse;
 import com.sellect.server.product.domain.Product;
 import com.sellect.server.product.domain.ProductImage;
 import com.sellect.server.product.repository.ProductImageRepository;
 import com.sellect.server.product.repository.ProductRepository;
+import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +46,7 @@ public class ProductService {
     private final BrandRepository brandRepository;
     private final CategoryRepository categoryRepository;
     private final ProductImageRepository productImageRepository;
+    private final OrderItemRepository orderItemRepository;
 
     @Transactional
     public ProductRegisterResponse register(
@@ -71,8 +79,13 @@ public class ProductService {
 
         // todo: service 에서 service??? 추후 체크
         // 이미지 저장
+        Map<String, MultipartFile> imageMap = new HashMap<>();
+        images.forEach(image -> {
+            imageMap.put(Objects.requireNonNull(image.getOriginalFilename())
+                .substring(0, image.getOriginalFilename().lastIndexOf(".")), image);
+        });
         request.imageContexts().forEach(imageContext -> {
-            productImageService.registerProductImage(product, imageContext, images);
+            productImageService.registerProductImage(product, imageContext, imageMap.get(imageContext.target()));
         });
 
         return ProductRegisterResponse.from(product);
@@ -206,8 +219,11 @@ public class ProductService {
             productImages);
     }
 
+
+    //== Seller 전용 ==//
+
     @Transactional(readOnly = true)
-    public Page<ProductDetailReadResponse> readAllBySeller(User seller, int page, int size) {
+    public Page<ProductDetailReadResponse> retrieveAllBySeller(User seller, int page, int size) {
 
         Page<Product> products = productRepository.findBySellerId(seller.getId(), PageRequest.of(page, size));
 
@@ -221,5 +237,32 @@ public class ProductService {
             return ProductDetailReadResponse.from(product, category, product.getSeller(), brand,
                 productImages);
         });
+    }
+
+    @Transactional(readOnly = true)
+    public ProductDetailRetrieveBySellerResponse retrieveDetailBySeller(User seller, Long productId) {
+        // 상품 정보 조회
+        Product product = productRepository.findById(productId)
+            .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "product"));
+
+        // 유저의 상품이 맞는지 확인
+        if (!product.getSeller().getId().equals(seller.getId())) {
+            throw new CommonException(BError.NOT_ACCESSIBLE, "product");
+        }
+
+        List<ProductImage> productImages = productImageRepository.findByProductId(productId);
+        Integer totalOrders = orderItemRepository.countCompleteOrdersByProductId(productId);
+        BigDecimal totalSales = orderItemRepository.calculateSalesByProductId(productId);
+
+        return ProductDetailRetrieveBySellerResponse.from(product, productImages, totalOrders, totalSales);
+    }
+
+    @Transactional(readOnly = true)
+    public SellerStatsRetrieveResponse retrieveStats(User seller) {
+        List<Product> products = productRepository.findAllBySellerId(seller.getId());
+        BigDecimal totalSales = orderItemRepository.calculateTotalSalesByProductIds(
+            products.stream()
+                .map(Product::getId).toList());
+        return SellerStatsRetrieveResponse.from(totalSales, products.size());
     }
 }

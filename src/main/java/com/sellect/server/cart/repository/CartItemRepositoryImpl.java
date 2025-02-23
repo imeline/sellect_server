@@ -42,4 +42,9 @@ public class CartItemRepositoryImpl implements CartItemRepository {
         return cartItemJpaRepository.findByUserEntityIdAndProductEntityIdAndDeleteAtIsNull(userId, productId)
             .map(CartItemEntity::toModel);
     }
+
+    @Override
+    public Long countByUserId(Long userId) {
+        return cartItemJpaRepository.countByUserEntityIdAndDeleteAtIsNull(userId);
+    }
 }

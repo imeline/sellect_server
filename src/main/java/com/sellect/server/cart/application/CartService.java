@@ -89,6 +89,11 @@ public class CartService {
     }
 
     @Transactional
+    public Long getTotalCount(Long userId) {
+        return cartItemRepository.countByUserId(userId);
+    }
+
+    @Transactional
     public void deleteCartItem(Long userId, Long cartItemId) {
 
         CartItem cartItem = cartItemRepository.findById(cartItemId)

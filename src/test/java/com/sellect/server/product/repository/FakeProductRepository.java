@@ -68,6 +68,11 @@ public class FakeProductRepository implements ProductRepository {
         return null;
     }
 
+    @Override
+    public List<Product> findAllBySellerId(Long sellerId) {
+        return List.of();
+    }
+
     public void clear() {
         data.clear();
     }

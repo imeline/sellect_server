@@ -1,6 +1,7 @@
 package com.sellect.server.product.repository;
 
 import jakarta.persistence.LockModeType;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -25,4 +26,6 @@ public interface ProductJpaRepository extends JpaRepository<ProductEntity, Long>
 
     // 판매자 아이디로 상품 조회
     Page<ProductEntity> findBySellerEntityId(Long sellerId, Pageable pageable);
+
+    List<ProductEntity> findAllBySellerEntityIdAndDeleteAtIsNull(Long sellerId);
 }
