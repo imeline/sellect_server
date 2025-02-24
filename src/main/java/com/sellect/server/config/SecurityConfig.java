@@ -82,6 +82,7 @@ public class SecurityConfig {
                     .noneMatch(path -> new AntPathMatcher().match(path, request.getRequestURI())))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(PUBLIC_PATHS).permitAll()
+                .requestMatchers("/**").permitAll() // ✅ 모든 요청에 대해 Preflight 허용
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
