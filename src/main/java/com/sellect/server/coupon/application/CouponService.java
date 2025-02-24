@@ -112,11 +112,12 @@ public class CouponService {
     public List<CouponPossibleOrderResponse> getCouponsByMatchingSeller(User user,
         List<Long> productIds) {
         // 1. productIds를 통해 판매자 리스트 가져오기
-        List<User> sellers = productIds.stream()
+        List<Long> sellersId = productIds.stream()
             .map(productId -> productRepository.findById(productId)
                 .orElseThrow(
                     () -> new CommonException(BError.NOT_EXIST, String.valueOf(productId))))
             .map(Product::getSeller)
+            .map(User::getId)
             .toList();
 
         // 2. 사용하지 않은 쿠폰 중 유효기간이 남아 있는 것 필터링
@@ -127,7 +128,8 @@ public class CouponService {
 
         // 3. 판매자가 일치하는 쿠폰만 선택하여 변환
         return validCoupons.stream()
-            .filter(c -> sellers.contains(c.getCoupon().getSeller()))
+            .filter(c -> sellersId.contains(
+                c.getCoupon().getSeller().getId()))
             .map(c -> new CouponPossibleOrderResponse(
                 c.getId(),
                 c.getCoupon().getDiscountCost(),
