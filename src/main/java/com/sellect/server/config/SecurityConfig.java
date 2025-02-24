@@ -4,6 +4,7 @@ import com.sellect.server.common.infrastructure.jwt.JwtFilter;
 import java.util.Arrays;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -23,6 +24,9 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @Configuration
 @RequiredArgsConstructor
 public class SecurityConfig {
+
+    @Value("${cloudfront.domain-name}")
+    private String CLOUDFRONT_DOMAIN_NAME;
 
     private static final String[] SWAGGER_PATHS = {
         "/swagger-resources/**", "/swagger-ui/**", "/v3/api-docs/**"
@@ -109,6 +113,7 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.addAllowedOrigin("http://localhost:3000");
         configuration.addAllowedOrigin("https://sellect-client.vercel.app");
+        configuration.addAllowedOrigin(CLOUDFRONT_DOMAIN_NAME);
         configuration.addAllowedMethod("*");
         configuration.addAllowedHeader("*");
         configuration.setAllowCredentials(true);
