@@ -43,7 +43,6 @@ public class CouponController {
         return ApiResponse.ok();
     }
 
-
     // reponse 데이터에 seller id, 이름 나오게 추가
     @GetMapping
     public ApiResponse<List<CouponResponse>> getCoupon(@AuthUser User user,
@@ -65,7 +64,7 @@ public class CouponController {
 
     @GetMapping("/possible-order")
     public ApiResponse<List<CouponPossibleOrderResponse>> getPossibleOrderCouponList(
-        @AuthUser User user, @RequestBody List<Long> productIds
+        @AuthUser User user, @RequestParam("productIds") List<Long> productIds
     ) {
         List<CouponPossibleOrderResponse> couponList = couponService.getCouponsByMatchingSeller(
             user, productIds);
