@@ -1,6 +1,5 @@
 package com.sellect.server.order.controller.response;
 
-import com.sellect.server.order.domain.OrderItem;
 import com.sellect.server.order.domain.Orders;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -11,20 +10,18 @@ public record OrderDetailGetResponse(
     BigDecimal discountCost,
     BigDecimal totalPrice,
     List<OrderItemGetResponse> orderItems,
-    LocalDateTime createdAt
+    LocalDateTime updateAt
 
 ) {
 
     public static OrderDetailGetResponse from(Orders order, BigDecimal discountCost,
-        List<OrderItem> orderItems) {
-
-        List<OrderItemGetResponse> orderItemResponses = OrderItemGetResponse.fromList(orderItems);
+        List<OrderItemGetResponse> orderItems) {
         return new OrderDetailGetResponse(
             order.getOrderNumber(),
             discountCost,
             order.getTotalPrice(),
-            orderItemResponses,
-            order.getCreatedAt()
+            orderItems,
+            order.getUpdatedAt()
         );
     }
 }

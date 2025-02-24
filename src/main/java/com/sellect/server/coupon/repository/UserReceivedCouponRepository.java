@@ -16,6 +16,8 @@ public interface UserReceivedCouponRepository {
     List<UserReceivedCoupon> findByUserAndIsUsed(User user, PageRequest pageRequest,
         Boolean isUsed);
 
+    List<UserReceivedCoupon> findAllByUserAndIsUsed(User user, boolean isUsed);
+
     Optional<UserReceivedCoupon> findByUserAndCoupon(User user, Coupon coupon);
 
     Boolean existsByUserAndCoupon(User user, Coupon coupon);

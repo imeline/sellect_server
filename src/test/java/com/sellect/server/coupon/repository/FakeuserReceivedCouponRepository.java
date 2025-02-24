@@ -56,6 +56,14 @@ public class FakeuserReceivedCouponRepository implements UserReceivedCouponRepos
     }
 
     @Override
+    public List<UserReceivedCoupon> findAllByUserAndIsUsed(User user, boolean isUsed) {
+        return table.values().stream()
+            .filter(coupon -> coupon.getUser().getId().equals(user.getId()))
+            .filter(coupon -> coupon.getIsUsed().equals(isUsed))
+            .toList();
+    }
+
+    @Override
     public Optional<UserReceivedCoupon> findByUserAndCoupon(User user, Coupon coupon) {
         return Optional.empty();
     }

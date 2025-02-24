@@ -11,7 +11,7 @@ import com.sellect.server.coupon.repository.UserReceivedCouponRepository;
 import com.sellect.server.order.controller.request.OrderAddRequest;
 import com.sellect.server.order.controller.response.OrderDetailGetResponse;
 import com.sellect.server.order.controller.response.OrderGetResponse;
-import com.sellect.server.order.controller.response.OrderItemPendingReadResponse;
+import com.sellect.server.order.controller.response.OrderItemGetResponse;
 import com.sellect.server.order.domain.OrderItem;
 import com.sellect.server.order.domain.Orders;
 import com.sellect.server.order.repository.OrderItemRepository;
@@ -45,47 +45,29 @@ public class OrderService {
     private final UserReceivedCouponRepository userReceivedCouponRepository;
     private final ProductImageRepository productImageRepository;
 
-    @Transactional(readOnly = true)
-    public List<OrderItemPendingReadResponse> readPending(User user, Long orderId) {
+    public List<OrderItemGetResponse> readPending(User user, Long orderId) {
         // 주문이 실제로 존재하는지 체크
         Orders order = ordersRepository.findById(orderId)
             .orElseThrow(() -> new RuntimeException("존재하지 않는 주문입니다."));
-
         // 유저의 주문이 맞는지 체크
         if (!order.getUser().getId().equals(user.getId())) {
             throw new RuntimeException("해당 주문에 접근 권한이 없습니다.");
         }
-
         // 결제 대기 주문인지 체크
         if (!order.getStatus().equals(OrderStatus.PENDING)) {
             throw new RuntimeException("결제 대기 주문이 아닙니다.");
         }
 
         List<OrderItem> orders = orderItemRepository.findAllByOrdersId(orderId);
-
         // 주문에 상품이 하나도 없는 경우라면 조회 x
         if (orders.isEmpty()) {
             throw new RuntimeException("올바르지 않은 orderId 입니다.");
         }
 
-        // todo: N+1 발생
-        // todo: BrandRepository를 Response에서 brandName 가져올 때 JPA에서 조회를 통해 가져옴
-        // todo: N+1 문제 발생 (일단 임시로 구현)
         return orders.stream()
-            .map(orderItem -> {
-                Product product = productRepository.findById(orderItem.getProduct().getId())
-                    .orElseThrow(() -> new RuntimeException("유효하지 않은 상품 번호입니다."));
-
-                // 대표 이미지 가져오기 (한 개만)
-                String thumbnailImageUrl = productImageRepository.findByThumbnailImage(
-                        product.getId())
-                    .getImageUrl();
-
-                return OrderItemPendingReadResponse.from(orderItem, product, thumbnailImageUrl);
-            })
+            .map(this::convertToOrderItemResponse)
             .toList();
     }
-
 
     @Transactional
     public Orders registerPendingOrder(User user, OrderAddRequest request) {
@@ -184,30 +166,39 @@ public class OrderService {
         }
     }
 
-
     public List<OrderGetResponse> getOrdersByUser(User user) {
-        // 완료된 주문만 조회
-        List<Orders> orderList = ordersRepository.findAllByUserEntityAndStatus(user,
+        List<Orders> orderList = ordersRepository.findCompletedOrdersByUser(user,
             OrderStatus.COMPLETED);
-        // 주문 목록이 없을 경우
+
         if (orderList.isEmpty()) {
             throw new CommonException(BError.NOT_EXIST, "주문 목록");
         }
+
         return orderList.stream()
-            .map(order -> OrderGetResponse.from(order, getOrderItemsByOrderId(order.getId())))
+            .map(order -> {
+                List<OrderItemGetResponse> orderItems = orderItemRepository.findAllByOrdersId(
+                        order.getId())
+                    .stream()
+                    .map(this::convertToOrderItemResponse)
+                    .toList();
+
+                return OrderGetResponse.from(order, orderItems);
+            })
             .toList();
     }
 
-    public OrderDetailGetResponse getOrderDetail(Long orderId) {
 
+    public OrderDetailGetResponse getOrderDetail(Long orderId) {
         Orders order = getOrderById(orderId);
 
-        // PENDING 상태 주문은 에러 처리
         if (order.getStatus() == OrderStatus.PENDING) {
             throw new CommonException(BError.NOT_VALID, "PENDING 상태의 주문은 조회할 수 없습니다.");
         }
 
-        List<OrderItem> orderItems = getOrderItemsByOrderId(orderId);
+        List<OrderItemGetResponse> orderItems = getOrderItemsByOrderId(orderId).stream()
+            .map(this::convertToOrderItemResponse)
+            .toList();
+
         BigDecimal discountCost = Optional.ofNullable(order.getUserReceivedCoupon())
             .map(UserReceivedCoupon::getCoupon)
             .map(Coupon::getDiscountCost)
@@ -217,8 +208,45 @@ public class OrderService {
         return OrderDetailGetResponse.from(order, discountCost, orderItems);
     }
 
-    @Transactional(readOnly = true)
-    public List<OrderItem> getOrderItemsByOrderId(Long orderId) {
+
+    @Transactional
+    public void applyCouponToOrder(User user, Long orderId, Long couponId) {
+        Orders order = getOrderById(orderId);
+        // 이미 완료된 주문인지 확인
+        if (order.getStatus() == OrderStatus.COMPLETED) {
+            throw new CommonException(BError.NOT_VALID, "이미 완료(확정)된 주문입니다.");
+        }
+        // 쿠폰 조회
+        UserReceivedCoupon coupon = userReceivedCouponRepository.findById(couponId)
+            .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "쿠폰"));
+        // 쿠폰 사용 여부 확인
+        if (coupon.getIsUsed()) {
+            throw new CommonException(BError.NOT_VALID, "이미 사용된 쿠폰입니다.");
+        }
+        // 쿠폰 소유자 확인
+        if (!coupon.getUser().getId().equals(user.getId())) {
+            throw new CommonException(BError.NOT_VALID, "쿠폰 소유자가 아닙니다.");
+        }
+        // 주문에 쿠폰 정보 저장
+        ordersRepository.save(order.updateCoupon(coupon));
+        // 쿠폰 사용 처리는 주문 확정 후 적용
+        //userReceivedCouponRepository.save(coupon.useCoupon());
+    }
+
+    private OrderItemGetResponse convertToOrderItemResponse(OrderItem orderItem) {
+        // todo: N+1 발생
+        // todo: BrandRepository를 Response에서 brandName 가져올 때 JPA에서 조회를 통해 가져옴
+        // todo: N+1 문제 발생 (일단 임시로 구현)
+        Product product = productRepository.findById(orderItem.getProduct().getId())
+            .orElseThrow(() -> new RuntimeException("유효하지 않은 상품 번호입니다."));
+        // 대표 이미지 가져오기 (한 개만)
+        String thumbnailImageUrl = productImageRepository.findByThumbnailImage(product.getId())
+            .getImageUrl();
+
+        return OrderItemGetResponse.from(orderItem, product, thumbnailImageUrl);
+    }
+
+    private List<OrderItem> getOrderItemsByOrderId(Long orderId) {
         List<OrderItem> orderItems = orderItemRepository.findAllByOrdersId(orderId);
         // 주문 아이템이 없을 경우
         if (orderItems.isEmpty()) {
@@ -227,8 +255,7 @@ public class OrderService {
         return orderItems;
     }
 
-    @Transactional(readOnly = true)
-    public Orders getOrderById(Long orderId) {
+    private Orders getOrderById(Long orderId) {
         return ordersRepository.findById(orderId)
             .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "주문"));
     }
