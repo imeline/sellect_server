@@ -132,6 +132,7 @@ class PaymentServiceTest {
         void approvePayment_Failure() {
             // Arrange
             paymentRepository.save(payment);
+            userRepository.save(user);
             when(restTemplate.exchange(any(String.class),
                 eq(org.springframework.http.HttpMethod.POST),
                 any(), eq(java.util.Map.class)))
@@ -178,6 +179,7 @@ class PaymentServiceTest {
         void approvePayment_Failure_KakaoPayApiError() {
             // given
             paymentRepository.save(payment); // 테스트용 결제 데이터 저장
+            userRepository.save(user);
             when(restTemplate.exchange(
                 any(String.class),
                 eq(HttpMethod.POST),
