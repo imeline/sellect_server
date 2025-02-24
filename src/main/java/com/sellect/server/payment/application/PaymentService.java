@@ -63,15 +63,15 @@ public class PaymentService {
             .orElseThrow(
                 () -> new CommonException(BError.NOT_EXIST, String.format("Payment %s", pid)));
         try {
-            log.info("Starting payment approval for pid: {}", pid);
-            ApproveRequest approveRequest = createApproveRequest(payment, token);
             Long orderId = Long.valueOf(payment.getOrderId());
             orderService.lockProductItems(orderId);
-            ResponseEntity<Map> response = sendKakaoPayApproveRequest(approveRequest);
-            handleKakaoPayApproveResponse(response, payment);
             User user = userRepository.findByUuid(payment.getUid())
                 .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "user"));
             orderService.completeOrder(user, orderId);
+
+            ApproveRequest approveRequest = createApproveRequest(payment, token);
+            ResponseEntity<Map> response = sendKakaoPayApproveRequest(approveRequest);
+            handleKakaoPayApproveResponse(response, payment);
             log.info("Payment approved for pid: {}", pid);
         } catch (Exception e) {
             log.error("Payment approval failed for pid: {}", pid, e);
