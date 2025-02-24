@@ -15,6 +15,7 @@ import com.sellect.server.product.controller.response.ProductMultipleRegisterRes
 import com.sellect.server.product.controller.response.ProductRegisterResponse;
 import com.sellect.server.product.controller.response.SellerStatsRetrieveResponse;
 import jakarta.validation.Valid;
+import java.util.Collections;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -93,17 +95,19 @@ public class ProductController {
     /**
      * 상품 이미지 수정 API
      */
-    @PostMapping("/products/images")
+    @PutMapping("/products/images")
     public ApiResponse<Void> modifyProductImages(
         @AuthSeller User seller,
-        @RequestPart("images") List<MultipartFile> images,
-        @RequestPart("modify_request") ProductImageModifyRequest request
+        @RequestPart(value = "images", required = false) List<MultipartFile> images,
+        @RequestPart(value = "modify_request") ProductImageModifyRequest request
     ) {
-        productImageService.modifyProductImages(seller.getId(), request, images);
+        productImageService.modifyProductImages(seller.getId(), request, images == null ? Collections.EMPTY_LIST : images);
         return ApiResponse.ok();
     }
 
-
+    /**
+     * 상품 상세 조회 API
+     */
     @GetMapping("/products/{productId}")
     public ApiResponse<ProductDetailReadResponse> readDetail(
         @PathVariable Long productId
@@ -111,7 +115,6 @@ public class ProductController {
         ProductDetailReadResponse result = productService.readDetail(productId);
         return ApiResponse.ok(result);
     }
-
 
     // TODO: 추후 분리
     //==================== Seller 전용 ====================//

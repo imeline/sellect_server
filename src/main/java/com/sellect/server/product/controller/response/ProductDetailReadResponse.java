@@ -12,7 +12,9 @@ import lombok.Builder;
 @Builder
 public record ProductDetailReadResponse(
     Long productId,
-    String categoryName, // todo: 일단은 하나의 String 으로만 조회된다.
+    String smallCategoryName,
+    String mediumCategoryName,
+    String largeCategoryName,
     String brandName,
     String sellerName,
     String name,
@@ -22,14 +24,19 @@ public record ProductDetailReadResponse(
     List<ProductImageResponse> images // 이미지 순서를 고려해서 이미지 전부 보내기
 ) {
 
-    public static ProductDetailReadResponse from(Product product,
-        Category category,
+    public static ProductDetailReadResponse from(
+        Product product,
+        Category smallCategory,
+        Category mediumCategory,
+        Category largeCategory,
         User seller,
         Brand brand, List<ProductImage>productImages
         ) {
         return ProductDetailReadResponse.builder()
             .productId(product.getId())
-            .categoryName(category.getName())
+            .smallCategoryName(smallCategory.getName())
+            .mediumCategoryName(mediumCategory.getName())
+            .largeCategoryName(largeCategory.getName())
             .brandName(brand.getName())
             .sellerName(seller.getNickname())
             .name(product.getName())

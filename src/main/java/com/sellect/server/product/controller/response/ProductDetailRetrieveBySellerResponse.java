@@ -1,5 +1,6 @@
 package com.sellect.server.product.controller.response;
 
+import com.sellect.server.category.domain.Category;
 import com.sellect.server.product.domain.Product;
 import com.sellect.server.product.domain.ProductImage;
 import java.math.BigDecimal;
@@ -14,7 +15,9 @@ public record ProductDetailRetrieveBySellerResponse(
     BigDecimal price,
     Integer stock,
     String description,
-    String categoryName,
+    String smallCategoryName,
+    String mediumCategoryName,
+    String largeCategoryName,
     String brandName,
     List<ProductImageResponse> images,
     Integer totalOrders,
@@ -25,6 +28,9 @@ public record ProductDetailRetrieveBySellerResponse(
     public static ProductDetailRetrieveBySellerResponse from(
         Product product,
         List<ProductImage> productImages,
+        Category smallCategory,
+        Category mediumCategory,
+        Category largeCategory,
         Integer totalOrders,
         BigDecimal totalSales) {
         return ProductDetailRetrieveBySellerResponse.builder()
@@ -33,7 +39,9 @@ public record ProductDetailRetrieveBySellerResponse(
             .price(product.getPrice())
             .stock(product.getStock())
             .description(product.getDescription())
-            .categoryName(product.getCategory().getName())
+            .smallCategoryName(smallCategory.getName())
+            .mediumCategoryName(mediumCategory.getName())
+            .largeCategoryName(largeCategory.getName())
             .brandName(product.getBrand().getName())
             .images(productImages.stream()
                 .map(ProductImageResponse::from)

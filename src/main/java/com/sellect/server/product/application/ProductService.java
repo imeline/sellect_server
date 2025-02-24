@@ -204,8 +204,13 @@ public class ProductService {
         Product product = productRepository.findById(productId)
             .orElseThrow(() -> new RuntimeException("존재하지 않는 상품입니다."));
 
-        // todo: 일단 하나의 카ㅔ고리만 보내도록 한다. (추후 변경) List<String> or 조합해서 String 으로
-        Category category = categoryRepository.findById(product.getCategory().getId())
+        Category smallCategory = categoryRepository.findById(product.getCategory().getId())
+            .orElseThrow(() ->
+                new RuntimeException("존재하지 않는 카테고리입니다."));
+        Category mediumCategory = categoryRepository.findById(smallCategory.getParentId())
+            .orElseThrow(() ->
+                new RuntimeException("존재하지 않는 카테고리입니다."));
+        Category largeCategory = categoryRepository.findById(mediumCategory.getParentId())
             .orElseThrow(() ->
                 new RuntimeException("존재하지 않는 카테고리입니다."));
 
@@ -217,26 +222,38 @@ public class ProductService {
         List<ProductImage> productImages = productImageRepository.findByProductId(productId);
 
         // todo: JPA가 알아서 조회
-        return ProductDetailReadResponse.from(product, category, product.getSeller(), brand,
+        return ProductDetailReadResponse.from(
+            product,
+            smallCategory,
+            mediumCategory,
+            largeCategory,
+            product.getSeller(),
+            brand,
             productImages);
     }
 
 
-    //== Seller 전용 ==//
-
+    //========================= Seller 전용 =========================//
     @Transactional(readOnly = true)
     public Page<ProductDetailReadResponse> retrieveAllBySeller(User seller, int page, int size) {
 
         Page<Product> products = productRepository.findBySellerId(seller.getId(), PageRequest.of(page, size));
 
         return products.map(product -> {
-            Category category = categoryRepository.findById(product.getCategory().getId())
+            Category smallCategory = categoryRepository.findById(product.getCategory().getId())
+                .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "category"));
+            Category mediumCategory = categoryRepository.findById(smallCategory.getParentId())
+                .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "category"));
+            Category largeCategory = categoryRepository.findById(mediumCategory.getParentId())
                 .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "category"));
             Brand brand = brandRepository.findById(product.getBrand().getId())
                 .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "brand"));
 
             List<ProductImage> productImages = productImageRepository.findByProductId(product.getId());
-            return ProductDetailReadResponse.from(product, category, product.getSeller(), brand,
+            return ProductDetailReadResponse.from(
+                product,
+                smallCategory, mediumCategory, largeCategory,
+                product.getSeller(), brand,
                 productImages);
         });
     }
@@ -252,11 +269,22 @@ public class ProductService {
             throw new CommonException(BError.ACCESS_DENIED, "product");
         }
 
+        Category smallCategory = categoryRepository.findById(product.getCategory().getId())
+            .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "category"));
+        Category mediumCategory = categoryRepository.findById(smallCategory.getParentId())
+            .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "category"));
+        Category largeCategory = categoryRepository.findById(mediumCategory.getParentId())
+            .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "category"));
+
+
         List<ProductImage> productImages = productImageRepository.findByProductId(productId);
         Integer totalOrders = orderItemRepository.countCompleteOrdersByProductId(productId);
         BigDecimal totalSales = orderItemRepository.calculateSalesByProductId(productId);
 
-        return ProductDetailRetrieveBySellerResponse.from(product, productImages, totalOrders, totalSales);
+        return ProductDetailRetrieveBySellerResponse.from(
+            product, productImages,
+            smallCategory, mediumCategory, largeCategory,
+            totalOrders, totalSales);
     }
 
     @Transactional(readOnly = true)
