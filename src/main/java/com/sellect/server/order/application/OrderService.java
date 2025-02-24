@@ -157,8 +157,9 @@ public class OrderService {
         }
         // 장바구니 비우기
         List<CartItem> cartItems = cartRepository.findAllByUserId(user.getId());
-        cartItems.forEach(CartItem::remove);
-        cartRepository.saveAll(cartItems);
+        List<CartItem> removedCartItems = cartItems.stream().map(CartItem::remove).toList();
+
+        cartRepository.saveAll(removedCartItems);
 
         // 쿠폰 사용 처리
         if (order.getUserReceivedCoupon() != null) {
