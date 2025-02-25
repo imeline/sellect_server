@@ -51,8 +51,36 @@ public class PaymentController {
         @PathVariable String pid,
         @RequestParam("pg_token") String token) {
         paymentService.approvePayment(pid, token);
-        // todo: home redirect
-        return "success";
+        return """
+            <!DOCTYPE html>
+            <html lang="ko">
+            <head>
+                <meta charset="UTF-8">
+                <title>결제 성공</title>
+                <link rel="icon" href="data:,"> <!-- favicon 요청 방지 -->
+                <style>
+                    body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+                    h1 { color: #4CAF50; }
+                    p { font-size: 18px; }
+                    button { 
+                        padding: 10px 20px; 
+                        font-size: 16px; 
+                        color: white; 
+                        background-color: #007BFF; 
+                        border: none; 
+                        border-radius: 5px; 
+                        cursor: pointer; 
+                    }
+                    button:hover { background-color: #0056b3; }
+                </style>
+            </head>
+            <body>
+                <h1>결제 성공!</h1>
+                <p>결제가 정상적으로 완료되었습니다.</p>
+                <button onclick="window.close()">확인</button>
+            </body>
+            </html>
+            """;
     }
 
     @GetMapping("/cancel/{pid}")

@@ -70,8 +70,12 @@ public class PaymentService {
             orderService.completeOrder(user, orderId);
 
             ApproveRequest approveRequest = createApproveRequest(payment, token);
+            handleKakaoPayApproveResponse(payment);
             ResponseEntity<Map> response = sendKakaoPayApproveRequest(approveRequest);
-            handleKakaoPayApproveResponse(response, payment);
+            if (response.getStatusCode() != HttpStatus.OK) {
+                throw new RuntimeException("Failed to approve KakaoPay payment");
+            }
+
             log.info("Payment approved for pid: {}", pid);
         } catch (Exception e) {
             log.error("Payment approval failed for pid: {}", pid, e);
@@ -190,13 +194,10 @@ public class PaymentService {
             Map.class);
     }
 
-    private void handleKakaoPayApproveResponse(ResponseEntity<Map> response, Payment payment) {
-        if (response.getStatusCode() == HttpStatus.OK) {
-            Payment approvePayment = payment.approvePayment();
-            paymentRepository.save(approvePayment);
-        } else {
-            throw new RuntimeException("Failed to approve KakaoPay payment");
-        }
+    private void handleKakaoPayApproveResponse(Payment payment) {
+        Payment approvePayment = payment.approvePayment();
+        paymentRepository.save(approvePayment);
+
     }
 
     private HttpHeaders createHeaders() {
