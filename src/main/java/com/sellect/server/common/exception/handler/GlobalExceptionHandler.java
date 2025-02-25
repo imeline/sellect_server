@@ -107,10 +107,10 @@ public class GlobalExceptionHandler {
         return ApiResponse.onFailure(response, HttpStatus.valueOf(response.getStatus()));
     }
 
-//    @ExceptionHandler(Exception.class)
-//    protected ApiResponse<Void> handleUnExpectException(Exception e) {
-//        log.error("UnExpectException {}", e.getMessage());
-//        final ErrorResponse response = ErrorResponse.of(ErrorCode.INTERNAL_SERVER_ERROR);
-//        return ApiResponse.onFailure(response, HttpStatus.INTERNAL_SERVER_ERROR);
-//    }
+    @ExceptionHandler(Exception.class)
+    protected ApiResponse<Void> handleUnExpectException(Exception e) {
+        log.error("UnExpectException {}", e.getMessage());
+        final ErrorResponse response = ErrorResponse.of(ErrorCode.INTERNAL_SERVER_ERROR);
+        return ApiResponse.onFailure(response, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
 }
