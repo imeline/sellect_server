@@ -45,8 +45,15 @@ public class AuthController {
         LoginDto loginResponse = userAuthService.login(request);
         String accessToken = loginResponse.accessToken();
 
-        ResponseCookie cookie = ResponseCookie.from("access_token", accessToken).httpOnly(true)
-            .secure(false).path("/").maxAge(Duration.ofMinutes(60)).build();
+        // todo: 환경변수
+        ResponseCookie cookie = ResponseCookie.from("access_token", accessToken)
+            .domain("sellect.site") // ✅ 서브도메인에서도 유지하려면 설정
+            .httpOnly(true)
+            .secure(true)
+            .path("/")
+            .sameSite("None") // 반드시 추가
+            .maxAge(Duration.ofMinutes(60))
+            .build();
 
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 

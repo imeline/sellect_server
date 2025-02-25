@@ -117,6 +117,10 @@ public class SecurityConfig {
         configuration.addAllowedMethod("*");
         configuration.addAllowedHeader("*");
         configuration.setAllowCredentials(true);
+
+        // 🔥 Set-Cookie 헤더를 클라이언트에서 읽을 수 있도록 설정
+        configuration.setExposedHeaders(Arrays.asList("Set-Cookie"));
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;

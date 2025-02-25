@@ -289,10 +289,16 @@ public class ProductService {
 
     @Transactional(readOnly = true)
     public SellerStatsRetrieveResponse retrieveStats(User seller) {
+        // 판매 중인 상품 체크
         List<Product> products = productRepository.findAllBySellerId(seller.getId());
+
+        System.out.println("products = " + products);
+        // todo: products가 비어있을때는? stream이어서 상관없나?
         BigDecimal totalSales = orderItemRepository.calculateTotalSalesByProductIds(
             products.stream()
                 .map(Product::getId).toList());
+
+        totalSales = totalSales != null ? totalSales : BigDecimal.ZERO;
         return SellerStatsRetrieveResponse.from(totalSales, products.size());
     }
 }
