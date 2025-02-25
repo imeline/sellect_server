@@ -60,10 +60,12 @@ class OrderServiceTest {
             // Given
             productRepository.save(Product.builder()
                 .id(1L)
+                .stock(5)
                 .build());
 
             productRepository.save(Product.builder()
                 .id(2L)
+                .stock(10)
                 .build());
             userReceivedCouponRepository.save(UserReceivedCoupon.builder()
                 .id(1L)
@@ -72,19 +74,23 @@ class OrderServiceTest {
             OrderAddRequest request = new OrderAddRequest(
                 "200000",
                 List.of(
-                    new OrderItemAddRequest(1L, "10000", 10),
+                    new OrderItemAddRequest(1L, "10000", 5),
                     new OrderItemAddRequest(2L, "20000", 5)
                 )
             );
 
             // When
             Orders savedOrder = sut.registerPendingOrder(user, request);
+//            CommonException exception = assertThrows(CommonException.class, () -> {
+//                sut.registerPendingOrder(user, request);
+//        });
 
             // Then
             assertThat(savedOrder.getStatus()).isEqualTo(OrderStatus.PENDING);
             List<OrderItem> orderItems = orderItemRepository.findAllByOrdersId(savedOrder.getId());
             assertThat(orderItems).hasSize(2);
-//            assertThat(savedOrder.getUserReceivedCoupon().getId()).isEqualTo(1L);
+            //assertEquals("재고 부족 is not valid", exception.getMessage());
+
         }
     }
 

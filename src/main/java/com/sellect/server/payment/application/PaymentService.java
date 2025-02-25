@@ -40,6 +40,8 @@ public class PaymentService {
 
     @Value("${kakao.pay.secret-key}")
     private String PAY_SECRET_KEY;
+    @Value("${server.host}")
+    private String SERVER_HOST;
     public static final String TEST_API_CID = "TC0ONETIME";
     private static final String KAKAO_PAY_API_URL = "https://open-api.kakaopay.com/online/v1/payment/ready";
     private static final String KAKAO_PAY_APPROVE_API_URL = "https://open-api.kakaopay.com/online/v1/payment/approve";
@@ -70,8 +72,12 @@ public class PaymentService {
             orderService.completeOrder(user, orderId);
 
             ApproveRequest approveRequest = createApproveRequest(payment, token);
+            handleKakaoPayApproveResponse(payment);
             ResponseEntity<Map> response = sendKakaoPayApproveRequest(approveRequest);
-            handleKakaoPayApproveResponse(response, payment);
+            if (response.getStatusCode() != HttpStatus.OK) {
+                throw new RuntimeException("Failed to approve KakaoPay payment");
+            }
+
             log.info("Payment approved for pid: {}", pid);
         } catch (Exception e) {
             log.error("Payment approval failed for pid: {}", pid, e);
@@ -142,9 +148,9 @@ public class PaymentService {
             .quantity(paymentRequest.quantity())
             .totalAmount(paymentRequest.totalAmount())
             .taxFreeAmount(0)
-            .approvalUrl(String.format("http://localhost:8080/api/v1/payment/success/%s", pid))
-            .cancelUrl("http://localhost:8080/api/v1/payment/cancel")
-            .failUrl("http://localhost:8080/api/v1/payment/fail")
+            .approvalUrl(String.format("%s/api/v1/payment/success/%s", SERVER_HOST, pid))
+            .cancelUrl(String.format("%s/api/v1/payment/cancel", SERVER_HOST))
+            .failUrl(String.format("%s/api/v1/payment/fail", SERVER_HOST))
             .build();
     }
 
@@ -190,13 +196,10 @@ public class PaymentService {
             Map.class);
     }
 
-    private void handleKakaoPayApproveResponse(ResponseEntity<Map> response, Payment payment) {
-        if (response.getStatusCode() == HttpStatus.OK) {
-            Payment approvePayment = payment.approvePayment();
-            paymentRepository.save(approvePayment);
-        } else {
-            throw new RuntimeException("Failed to approve KakaoPay payment");
-        }
+    private void handleKakaoPayApproveResponse(Payment payment) {
+        Payment approvePayment = payment.approvePayment();
+        paymentRepository.save(approvePayment);
+
     }
 
     private HttpHeaders createHeaders() {
