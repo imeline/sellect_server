@@ -40,6 +40,8 @@ public class PaymentService {
 
     @Value("${kakao.pay.secret-key}")
     private String PAY_SECRET_KEY;
+    @Value("${server.host}")
+    private String SERVER_HOST;
     public static final String TEST_API_CID = "TC0ONETIME";
     private static final String KAKAO_PAY_API_URL = "https://open-api.kakaopay.com/online/v1/payment/ready";
     private static final String KAKAO_PAY_APPROVE_API_URL = "https://open-api.kakaopay.com/online/v1/payment/approve";
@@ -146,9 +148,9 @@ public class PaymentService {
             .quantity(paymentRequest.quantity())
             .totalAmount(paymentRequest.totalAmount())
             .taxFreeAmount(0)
-            .approvalUrl(String.format("http://localhost:8080/api/v1/payment/success/%s", pid))
-            .cancelUrl("http://localhost:8080/api/v1/payment/cancel")
-            .failUrl("http://localhost:8080/api/v1/payment/fail")
+            .approvalUrl(String.format("%s/api/v1/payment/success/%s", SERVER_HOST, pid))
+            .cancelUrl(String.format("%s/api/v1/payment/cancel", SERVER_HOST))
+            .failUrl(String.format("%s/api/v1/payment/fail", SERVER_HOST))
             .build();
     }
 
