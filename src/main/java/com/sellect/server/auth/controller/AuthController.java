@@ -45,8 +45,13 @@ public class AuthController {
         LoginDto loginResponse = userAuthService.login(request);
         String accessToken = loginResponse.accessToken();
 
-        ResponseCookie cookie = ResponseCookie.from("access_token", accessToken).httpOnly(true)
-            .secure(false).path("/").maxAge(Duration.ofMinutes(60)).build();
+        ResponseCookie cookie = ResponseCookie.from("access_token", accessToken)
+            .httpOnly(true)
+            .secure(true)
+            .path("/")
+            .sameSite("None") // ✅ SameSite=None 설정
+            .maxAge(Duration.ofMinutes(60))
+            .build();
 
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
