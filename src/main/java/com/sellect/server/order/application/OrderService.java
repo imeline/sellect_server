@@ -71,6 +71,14 @@ public class OrderService {
 
     @Transactional
     public Orders registerPendingOrder(User user, OrderAddRequest request) {
+        // 재고 확인
+        request.orderItems().forEach(item -> {
+            Product product = productRepository.findById(item.productId())
+                .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "product"));
+            if (product.getStock() < item.quantity()) {
+                throw new CommonException(BError.NOT_VALID, "재고 부족");
+            }
+        });
         // Orders 저장
         Orders order = Orders.register(user, request.convertPriceAsBigDecimal(),
             OrderStatus.PENDING);
