@@ -139,6 +139,9 @@ public class ProductController {
         return ApiResponse.ok(result);
     }
 
+    /*
+    * 판매자 전용
+    * */
     @GetMapping("/seller/stats")
     public ApiResponse<SellerStatsRetrieveResponse> retrieveStats(
         @AuthSeller User seller
