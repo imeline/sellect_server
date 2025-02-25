@@ -47,9 +47,9 @@ public class AuthController {
 
         // todo: 환경변수
         ResponseCookie cookie = ResponseCookie.from("access_token", accessToken)
-            .domain("") // ✅ 서브도메인에서도 유지하려면 설정
+            .domain("sellect.site") // ✅ 서브도메인에서도 유지하려면 설정
             .httpOnly(true)
-            .secure(true) // 로컬에서는 false
+            .secure(true)
             .path("/")
             .sameSite("None") // 반드시 추가
             .maxAge(Duration.ofMinutes(60))
