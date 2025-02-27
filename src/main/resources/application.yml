@@ -47,3 +47,14 @@ storage:
 
 cloudfront:
   domain-name: ${CLOUDFRONT_DOMAIN_NAME:0.0.0.0}
+
+management:
+  endpoint:
+    health:
+      show-components: always
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  server:
+    port: 8080
