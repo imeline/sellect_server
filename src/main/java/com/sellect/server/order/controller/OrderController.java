@@ -54,26 +54,14 @@ public class OrderController {
             .build());
     }
 
-//    /**
-//     * 결제 전 - 재고 확인, DB 락
-//     */
-//    @PatchMapping("/order/{orderId}/reserve/stock")
-//    public ApiResponse<Void> reserveStock(
-//        @PathVariable Long orderId) {
-//
-//        orderService.reserveStock(orderId);
-//        return ApiResponse.ok(null);
-//    }
-
     /**
-     * 주문 완료 - 주문 상태 확정, 쿠폰 삭제, 장바구니 비우기
+     * 주문 완료 -  DB 락, 재고 차감, 주문 상태 확정, 쿠폰 삭제, 장바구니 비우기
      */
     @PostMapping("/order/complete/{orderId}")
-    public ApiResponse<Void> completeOrder(@AuthUser User user, @PathVariable Long orderId) {
-        orderService.completeOrder(user, orderId);
+    public ApiResponse<Void> lockAndCompleteOrder(@AuthUser User user, @PathVariable Long orderId) {
+        orderService.lockAndCompleteOrder(user, orderId);
         return ApiResponse.ok(null);
     }
-
 
     /**
      * 주문 내역 확인
