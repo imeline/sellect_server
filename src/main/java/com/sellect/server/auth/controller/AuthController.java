@@ -45,7 +45,6 @@ public class AuthController {
         LoginDto loginResponse = userAuthService.login(request);
         String accessToken = loginResponse.accessToken();
 
-        // todo: 환경변수
         ResponseCookie cookie = ResponseCookie.from("access_token", accessToken)
             .domain("sellect.site") // ✅ 서브도메인에서도 유지하려면 설정
             .httpOnly(true)
