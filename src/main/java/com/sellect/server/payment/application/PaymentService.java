@@ -66,10 +66,9 @@ public class PaymentService {
                 () -> new CommonException(BError.NOT_EXIST, String.format("Payment %s", pid)));
         try {
             Long orderId = Long.valueOf(payment.getOrderId());
-            orderService.lockProductItems(orderId);
             User user = userRepository.findByUuid(payment.getUid())
                 .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "user"));
-            orderService.completeOrder(user, orderId);
+            orderService.lockAndCompleteOrder(user, orderId);
 
             ApproveRequest approveRequest = createApproveRequest(payment, token);
             handleKakaoPayApproveResponse(payment);

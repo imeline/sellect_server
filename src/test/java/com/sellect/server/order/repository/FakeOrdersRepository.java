@@ -42,7 +42,8 @@ public class FakeOrdersRepository implements OrdersRepository {
     @Override
     public List<Orders> findCompletedOrdersByUser(User user, OrderStatus status) {
         return data.stream()
-            .filter(order -> order.getUser().getId().equals(user.getId()))
+            .filter(order -> order.getUser().getId().equals(user.getId())
+                && order.getStatus() == status)
             .toList();
     }
 

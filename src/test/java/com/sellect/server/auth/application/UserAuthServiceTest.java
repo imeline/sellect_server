@@ -38,8 +38,7 @@ class UserAuthServiceTest {
         userRepository.clear();
         userAuthRepository.clear();
         passwordEncoder = new BCryptPasswordEncoder();
-        userAuthService = new UserAuthService(jwtUtil, userAuthRepository, userRepository,
-            passwordEncoder);
+        userAuthService = new UserAuthService(jwtUtil, userAuthRepository, userRepository);
     }
 
     @Nested

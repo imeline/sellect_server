@@ -14,7 +14,6 @@ import com.sellect.server.common.infrastructure.jwt.JwtUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -25,7 +24,7 @@ public class UserAuthService {
     private final JwtUtil jwtUtil;
     private final UserAuthRepository userAuthRepository;
     private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
+
 
     @Transactional(rollbackOn = RuntimeException.class)
     public void signUp(UserSignUpRequest request, Role role) {
@@ -33,7 +32,7 @@ public class UserAuthService {
             throw new CommonException(BError.EXIST, "Email");
         }
         User saveUser = userRepository.save(User.register(request.nickname(), role));
-        String encryptedPassword = passwordEncoder.encode(request.password());
+        String encryptedPassword = jwtUtil.passwordEncoder().encode(request.password());
         UserAuth userAuth = UserAuth.signUp(saveUser, request.email(), encryptedPassword);
         userAuthRepository.save(userAuth);
     }
@@ -42,7 +41,7 @@ public class UserAuthService {
         UserAuth userAuth = userAuthRepository.findByEmail(loginRequest.email())
             .orElseThrow(() -> new IllegalArgumentException("Invalid email"));
 
-        if (!passwordEncoder.matches(loginRequest.password(), userAuth.getPassword())) {
+        if (!jwtUtil.passwordEncoder().matches(loginRequest.password(), userAuth.getPassword())) {
             throw new IllegalArgumentException("Invalid password");
         }
 
