@@ -7,14 +7,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.util.AntPathMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -60,56 +56,23 @@ public class SecurityConfig {
             .httpBasic(AbstractHttpConfigurer::disable);
     }
 
-    @Order(1)
-    @Bean
-    public SecurityFilterChain loginFilterChain(HttpSecurity http) throws Exception {
-        http = commonConfig(http);
-        http
-            .securityMatcher(request -> Arrays.stream(NO_JWT_PATHS)
-                .anyMatch(path -> new AntPathMatcher().match(path, request.getRequestURI())))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers(NO_JWT_PATHS).permitAll()
-                .anyRequest().denyAll()
-            );
-        return http.build();
-    }
-
-
-    @Order(2)
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http = commonConfig(http);
-        http
-            .securityMatcher(request -> Arrays.stream(NO_JWT_PATHS)
-                .noneMatch(path -> path.equals(request.getRequestURI())) &&
-                Arrays.stream(SWAGGER_PATHS)
-                    .noneMatch(path -> new AntPathMatcher().match(path, request.getRequestURI())))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers(PUBLIC_PATHS).permitAll()
-                .requestMatchers("/**").permitAll() // ✅ 모든 요청에 대해 Preflight 허용
-                .anyRequest().authenticated()
-            )
-            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+
+        http.authorizeHttpRequests(auth -> auth
+            .requestMatchers(NO_JWT_PATHS).permitAll() // 인증 없이 허용
+            .requestMatchers(PUBLIC_PATHS).permitAll() // JWT는 필요하지만 인증 없이 접근 가능
+            .requestMatchers(SWAGGER_PATHS).permitAll() // Swagger 문서 접근 가능
+            .anyRequest().authenticated()
+        );
+
+        http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+
         return http.build();
     }
 
-    @Order(3)
-    @Bean
-    public SecurityFilterChain swaggerFilterChain(HttpSecurity http) throws Exception {
-        http = commonConfig(http);
-        http
-            .securityMatcher(request -> Arrays.stream(SWAGGER_PATHS)
-                .anyMatch(path -> new AntPathMatcher().match(path, request.getRequestURI())))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers(SWAGGER_PATHS).permitAll()
-                .anyRequest().denyAll()
-            );
-        return http.build();
-    }
-
-
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
+    private CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.addAllowedOrigin("http://localhost:3000");
         configuration.addAllowedOrigin("https://sellect-client.vercel.app");
@@ -125,10 +88,4 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
-
 }
