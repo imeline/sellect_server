@@ -53,4 +53,8 @@ public class FakeUserAuthRepository implements UserAuthRepository {
             .findFirst()
             .get();
     }
+
+    public void clear() {
+        userAuthStore.clear();
+    }
 }

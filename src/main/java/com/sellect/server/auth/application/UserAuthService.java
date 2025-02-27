@@ -8,6 +8,8 @@ import com.sellect.server.auth.domain.UserAuth;
 import com.sellect.server.auth.repository.entity.Role;
 import com.sellect.server.auth.repository.user.UserAuthRepository;
 import com.sellect.server.auth.repository.user.UserRepository;
+import com.sellect.server.common.exception.CommonException;
+import com.sellect.server.common.exception.enums.BError;
 import com.sellect.server.common.infrastructure.jwt.JwtUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -28,8 +30,7 @@ public class UserAuthService {
     @Transactional(rollbackOn = RuntimeException.class)
     public void signUp(UserSignUpRequest request, Role role) {
         if (userAuthRepository.existsByEmail(request.email())) {
-            // todo: 커스텀 exception
-            throw new IllegalArgumentException("Email already exists");
+            throw new CommonException(BError.EXIST, "Email");
         }
         User saveUser = userRepository.save(User.register(request.nickname(), role));
         String encryptedPassword = passwordEncoder.encode(request.password());

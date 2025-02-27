@@ -15,6 +15,7 @@ import com.sellect.server.auth.repository.FakeUserRepository;
 import com.sellect.server.auth.repository.entity.Role;
 import com.sellect.server.auth.repository.user.UserAuthRepository;
 import com.sellect.server.auth.repository.user.UserRepository;
+import com.sellect.server.common.exception.CommonException;
 import com.sellect.server.common.infrastructure.jwt.JwtUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -25,17 +26,17 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 class UserAuthServiceTest {
 
-    private UserRepository userRepository;
-    private UserAuthRepository userAuthRepository;
-    private PasswordEncoder passwordEncoder;
-    private UserAuthService userAuthService;
-    private JwtUtil jwtUtil;
+    JwtUtil jwtUtil;
+    FakeUserRepository userRepository = new FakeUserRepository();
+    FakeUserAuthRepository userAuthRepository = new FakeUserAuthRepository();
+    PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    UserAuthService userAuthService;
 
     @BeforeEach
     void setUp() {
         jwtUtil = new JwtUtil("TEST_SECRET_KEY_TEMP_UPPER_THAN_256_BIT", 10000L);
-        userRepository = new FakeUserRepository();
-        userAuthRepository = new FakeUserAuthRepository();
+        userRepository.clear();
+        userAuthRepository.clear();
         passwordEncoder = new BCryptPasswordEncoder();
         userAuthService = new UserAuthService(jwtUtil, userAuthRepository, userRepository,
             passwordEncoder);
@@ -106,7 +107,7 @@ class UserAuthServiceTest {
             userAuthService.signUp(request1, role);
 
             // when & then
-            IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, () -> {
+            CommonException thrown = assertThrows(CommonException.class, () -> {
                 userAuthService.signUp(request2, role);
             });
 

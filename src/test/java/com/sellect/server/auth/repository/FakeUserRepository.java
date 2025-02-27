@@ -43,5 +43,10 @@ public class FakeUserRepository implements UserRepository {
         User user = userStore.get(id);
         return Optional.ofNullable(user);
     }
+
+
+    public void clear() {
+        userStore.clear();
+    }
 }
 
