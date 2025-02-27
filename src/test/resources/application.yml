@@ -1,4 +1,6 @@
 spring:
+  security:
+    enable: false
   datasource:
     url: jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
     driverClassName: org.h2.Driver
@@ -12,7 +14,26 @@ spring:
     properties:
       hibernate:
         format_sql: true
-  flyway:
-    enabled: false
+
+
+# 사용해야하는 경우 주석해제
 jwt:
+  secret: spring-boot-test-secret-key-1234-!!!! # JWT 시크릿 키 설정
   expiration: 1800000
+
+
+# 결제 SpringBootTest 시에는 TestPropertySource 사용할 것
+kakao:
+  pay:
+    secret-key: "default-test-secret!"
+server:
+  host: "http://localhost:8080"
+
+
+storage:
+  file-system:
+    location: /tmp/spring-boot-upload-test
+
+
+cloudfront:
+  domain-name: "http://test-cloudfront-url.com"
