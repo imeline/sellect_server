@@ -60,7 +60,6 @@ public class JwtUtil {
             .getBody();
     }
 
-    @Deprecated
     public String extractToken(HttpServletRequest request) {
         String authHeader = request.getHeader("Authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
@@ -70,6 +69,7 @@ public class JwtUtil {
         return null;
     }
 
+    @Deprecated
     public String extractTokenFromCookie(HttpServletRequest request) {
         String token = null;
         if (request.getCookies() != null) {

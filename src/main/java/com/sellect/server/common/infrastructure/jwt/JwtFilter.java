@@ -21,7 +21,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 @Component
 @RequiredArgsConstructor
-@Slf4j
 public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
@@ -30,7 +29,7 @@ public class JwtFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
         FilterChain filterChain) throws ServletException, IOException {
-        String token = jwtUtil.extractTokenFromCookie(request);
+        String token = jwtUtil.extractToken(request);
         if (token != null && jwtUtil.isTokenValid(token)) {
             String uuid = jwtUtil.extractUuid(token);
 
