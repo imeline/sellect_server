@@ -18,7 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
         ManagementWebSecurityAutoConfiguration.class,
         SecurityConfig.class}) // Spring Security 비활성화
 @Transactional // 테스트 실행 후 DB 변경 사항 자동 롤백 (깨끗한 상태 유지)
-class ServerApplicationTests {
+class SpringBootTestSample {
 
     @MockBean
     private SecurityFilterChain securityFilterChain;
