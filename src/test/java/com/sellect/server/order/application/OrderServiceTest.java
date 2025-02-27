@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.sellect.server.auth.domain.User;
 import com.sellect.server.brand.domain.Brand;
 import com.sellect.server.brand.repository.FakeBrandRepository;
+import com.sellect.server.cart.domain.CartItem;
 import com.sellect.server.cart.repository.FakeCartItemRepository;
 import com.sellect.server.common.exception.CommonException;
 import com.sellect.server.coupon.domain.Coupon;
@@ -186,14 +187,27 @@ class OrderServiceTest {
         @DisplayName("장바구니 비우기 & 쿠폰 사용 처리 성공")
         void testClearCartCoupon() {
             // Given
-            UserReceivedCoupon userReceivedCoupon = UserReceivedCoupon.builder()
+            cartRepository.save(CartItem.builder()
                 .id(1L)
+                .user(user)
+                .build());
+
+            cartRepository.save(CartItem.builder()
+                .id(2L)
+                .user(user)
+                .build());
+
+            userReceivedCouponRepository.save(UserReceivedCoupon.builder()
+                .id(1L)
+                .user(user)
                 .isUsed(false)
-                .build();
+                .build());
+            UserReceivedCoupon userCoupon = userReceivedCouponRepository.findById(1L).orElseThrow();
 
             Orders savedOrder = ordersRepository.save(Orders.builder()
                 .id(1L)
-                .userReceivedCoupon(userReceivedCoupon)
+                .user(user)
+                .userReceivedCoupon(userCoupon)
                 .status(OrderStatus.COMPLETED)
                 .build());
 
@@ -201,8 +215,14 @@ class OrderServiceTest {
             sut.clearCartAndDeleteCoupon(user, savedOrder);
 
             // Then
-            assertThat(cartRepository.findAllByUserId(user.getId())).isEmpty();
-            //assertThat(userReceivedCoupon.getIsUsed()).isTrue();
+            CartItem cart1 = cartRepository.findById(1L).orElseThrow();
+            CartItem cart2 = cartRepository.findById(2L).orElseThrow();
+            assertThat(cart1.getDeleteAt()).isNotNull();
+            assertThat(cart2.getDeleteAt()).isNotNull();
+
+            UserReceivedCoupon updatedCoupon = userReceivedCouponRepository.findById(1L)
+                .orElseThrow();
+            assertThat(updatedCoupon.getIsUsed()).isTrue();
         }
     }
 
