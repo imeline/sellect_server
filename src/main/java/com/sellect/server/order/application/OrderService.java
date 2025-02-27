@@ -112,7 +112,7 @@ public class OrderService {
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
-    public void lockProductItems(Long orderId) {
+    public Orders lockAndCompleteOrder(User user, Long orderId) {
         Orders order = getOrderById(orderId);
         // 이미 완료된 주문인지 확인
         if (order.getStatus() == OrderStatus.COMPLETED) {
@@ -121,35 +121,23 @@ public class OrderService {
         List<OrderItem> orderItems = getOrderItemsByOrderId(orderId);
 
         orderItems.forEach(orderItem -> {
+            // DB 락
+            productRepository.findByIdWithLock(orderItem.getProduct().getId())
+                .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "상품이 존재하지 않습니다."));
             // 재고 확인
             if (orderItem.getProduct().getStock() < orderItem.getQuantity()) {
                 throw new CommonException(BError.NOT_VALID, "재고 부족");
             }
-            // DB 락
-            productRepository.findByIdWithLock(orderItem.getProduct().getId())
-                .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "상품이 존재하지 않습니다."));
-        });
-    }
-
-    @Transactional(propagation = Propagation.REQUIRED)
-    public void completeOrder(User user, Long orderId) {
-        Orders order = getOrderById(orderId);
-        // 이미 완료된 주문인지 확인
-        if (order.getStatus() == OrderStatus.COMPLETED) {
-            throw new CommonException(BError.NOT_VALID, "이미 완료(확정)된 주문입니다.");
-        }
-        List<OrderItem> orderItems = getOrderItemsByOrderId(orderId);
-
-        orderItems.forEach(orderItem -> {
             // 재고 차감
             productRepository.save(orderItem.getProduct().updateStock(orderItem.getQuantity()));
         });
-
         // 주문 확정
         Orders savedOrder = ordersRepository.save(order.updateStatus(OrderStatus.COMPLETED));
 
         // 쿠폰 사용 처리, 장바구니 비우기
         clearCartAndDeleteCouponAsync(user, savedOrder);
+
+        return savedOrder;
     }
 
     // 비동기 처리
