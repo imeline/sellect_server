@@ -56,10 +56,13 @@ public class FakeProductRepository implements ProductRepository {
         return new PageImpl<>(findProducts, pageable, findProducts.size());
     }
 
-    // 락에 대해선 fake repository를 구현하지 못함
+    // 락에 대해선 구현 못하고, id 를 통한 select product 만 구현
     @Override
-    public Optional<Product> findByIdWithLock(Long id) {
-        return Optional.empty();
+    public Optional<Product> findByIdWithLock(Long productId) {
+        return data.stream()
+            .filter(product -> product.getId().equals(productId))
+            .filter(product -> product.getDeleteAt() == null)
+            .findFirst();
     }
 
     @Override
