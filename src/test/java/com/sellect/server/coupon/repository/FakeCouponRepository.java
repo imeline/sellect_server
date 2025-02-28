@@ -1,7 +1,6 @@
 package com.sellect.server.coupon.repository;
 
 import com.sellect.server.coupon.domain.Coupon;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -15,7 +14,7 @@ public class FakeCouponRepository implements CouponRepository {
     private Long id = 1L;
 
     @Override
-    public void save(Coupon coupon) {
+    public Coupon save(Coupon coupon) {
             if (coupon.getId() == null) {
                 coupon = Coupon.builder()
                     .id(id++)
@@ -29,6 +28,7 @@ public class FakeCouponRepository implements CouponRepository {
                     .build();
             }
             storage.put(coupon.getId(), coupon);
+        return coupon;
     }
 
     @Override

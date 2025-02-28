@@ -7,7 +7,7 @@ import org.springframework.data.domain.PageRequest;
 
 public interface CouponRepository {
 
-    void save(Coupon coupon);
+    Coupon save(Coupon coupon);
 
     Optional<Coupon> findById(Long couponId);
 
