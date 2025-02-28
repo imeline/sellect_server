@@ -6,16 +6,21 @@ import static org.springframework.web.bind.annotation.RequestMethod.HEAD;
 import static org.springframework.web.bind.annotation.RequestMethod.PATCH;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
+import com.sellect.server.image.config.properties.TusProperties;
 import com.sellect.server.product.application.StorageService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import me.desair.tus.server.TusFileUploadService;
 import me.desair.tus.server.exception.TusException;
 import me.desair.tus.server.upload.UploadInfo;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -26,6 +31,7 @@ public class ImageUploadController {
 
     private final TusFileUploadService fileUploadService;
     private final StorageService storageService;
+    private final TusProperties tusProperties;
 
     // TODO: 서비스 로직으로 분리
     @RequestMapping(value = { "/upload", "/upload/**" },
@@ -60,6 +66,20 @@ public class ImageUploadController {
             } catch (IOException | TusException e) {
                 log.error("delete upload", e);
                 // TODO: 예외 처리
+            }
+        }
+    }
+
+    @Scheduled(fixedDelayString = "PT24H")
+    private void cleanup() {
+        Path path = Paths.get(tusProperties.getStoragePath());
+        Path locksDir = path.resolve("locks");
+        if (Files.exists(locksDir)) {
+            try {
+                fileUploadService.cleanup();
+            }
+            catch (IOException e) {
+                log.error("cleanup", e);
             }
         }
     }
