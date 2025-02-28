@@ -7,7 +7,9 @@ import com.sellect.server.auth.domain.User;
 import com.sellect.server.auth.repository.entity.Role;
 import com.sellect.server.common.exception.CommonException;
 import com.sellect.server.coupon.controller.request.IssueCouponRequest;
+import com.sellect.server.coupon.controller.response.CouponResponse;
 import com.sellect.server.coupon.domain.Coupon;
+import com.sellect.server.coupon.domain.UserReceivedCoupon;
 import com.sellect.server.coupon.repository.CouponRepository;
 import com.sellect.server.coupon.repository.FakeCouponRepository;
 import com.sellect.server.coupon.repository.FakeuserReceivedCouponRepository;
@@ -15,6 +17,7 @@ import com.sellect.server.coupon.repository.UserReceivedCouponRepository;
 import com.sellect.server.product.repository.FakeProductRepository;
 import com.sellect.server.product.repository.ProductRepository;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -251,53 +254,66 @@ class CouponServiceTest {
 
     }
 
-//    @Nested
-//    @DisplayName("쿠폰 내역 가져오기 테스트")
-//    class GetReceivedCouponListTest {
-//
-//        @Test
-//        @DisplayName("사용자가 사용하지 않고 등록한 쿠폰을 조회한다.")
-//        void _willSuccess() {
-//            // Given
-//            User user = User.builder()
-//                .id(1L)
-//                .nickname("testUser")
-//                .role(Role.USER)
-//                .build();
-//
-//            Coupon coupon = Coupon.builder()
-//                .id(1L)
-//                .seller(User.builder().id(2L).nickname("seller").role(Role.SELLER).build())
-//                .discountCost(3000)
-//                .quantity(1)
-//                .expirationDate(LocalDate.now().plusDays(10))
-//                .build();
-//
-//            Coupon anotherCoupon = Coupon.builder()
-//                .id(2L)
-//                .seller(User.builder().id(2L).nickname("seller").role(Role.SELLER).build())
-//                .discountCost(5000)
-//                .quantity(10)
-//                .expirationDate(LocalDate.now().plusDays(10))
-//                .build();
-//
-////            couponRepository.save(coupon);
-//
-//            UserReceivedCoupon userReceivedCoupon = UserReceivedCoupon.create(user, coupon);
-//            UserReceivedCoupon userReceivedCoupon2 = UserReceivedCoupon.create(user, anotherCoupon);
-//
-//            userReceivedCouponRepository.save(userReceivedCoupon);
-//            userReceivedCouponRepository.save(userReceivedCoupon2);
-//
-//            // when
-//            List<CouponResponse> couponList = couponService.getCouponList(user, 0, 5, false);
-//
-//            // then
-//            assertEquals(2, couponList.size());
-//            assertEquals(3000, couponList.get(0).couponInfo().discountCost());
-//            assertEquals(5000, couponList.get(1).couponInfo().discountCost());
-//
-//        }
-//    }
+    @Nested
+    @DisplayName("쿠폰 내역 가져오기 테스트")
+    class GetReceivedCouponListTest {
+
+        @Test
+        @DisplayName("사용자가 사용하지 않고 등록한 쿠폰을 조회한다.")
+        void _willSuccess() {
+            // Given
+            User user = User.builder()
+                .id(1L)
+                .nickname("testUser")
+                .role(Role.USER)
+                .build();
+
+            Coupon coupon = Coupon.builder()
+                .id(1L)
+                .seller(User.builder().id(2L).nickname("seller").role(Role.SELLER).build())
+                .discountCost(3000)
+                .quantity(1)
+                .expirationDate(LocalDate.now().plusDays(10))
+                .build();
+
+            Coupon anotherCoupon = Coupon.builder()
+                .id(2L)
+                .seller(User.builder().id(2L).nickname("seller").role(Role.SELLER).build())
+                .discountCost(5000)
+                .quantity(10)
+                .expirationDate(LocalDate.now().plusDays(10))
+                .build();
+
+            Coupon useCoupon = Coupon.builder()
+                .id(10L)
+                .seller(User.builder().id(2L).nickname("seller").role(Role.SELLER).build())
+                .discountCost(3200)
+                .quantity(20)
+                .expirationDate(LocalDate.now().plusDays(10))
+                .build();
+
+            couponRepository.save(coupon);
+            couponRepository.save(anotherCoupon);
+            couponRepository.save(useCoupon);
+
+            UserReceivedCoupon userReceivedCoupon = UserReceivedCoupon.create(user, coupon);
+            UserReceivedCoupon userReceivedCoupon2 = UserReceivedCoupon.create(user, anotherCoupon);
+            UserReceivedCoupon userReceivedCoupon3 = UserReceivedCoupon.create(user, useCoupon);
+            UserReceivedCoupon usedCoupon = userReceivedCoupon3.useCoupon();
+
+            userReceivedCouponRepository.save(userReceivedCoupon);
+            userReceivedCouponRepository.save(userReceivedCoupon2);
+            userReceivedCouponRepository.save(usedCoupon);
+
+            // when
+            List<CouponResponse> couponList = couponService.getCouponList(user, 0, 5, false);
+
+            // then
+            assertEquals(2, couponList.size());
+            assertEquals(5000, couponList.get(0).couponInfo().discountCost());
+            assertEquals(3000, couponList.get(1).couponInfo().discountCost());
+
+        }
+    }
 
 }
