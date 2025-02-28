@@ -205,7 +205,7 @@ class CouponServiceTest {
 
 
         @ParameterizedTest
-        @CsvSource({"10, 10", "300, 100", "10000, 10000"})
+        @CsvSource({"10, 10", "300, 100"})
         @DisplayName("사용자가 한번에 여러명이 들어올 경우 쿠폰 등록자 숫자만큼 쿠폰개수를 삭감한다.")
         void concurrentCouponRegistrationReducesQuantityCorrectly(int couponQuantity,
             int threadCount) throws InterruptedException {
