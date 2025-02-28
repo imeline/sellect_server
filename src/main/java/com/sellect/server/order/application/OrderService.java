@@ -1,6 +1,7 @@
 package com.sellect.server.order.application;
 
 import com.sellect.server.auth.domain.User;
+import com.sellect.server.auth.repository.user.UserRepository;
 import com.sellect.server.cart.domain.CartItem;
 import com.sellect.server.cart.repository.CartItemRepository;
 import com.sellect.server.common.exception.CommonException;
@@ -8,6 +9,8 @@ import com.sellect.server.common.exception.enums.BError;
 import com.sellect.server.coupon.domain.Coupon;
 import com.sellect.server.coupon.domain.UserReceivedCoupon;
 import com.sellect.server.coupon.repository.UserReceivedCouponRepository;
+import com.sellect.server.order.Infrastructure.port.KakaoPayClient;
+import com.sellect.server.order.Infrastructure.response.KakaoPayReadyResponse;
 import com.sellect.server.order.controller.request.OrderAddRequest;
 import com.sellect.server.order.controller.response.OrderDetailGetResponse;
 import com.sellect.server.order.controller.response.OrderGetResponse;
@@ -17,16 +20,23 @@ import com.sellect.server.order.domain.Orders;
 import com.sellect.server.order.repository.OrderItemRepository;
 import com.sellect.server.order.repository.OrdersRepository;
 import com.sellect.server.order.repository.entity.OrderStatus;
+import com.sellect.server.order.Infrastructure.request.KakaoPayReadyRequest;
+import com.sellect.server.payment.controller.request.ApproveRequest;
+import com.sellect.server.payment.domain.Payment;
+import com.sellect.server.payment.repository.PaymentRepository;
 import com.sellect.server.product.domain.Product;
 import com.sellect.server.product.repository.ProductImageRepository;
 import com.sellect.server.product.repository.ProductRepository;
 import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -37,6 +47,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @Transactional(readOnly = true)
 public class OrderService {
+    @Value("${server.host}")
+    private String SERVER_HOST;
 
     private final OrdersRepository ordersRepository;
     private final OrderItemRepository orderItemRepository;
@@ -44,6 +56,10 @@ public class OrderService {
     private final CartItemRepository cartRepository;
     private final UserReceivedCouponRepository userReceivedCouponRepository;
     private final ProductImageRepository productImageRepository;
+    private final KakaoPayClient kakaoPayClient;
+    private final PaymentRepository paymentRepository;
+    private final UserRepository userRepository;
+
 
     public List<OrderItemGetResponse> readPending(User user, Long orderId) {
         // 주문이 실제로 존재하는지 체크
@@ -255,5 +271,111 @@ public class OrderService {
     private Orders getOrderById(Long orderId) {
         return ordersRepository.findById(orderId)
             .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "주문"));
+    }
+
+    // todo: 결제하기
+    @Transactional
+    public String payOrder(User user, Long orderId, Long userReceivedCouponId) {
+        // 주문에 쿠폰 적용
+        Orders order = getOrderById(orderId);
+        // 이미 완료된 주문인지 확인
+        if (order.getStatus() == OrderStatus.COMPLETED) {
+            throw new CommonException(BError.NOT_VALID, "이미 완료(확정)된 주문입니다.");
+        }
+
+        if (userReceivedCouponId != null) {
+            UserReceivedCoupon coupon = userReceivedCouponRepository.findById(userReceivedCouponId)
+                .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "쿠폰"));
+            // 쿠폰 사용 여부 확인
+            if (coupon.getIsUsed()) {
+                throw new CommonException(BError.NOT_VALID, "이미 사용된 쿠폰입니다.");
+            }
+            // 쿠폰 소유자 확인
+            if (!coupon.getUser().getId().equals(user.getId())) {
+                throw new CommonException(BError.NOT_VALID, "쿠폰 소유자가 아닙니다.");
+            }
+            // 주문에 쿠폰 정보 저장
+            order = ordersRepository.save(order.updateCoupon(coupon));
+        }
+
+        String pid = generatePaymentId();
+
+        // 카카오 페이 API 호출
+        KakaoPayReadyRequest request = KakaoPayReadyRequest.builder()
+            .cid("TC0ONETIME")
+            .partnerOrderId(order.getId().toString())
+            .partnerUserId(user.getUuid())
+            .itemName("test")                 // TODO: 아이템 이름 가져오기(클라이언트에서 가져오는거 고려) 2025-02-28, 16:58
+            .quantity(3)                 // TODO: 주문에서 아이템 개수  2025-02-28, 16:58
+            .totalAmount(order.getTotalPrice().intValue())
+            .taxFreeAmount(0)
+            .approvalUrl(String.format("%s/api/v1/kakao-pay/success/%s", SERVER_HOST, pid))
+            .cancelUrl(String.format("%s/api/v1/kakao-pay/cancel", SERVER_HOST))
+            .failUrl(String.format("%s/api/v1/kakao-pay/fail", SERVER_HOST))
+            .build();
+
+        KakaoPayReadyResponse kakaoPayReadyResponse = kakaoPayClient.readyPayment(request);
+        Payment payment = Payment.readyPayment(String.valueOf(orderId), pid, user.getUuid(),  order.getTotalPrice().intValue(),
+            kakaoPayReadyResponse.tid());
+
+        paymentRepository.save(payment);
+
+        return kakaoPayReadyResponse.next_redirect_pc_url();
+    }
+
+    @Transactional
+    public void approvePayment(String pid, String token){
+        Payment payment = paymentRepository.findByPid(pid)
+            .orElseThrow(
+                () -> new CommonException(BError.NOT_EXIST, String.format("Payment %s", pid)));
+        try {
+            Long orderId = Long.valueOf(payment.getOrderId());
+            User user = userRepository.findByUuid(payment.getUid())
+                .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "user"));
+
+            Orders order = getOrderById(orderId);
+            // 이미 완료된 주문인지 확인
+            if (order.getStatus() == OrderStatus.COMPLETED) {
+                throw new CommonException(BError.NOT_VALID, "이미 완료(확정)된 주문입니다.");
+            }
+            List<OrderItem> orderItems = getOrderItemsByOrderId(orderId);
+
+            orderItems.forEach(orderItem -> {
+                // DB 락
+                productRepository.findByIdWithLock(orderItem.getProduct().getId())
+                    .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "상품이 존재하지 않습니다."));
+                // 재고 확인
+                if (orderItem.getProduct().getStock() < orderItem.getQuantity()) {
+                    throw new CommonException(BError.NOT_VALID, "재고 부족");
+                }
+                // 재고 차감
+                productRepository.save(orderItem.getProduct().updateStock(orderItem.getQuantity()));
+            });
+            // 주문 확정
+            Orders savedOrder = ordersRepository.save(order.updateStatus(OrderStatus.COMPLETED));
+
+            // 쿠폰 사용 처리, 장바구니 비우기
+            clearCartAndDeleteCouponAsync(user, savedOrder);
+            Payment approvePayment = payment.approvePayment();
+            paymentRepository.save(approvePayment);
+
+            // 카카오 한테 요청 보내기
+            ApproveRequest approveRequest = ApproveRequest.builder()
+                .cid("TC0ONETIME")
+                .tid(payment.getTid())
+                .partnerOrderId(payment.getOrderId())
+                .partnerUserId(payment.getUid())
+                .pgToken(token)
+                .build();
+
+            Map map = kakaoPayClient.paymentApprove(approveRequest);
+            log.info("Payment approved for pid: {}", pid);
+        } catch (Exception e) {
+            log.error("Failed to approve payment for pid: {}", pid, e);
+        }
+    }
+
+    private String generatePaymentId() {
+        return String.valueOf(UUID.randomUUID());
     }
 }
