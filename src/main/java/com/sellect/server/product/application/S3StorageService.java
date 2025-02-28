@@ -53,6 +53,22 @@ public class S3StorageService implements StorageService {
     }
 
     @Override
+    public void store(InputStream inputStream, String filename) {
+        try {
+            if (Objects.isNull(filename) || filename.isBlank()) {
+                throw new StorageException(BError.NOT_EXIST, "file name");
+            }
+
+            ObjectMetadata metadata = new ObjectMetadata();
+            metadata.setContentLength(inputStream.available());
+
+            s3Client.putObject(new PutObjectRequest(bucketName, filename, inputStream, metadata));
+        } catch (IOException e) {
+            throw new StorageException(BError.FAIL_FOR_REASON, "store file", e.getMessage());
+        }
+    }
+
+    @Override
     public String loadAsPath(String filename) {
         // TODO: 해당 파일명의 파일이 존재하는지 검증
         return s3Client.getUrl(bucketName, filename).toString();

@@ -56,20 +56,21 @@ public class SearchRepositoryImpl implements SearchRepository {
             builder.and(keywordBuilder);
         }
 
+        // TODO: 중복된 코드 -> 다른 의도가 있는지 확인 필요
         // 상품명 조회 시에는 제거할 것
         // 검색 우선순위 적용: 상품명 → 브랜드명 → 카테고리명
-        if (condition.getKeyword() != null && !condition.getKeyword().isEmpty()) {
-            BooleanBuilder keywordBuilder = new BooleanBuilder();
-
-            keywordBuilder.or(
-                productEntity.name.containsIgnoreCase(condition.getKeyword())); // 상품명 검색
-            keywordBuilder.or(productEntity.brandEntity.name.containsIgnoreCase(
-                condition.getKeyword())); // 브랜드명 검색
-            keywordBuilder.or(productEntity.categoryEntity.name.containsIgnoreCase(
-                condition.getKeyword())); // 카테고리명 검색
-
-            builder.and(keywordBuilder);
-        }
+//        if (condition.getKeyword() != null && !condition.getKeyword().isEmpty()) {
+//            BooleanBuilder keywordBuilder = new BooleanBuilder();
+//
+//            keywordBuilder.or(
+//                productEntity.name.containsIgnoreCase(condition.getKeyword())); // 상품명 검색
+//            keywordBuilder.or(productEntity.brandEntity.name.containsIgnoreCase(
+//                condition.getKeyword())); // 브랜드명 검색
+//            keywordBuilder.or(productEntity.categoryEntity.name.containsIgnoreCase(
+//                condition.getKeyword())); // 카테고리명 검색
+//
+//            builder.and(keywordBuilder);
+//        }
 
         // 2-1. 브랜드 필터링 (선택한 브랜드 ID)
         if (condition.getBrandId() != null) {

@@ -1,5 +1,6 @@
 package com.sellect.server.product.application;
 
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import org.springframework.core.io.Resource;
@@ -14,6 +15,11 @@ public class FakeStorageService implements StorageService {
 
     @Override
     public void store(MultipartFile file, String filename) {
+        storage.put(filename, "http://fake-url.com/" + filename);
+    }
+
+    @Override
+    public void store(InputStream inputStream, String filename) {
         storage.put(filename, "http://fake-url.com/" + filename);
     }
 

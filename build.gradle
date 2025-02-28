@@ -41,6 +41,7 @@ dependencies {
 		exclude group: 'commons-logging', module: 'commons-logging'
 	}
 	implementation 'javax.xml.bind:jaxb-api:2.3.1'
+	implementation 'me.desair.tus:tus-java-server:1.0.0-3.0'
 
 
 	runtimeOnly 'com.mysql:mysql-connector-j'

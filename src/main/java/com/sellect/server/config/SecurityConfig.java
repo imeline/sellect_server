@@ -33,6 +33,7 @@ public class SecurityConfig {
         "/api/v1/auth/signup",
         "/api/v1/auth/login",
         "/api/v1/auth/seller/signup",
+        "/upload/**" // TODO: TUS 업로드 테스트 용도 삭제
     };
 
     // 인증 x JWT o
