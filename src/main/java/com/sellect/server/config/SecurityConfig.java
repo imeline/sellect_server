@@ -32,7 +32,7 @@ public class SecurityConfig {
     private static final String[] NO_JWT_PATHS = {
         "/api/v1/auth/signup",
         "/api/v1/auth/login",
-        "/api/v1/auth/seller/signup",
+        "/api/v1/auth/seller/signup"
     };
 
     // 인증 x JWT o
@@ -42,9 +42,12 @@ public class SecurityConfig {
         "/api/v1/payment/cancel",
         "/api/v1/coupon/actives",
         "/api/v1/search/**",
+        "/api/v1/product/**",
         "/api/v1/products/**",
+        "/api/v1/images/**",
         "/api/v1/categories/**",
         "/api/v1/brands/**",
+        "/api/v1/seller/**"
     };
     private final JwtFilter jwtFilter;
 

@@ -33,6 +33,10 @@ server:
 storage:
   file-system:
     location: /tmp/spring-boot-upload-test
+  tus:
+    storage-path: /tmp/tus-upload-test
+    upload-uri: /api/v1/images/upload
+    upload-expiration: 86400
 
 
 cloudfront:

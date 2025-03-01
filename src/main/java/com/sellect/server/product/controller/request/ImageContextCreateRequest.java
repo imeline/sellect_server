@@ -6,6 +6,7 @@ import lombok.Builder;
 public record ImageContextCreateRequest(
     Integer sequence,
     String uuid,
+    String filename,
     boolean isRepresentative
 ) {
 

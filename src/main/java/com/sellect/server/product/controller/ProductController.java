@@ -43,15 +43,25 @@ public class ProductController {
     /**
      * 상품 단건 등록
      */
+//    @PostMapping("/product")
+//    public ApiResponse<ProductRegisterResponse> register(
+//        @AuthSeller User seller,
+//        @RequestPart("register_request") ProductRegisterRequest request,
+//        @RequestPart("images") List<MultipartFile> images) {
+//
+//        ProductRegisterResponse response = productService.register(seller, request, images);
+//        return ApiResponse.ok(response);
+//    }*
+    // 상품 정보만 등록하는 API
     @PostMapping("/product")
     public ApiResponse<ProductRegisterResponse> register(
         @AuthSeller User seller,
-        @RequestPart("register_request") ProductRegisterRequest request,
-        @RequestPart("images") List<MultipartFile> images) {
+        @RequestPart("register_request") ProductRegisterRequest request) {
 
-        ProductRegisterResponse response = productService.register(seller, request, images);
+        ProductRegisterResponse response = productService.register(seller, request);
         return ApiResponse.ok(response);
     }
+
 
     /**
      * 상품 다건 등록

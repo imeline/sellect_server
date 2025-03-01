@@ -7,6 +7,7 @@ public record ImageContextUpdateRequest(
     Long productImageId,
     Integer sequence,
     String uuid,
+    String filename,
     boolean isRepresentative,
     boolean isNewImage
 ) {
