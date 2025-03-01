@@ -47,6 +47,7 @@ public class ProductService {
     private final CategoryRepository categoryRepository;
     private final ProductImageRepository productImageRepository;
     private final OrderItemRepository orderItemRepository;
+    private final StorageService storageService;
 
     @Transactional
     public ProductRegisterResponse register(
@@ -86,6 +87,44 @@ public class ProductService {
         });
         request.imageContexts().forEach(imageContext -> {
             productImageService.registerProductImage(product, imageContext, imageMap.get(imageContext.uuid()));
+        });
+
+        return ProductRegisterResponse.from(product);
+    }
+
+    // 상품 정보와 이미지를 별도로 등록할 때 사용
+    @Transactional
+    public ProductRegisterResponse register(
+        User seller,
+        ProductRegisterRequest request) {
+
+        // 존재하지 않는 카테고리 체크
+        Category category = categoryRepository.findById(request.categoryId())
+            .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "category"));
+
+        // 존재하지 않는 브랜드 체크
+        Brand brand = brandRepository.findById(request.brandId())
+            .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "brand"));
+
+        // 등록된 상품 기준 중복 검사 (sellerId, productName 기준)
+        if (productRepository.isDuplicateProduct(seller.getId(), request.name())) {
+            throw new CommonException(BError.EXIST, "product name");
+        }
+
+        Product product = productRepository.save(Product.register(
+            seller,
+            category,
+            brand,
+            request.getPriceAsBigDecimal(), // String -> BigDecimal 변환
+            request.name(),
+            request.description(),
+            request.stock()
+        ));
+
+        request.imageContexts().forEach(imageContext -> {
+            String imageUrl = storageService.loadAsPath(imageContext.filename());
+            ProductImage productImage = ProductImage.register(product, imageUrl, imageContext);
+            productImageRepository.save(productImage, product);
         });
 
         return ProductRegisterResponse.from(product);

@@ -42,7 +42,7 @@ storage:
     region: ${S3_REGION}
   tus:
     storage-path: /tmp/tus-upload
-    upload-uri: /upload
+    upload-uri: /api/v1/images/upload
     upload-expiration: 86400
 cloudfront:
   domain-name: ${CLOUDFRONT_DOMAIN_NAME:0.0.0.0}

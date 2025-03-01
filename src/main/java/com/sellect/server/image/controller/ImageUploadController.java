@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
+@RequestMapping("/api/v1/images")
 public class ImageUploadController {
 
     private final TusFileUploadService fileUploadService;
@@ -53,6 +54,7 @@ public class ImageUploadController {
             // TODO: 예외 처리
         }
 
+        // 마지막 청크가 업로드된 이후 이미지 저장소에 이미지 저장
         if (uploadInfo != null && !uploadInfo.isUploadInProgress()) {
             try (InputStream inputStream = fileUploadService.getUploadedBytes(uploadURI)) {
                 storageService.store(inputStream, uploadInfo.getFileName());
