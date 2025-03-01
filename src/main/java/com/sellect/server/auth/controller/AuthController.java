@@ -57,7 +57,10 @@ public class AuthController {
 
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
-        return ApiResponse.ok(new LoginResponse(loginResponse.role(), loginResponse.nickname()));
+        return ApiResponse.ok(new LoginResponse(
+            loginResponse.accessToken(),
+            loginResponse.role(),
+            loginResponse.nickname()));
     }
 
 }
