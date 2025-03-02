@@ -14,7 +14,14 @@ spring:
     properties:
       hibernate:
         format_sql: true
-
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:db/init/schema-h2.sql
+      platform: h2
+  batch:
+    jdbc:
+      initialize-schema: never
 
 # 사용해야하는 경우 주석해제
 jwt:

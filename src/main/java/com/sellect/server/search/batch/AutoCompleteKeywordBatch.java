@@ -80,9 +80,9 @@ public class AutoCompleteKeywordBatch {
         JpaPagingItemReader<SearchLogEntity> reader = new JpaPagingItemReader<>();
         reader.setEntityManagerFactory(entityManagerFactory);
         reader.setQueryString("SELECT DISTINCT s FROM SearchLogEntity s "
-            + "WHERE s.timestamp BETWEEN :startDate AND :endDate "
-            + "AND s.filterApplied = false "
-            + "AND s.resultCount > 0 ");
+            + "WHERE s.timestamp BETWEEN :startDate AND :endDate " // 하룻동안의 검색어 로그만 처리
+            + "AND s.filterApplied = false " // 필터 적용된 검색어는 제외
+            + "AND s.resultCount > 0 "); // 검색 결과가 있는 검색어만 처리
         reader.setParameterValues(Map.of("startDate", startDate, "endDate", endDate));
         reader.setPageSize(100);
 
