@@ -16,7 +16,7 @@ spring:
         format_sql: true
   sql:
     init:
-      mode: always
+      mode: never
       schema-locations: classpath:db/init/schema-h2.sql
       platform: h2
   batch:
