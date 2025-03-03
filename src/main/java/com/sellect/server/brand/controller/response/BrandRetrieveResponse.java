@@ -4,13 +4,13 @@ import com.sellect.server.brand.domain.Brand;
 import lombok.Builder;
 
 @Builder
-public record BrandReadResponse(
+public record BrandRetrieveResponse(
     Long id,
     String name
 
 ) {
-    public static BrandReadResponse from(Brand brand) {
-        return BrandReadResponse.builder()
+    public static BrandRetrieveResponse from(Brand brand) {
+        return BrandRetrieveResponse.builder()
             .id(brand.getId())
             .name(brand.getName())
             .build();
