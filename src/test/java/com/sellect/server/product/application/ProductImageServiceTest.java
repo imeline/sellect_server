@@ -1,13 +1,9 @@
 package com.sellect.server.product.application;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.mock;
-
 import com.sellect.server.auth.domain.User;
 import com.sellect.server.common.exception.CommonException;
 import com.sellect.server.common.exception.enums.BError;
+import static com.sellect.server.product.application.FakeStorageService.FAKE_IMAGE_STORAGE_URL;
 import com.sellect.server.product.controller.request.ImageContextUpdateRequest;
 import com.sellect.server.product.controller.request.ProductImageModifyRequest;
 import com.sellect.server.product.domain.Product;
@@ -16,18 +12,24 @@ import com.sellect.server.product.repository.FakeProductImageRepository;
 import com.sellect.server.product.repository.FakeProductRepository;
 import java.util.Collections;
 import java.util.List;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.mock;
 import org.springframework.web.multipart.MultipartFile;
 
 class ProductImageServiceTest {
 
     private final FakeProductRepository productRepository = new FakeProductRepository();
     private final FakeProductImageRepository productImageRepository = new FakeProductImageRepository();
+    private final FakeStorageService storageService = new FakeStorageService();
     private final ProductImageService sut = new ProductImageService(
-        new FakeStorageService(),
+        storageService,
         productRepository,
         productImageRepository);
 
@@ -46,21 +48,18 @@ class ProductImageServiceTest {
 
         // productImage1 -> productImage2 -> productImage3 (순서 보장)
         ProductImage productImage1 = ProductImage.builder()
-            .id(1L)
             .sequence(1)
-            .imageUrl("image-url1")
+            .imageUrl(FAKE_IMAGE_STORAGE_URL + "image1-uuid.jpg")
             .product(product)
             .build();
         ProductImage productImage2 = ProductImage.builder()
-            .id(2L)
             .sequence(2)
-            .imageUrl("image-url2")
+            .imageUrl(FAKE_IMAGE_STORAGE_URL + "image2-uuid.jpg")
             .product(product)
             .build();
         ProductImage productImage3 = ProductImage.builder()
-            .id(3L)
             .sequence(3)
-            .imageUrl("image-url3")
+            .imageUrl(FAKE_IMAGE_STORAGE_URL + "image3-uuid.jpg")
             .product(product)
             .build();
 
@@ -68,6 +67,15 @@ class ProductImageServiceTest {
         productImageRepository.save(productImage1, product);
         productImageRepository.save(productImage2, product);
         productImageRepository.save(productImage3, product);
+        storageService.store(mock(MultipartFile.class), "image1-uuid.jpg");
+        storageService.store(mock(MultipartFile.class), "image2-uuid.jpg");
+        storageService.store(mock(MultipartFile.class), "image3-uuid.jpg");
+    }
+
+    @AfterEach
+    void tearDown() {
+        productRepository.clear();
+        productImageRepository.clear();
     }
 
     @Nested
@@ -212,7 +220,7 @@ class ProductImageServiceTest {
             // Then
             assertThat(productImageRepository.findByProductImageId(1L))
                 .hasValueSatisfying(image -> {
-                    assertThat(image.getSequence()).isEqualTo(1);
+                    assertThat(image.getSequence()).isEqualTo(1); // 1 -> 2?
                     assertThat(image.isRepresentative()).isTrue();
                 });
             assertThat(productImageRepository.findByProductImageId(2L))
