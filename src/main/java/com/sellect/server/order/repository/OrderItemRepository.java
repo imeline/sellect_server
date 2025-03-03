@@ -3,6 +3,7 @@ package com.sellect.server.order.repository;
 import com.sellect.server.order.domain.OrderItem;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 public interface OrderItemRepository {
 
@@ -10,9 +11,9 @@ public interface OrderItemRepository {
 
     List<OrderItem> findAllByOrdersId(Long orderId);
 
-    BigDecimal calculateSalesByProductId(Long productId);
+    Optional<BigDecimal> calculateSalesByProductId(Long productId);
 
-    Integer countCompleteOrdersByProductId(Long productId);
+    Optional<Integer> countCompleteOrdersByProductId(Long productId);
 
-    BigDecimal calculateTotalSalesByProductIds(List<Long> productIds);
+    Optional<BigDecimal> calculateTotalSalesByProductIds(List<Long> productIds);
 }
