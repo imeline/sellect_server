@@ -9,4 +9,6 @@ public interface BrandRepository {
     Optional<Brand> findById(Long brandId);
 
     List<Brand> findAll();
+
+    List<Brand> findByNameContaining(String brandName);
 }
