@@ -22,6 +22,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
@@ -141,6 +142,12 @@ public class CouponService {
     public Page<ActiveCouponResponse> getActiveCouponList(User user, int page, int size) {
         PageRequest pageRequest = PageRequest.of(page, size, DEFAULT_SORT);
         Page<Coupon> activeCoupons = couponRepository.findAllActiveCouponList(pageRequest);
+        return activeCoupons.map(coupon -> createActiveCouponResponse(user, coupon));
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ActiveCouponResponse> getActiveCouponList(User user, Pageable pageable) {
+        Page<Coupon> activeCoupons = couponRepository.findAllActiveCouponList(pageable);
         return activeCoupons.map(coupon -> createActiveCouponResponse(user, coupon));
     }
 

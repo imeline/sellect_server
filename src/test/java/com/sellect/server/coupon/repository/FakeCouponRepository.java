@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 public class FakeCouponRepository implements CouponRepository {
 
@@ -37,7 +37,7 @@ public class FakeCouponRepository implements CouponRepository {
     }
 
     @Override
-    public Page<Coupon> findAllActiveCouponList(PageRequest request) {
+    public Page<Coupon> findAllActiveCouponList(Pageable pageable) {
         return Page.empty();
     }
 }
