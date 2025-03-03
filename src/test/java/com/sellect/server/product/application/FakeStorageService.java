@@ -8,6 +8,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 public class FakeStorageService implements StorageService {
 
+    public static final String FAKE_IMAGE_STORAGE_URL = "http://fake-url.com/";
+
     private final Map<String, String> storage = new HashMap<>();
 
     @Override

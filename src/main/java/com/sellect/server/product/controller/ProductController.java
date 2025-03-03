@@ -8,10 +8,9 @@ import com.sellect.server.product.application.ProductService;
 import com.sellect.server.product.controller.request.ProductImageModifyRequest;
 import com.sellect.server.product.controller.request.ProductModifyRequest;
 import com.sellect.server.product.controller.request.ProductRegisterRequest;
-import com.sellect.server.product.controller.response.ProductDetailReadResponse;
+import com.sellect.server.product.controller.response.ProductDetailRetrieveResponse;
 import com.sellect.server.product.controller.response.ProductDetailRetrieveBySellerResponse;
 import com.sellect.server.product.controller.response.ProductModifyResponse;
-import com.sellect.server.product.controller.response.ProductMultipleRegisterResponse;
 import com.sellect.server.product.controller.response.ProductRegisterResponse;
 import com.sellect.server.product.controller.response.SellerStatsRetrieveResponse;
 import jakarta.validation.Valid;
@@ -65,17 +64,18 @@ public class ProductController {
 
     /**
      * 상품 다건 등록
+     * (보류)
      */
-    @PostMapping("/products")
-    public ApiResponse<ProductMultipleRegisterResponse> register(
-        @AuthSeller User seller,
-        @RequestPart("requests") List<ProductRegisterRequest> requests,
-        @RequestPart("images") List<MultipartFile> images) {
-
-        ProductMultipleRegisterResponse result = productService.registerMultiple(seller, requests,
-            images);
-        return ApiResponse.ok(result);
-    }
+//    @PostMapping("/products")
+//    public ApiResponse<ProductMultipleRegisterResponse> register(
+//        @AuthSeller User seller,
+//        @RequestPart("requests") List<ProductRegisterRequest> requests,
+//        @RequestPart("images") List<MultipartFile> images) {
+//
+//        ProductMultipleRegisterResponse result = productService.registerMultiple(seller, requests,
+//            images);
+//        return ApiResponse.ok(result);
+//    }
 
     /**
      * 상품 단건 수정 API
@@ -119,22 +119,22 @@ public class ProductController {
      * 상품 상세 조회 API
      */
     @GetMapping("/products/{productId}")
-    public ApiResponse<ProductDetailReadResponse> readDetail(
+    public ApiResponse<ProductDetailRetrieveResponse> readDetail(
         @PathVariable Long productId
     ) {
-        ProductDetailReadResponse result = productService.readDetail(productId);
+        ProductDetailRetrieveResponse result = productService.retrieveDetail(productId);
         return ApiResponse.ok(result);
     }
 
     // TODO: 추후 분리
     //========================= Seller 전용 =========================//
     @GetMapping("/seller/products")
-    public ApiResponse<Page<ProductDetailReadResponse>> retrieveAllBySeller(
+    public ApiResponse<Page<ProductDetailRetrieveResponse>> retrieveAllBySeller(
         @AuthSeller User seller,
         @RequestParam(value = "page", defaultValue = "0") int page,
         @RequestParam(value = "size", defaultValue = "20") int size
     ) {
-        Page<ProductDetailReadResponse> result = productService.retrieveAllBySeller(seller, page,
+        Page<ProductDetailRetrieveResponse> result = productService.retrieveAllBySeller(seller, page,
             size);
         return ApiResponse.ok(result);
     }

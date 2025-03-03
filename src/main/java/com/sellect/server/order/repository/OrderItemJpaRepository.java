@@ -3,6 +3,7 @@ package com.sellect.server.order.repository;
 import com.sellect.server.order.repository.entity.OrderItemEntity;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -16,20 +17,20 @@ public interface OrderItemJpaRepository extends JpaRepository<OrderItemEntity, L
         + "JOIN oi.ordersEntity o "
         + "WHERE oi.productEntity.id = :productId "
         + "AND o.status = 'COMPLETED'")
-    BigDecimal calculateSalesByProductId(@Param("productId") Long productId);
+    Optional<BigDecimal> calculateSalesByProductId(@Param("productId") Long productId);
 
     @Query("SELECT SUM(o.totalPrice) "
         + "FROM OrderItemEntity oi "
         + "JOIN oi.ordersEntity o "
         + "WHERE oi.productEntity.id IN :productIds "
         + "AND o.status = 'COMPLETED'")
-    BigDecimal calculateTotalSalesByProductIds(List<Long> productIds);
+    Optional<BigDecimal> calculateTotalSalesByProductIds(List<Long> productIds);
 
     @Query("SELECT COUNT(DISTINCT o.id) "
         + "FROM OrderItemEntity oi "
         + "JOIN oi.ordersEntity o "
         + "WHERE oi.productEntity.id = :productId "
         + "AND o.status = 'COMPLETED'")
-    Integer countCompletedOrdersByProductId(@Param("productId") Long productId);
+    Optional<Integer> countCompletedOrdersByProductId(@Param("productId") Long productId);
 
 }
