@@ -9,4 +9,6 @@ public interface BrandJpaRepository extends JpaRepository<BrandEntity, Long> {
     Optional<BrandEntity> findByIdAndDeleteAtIsNull(Long brandId);
 
     List<BrandEntity> findAllByDeleteAtIsNull();
+
+    List<BrandEntity> findByNameContainingAndDeleteAtIsNull(String brandName);
 }
