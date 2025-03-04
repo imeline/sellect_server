@@ -93,6 +93,7 @@ public class CouponService {
             : userReceivedCouponRepository.findByUser(user, pageRequest);
 
         return receivedCoupons.stream()
+            .filter(c -> c.getCoupon().getExpirationDate().isAfter(LocalDate.now().minusDays(1)))
             .map(this::toCouponResponse)
             .toList();
     }
