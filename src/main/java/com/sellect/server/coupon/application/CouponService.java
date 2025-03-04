@@ -16,7 +16,6 @@ import com.sellect.server.coupon.repository.CouponRepository;
 import com.sellect.server.coupon.repository.UserReceivedCouponRepository;
 import com.sellect.server.product.domain.Product;
 import com.sellect.server.product.repository.ProductRepository;
-import java.time.LocalDate;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 import lombok.RequiredArgsConstructor;
@@ -39,10 +38,10 @@ public class CouponService {
     private final UserReceivedCouponRepository userReceivedCouponRepository;
     private final ProductRepository productRepository;
 
+    // 판매자 쿠폰 등록
     public void uploadCoupon(User user, IssueCouponRequest issueCouponRequest) {
-        if (user.getRole() != Role.SELLER) {
-            throw new CommonException(BError.NOT_SELLER, user.getNickname());
-        }
+        user.checkRole(Role.SELLER);
+
         Coupon coupon = Coupon.builder()
             .seller(user)
             .discountCost(issueCouponRequest.discount())
@@ -54,13 +53,12 @@ public class CouponService {
     }
 
     /*
-     * 쿠폰 등록기능
+     * 유저 쿠폰 등록기능
      * 쿠폰 수량 삭감 - 동시성 이슈 발생
      * ReentrantLock을 사용하여 해결 -> 애플리케이션에서 해결
      * 단일 인스턴스인 경우 가능한 부분
      * 스케일 아웃을 하면?? -> DB 락????
      * */
-
     // TODO: 애플리케이션 락 vs DB 락 vs 큐 성능측정 필요 2025-02-18, 17:7
     @Transactional
     public void downloadCoupon(User user, Long couponId) {
@@ -68,12 +66,13 @@ public class CouponService {
         try {
             Coupon coupon = couponRepository.findById(couponId)
                 .orElseThrow(() -> new CommonException(BError.NOT_EXIST, String.valueOf(couponId)));
-            if (coupon.getQuantity() <= 0) {
-                throw new CommonException(BError.COUPON_QUANTITY_ZERO, couponId.toString());
-            }
+
+            coupon.isUsable();
+
             if (userReceivedCouponRepository.existsByUserAndCoupon(user, coupon)) {
                 throw new CommonException(BError.ALREADY_RECEIVED, couponId.toString());
             }
+
             Coupon decreasedCoupon = coupon.decreaseQuantity();
             UserReceivedCoupon userReceivedCoupon = UserReceivedCoupon.create(user,
                 decreasedCoupon);
@@ -84,6 +83,7 @@ public class CouponService {
         }
     }
 
+    // [사용자] 쿠폰 확인
     @Transactional(readOnly = true)
     public List<CouponResponse> getCouponList(User user, int page, int size, Boolean isUsed) {
         PageRequest pageRequest = PageRequest.of(page, size, DEFAULT_SORT);
@@ -98,6 +98,7 @@ public class CouponService {
             .toList();
     }
 
+    // [사용자] 쿠폰 사용
     @Transactional
     public void useCoupon(User user, Long couponId) {
         Coupon coupon = couponRepository.findById(couponId)
@@ -124,9 +125,11 @@ public class CouponService {
     * 3. 조인 비효율성: sellersId.contains()는 리스트 검색(O(n))으로, 데이터가 많을수록 성능 저하.
     * */
     @Transactional(readOnly = true)
-    public List<CouponPossibleOrderResponse> getCouponsByMatchingSeller(User user,
-        List<Long> productIds) {
-        // 1. productIds를 통해 판매자 리스트 가져오기
+    public List<CouponPossibleOrderResponse> getCouponsByMatchingSeller(User user, List<Long> productIds) {
+        // 1. productIds를 통해 판매자 리스트 가져오기\
+
+        // todo HashMap
+        // TODO: set or hashset 2025-03-4, 15:26
         List<Long> sellersId = productIds.stream()
             .map(productId ->
                 productRepository.findById(productId)
@@ -144,8 +147,7 @@ public class CouponService {
 
         // 3. 판매자가 일치하는 쿠폰만 선택하여 변환
         return validCoupons.stream()
-            .filter(c -> sellersId.contains(
-                c.getCoupon().getSeller().getId()))
+            .filter(c -> sellersId.contains(c.getCoupon().getSeller().getId()))
             .map(c -> new CouponPossibleOrderResponse(
                 c.getId(),
                 c.getCoupon().getDiscountCost(),
@@ -154,6 +156,7 @@ public class CouponService {
     }
 
 
+    // [사용자] 등록한 쿠폰 리스트 조회
     @Transactional(readOnly = true)
     public Page<ActiveCouponResponse> getActiveCouponList(User user, Pageable pageable) {
         Page<Coupon> activeCoupons = couponRepository.findAllActiveCouponList(pageable);
@@ -175,16 +178,12 @@ public class CouponService {
     }
 
     private CouponInfo toCouponInfo(Coupon coupon) {
-        return new CouponInfo(
+        return CouponInfo.from(
             coupon.getId(),
             coupon.getDiscountCost(),
             coupon.getExpirationDate(),
-            toSellerInfo(coupon.getSeller())
+            SellerInfo.from(coupon.getSeller().getId(), coupon.getSeller().getNickname())
         );
-    }
-
-    private SellerInfo toSellerInfo(User user) {
-        return new SellerInfo(user.getId(), user.getNickname());
     }
 }
 

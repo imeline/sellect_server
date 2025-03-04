@@ -1,6 +1,8 @@
 package com.sellect.server.auth.domain;
 
 import com.sellect.server.auth.repository.entity.Role;
+import com.sellect.server.common.exception.CommonException;
+import com.sellect.server.common.exception.enums.BError;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.AccessLevel;
@@ -42,6 +44,17 @@ public class User {
             .updatedAt(this.updatedAt)
             .deleteAt(LocalDateTime.now())
             .build();
+    }
+
+    // 역할 확인
+    public void checkRole(Role role) {
+        if (this.role != role) {
+            if (role == Role.SELLER) {
+                throw new CommonException(BError.NOT_SELLER, this.nickname);
+            } else {
+                throw new CommonException(BError.NOT_USER, this.nickname);
+            }
+        }
     }
 }
 
