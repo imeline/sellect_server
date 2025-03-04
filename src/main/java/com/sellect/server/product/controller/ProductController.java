@@ -40,7 +40,7 @@ public class ProductController {
     private final ProductImageService productImageService;
 
     /**
-     * 상품 단건 등록
+     * 상품 단건 등록 API (이미지 포함)
      */
 //    @PostMapping("/product")
 //    public ApiResponse<ProductRegisterResponse> register(
@@ -51,31 +51,18 @@ public class ProductController {
 //        ProductRegisterResponse response = productService.register(seller, request, images);
 //        return ApiResponse.ok(response);
 //    }*
-    // 상품 정보만 등록하는 API
+
+    /**
+     * 상품 정보만 등록하는 API (이미지 별도)
+     */
     @PostMapping("/product")
     public ApiResponse<ProductRegisterResponse> register(
         @AuthSeller User seller,
-        @RequestPart("register_request") ProductRegisterRequest request) {
+        @Valid @RequestPart("register_request") ProductRegisterRequest request) {
 
         ProductRegisterResponse response = productService.register(seller, request);
         return ApiResponse.ok(response);
     }
-
-
-    /**
-     * 상품 다건 등록
-     * (보류)
-     */
-//    @PostMapping("/products")
-//    public ApiResponse<ProductMultipleRegisterResponse> register(
-//        @AuthSeller User seller,
-//        @RequestPart("requests") List<ProductRegisterRequest> requests,
-//        @RequestPart("images") List<MultipartFile> images) {
-//
-//        ProductMultipleRegisterResponse result = productService.registerMultiple(seller, requests,
-//            images);
-//        return ApiResponse.ok(result);
-//    }
 
     /**
      * 상품 단건 수정 API
@@ -103,15 +90,16 @@ public class ProductController {
     }
 
     /**
-     * 상품 이미지 수정 API
+     * 상품 이미지 수정 API (상품 이미지를 별도로 전송하는 경우 상품 이미지가 없을 수도 있음)
      */
     @PutMapping("/products/images")
     public ApiResponse<Void> modifyProductImages(
         @AuthSeller User seller,
         @RequestPart(value = "images", required = false) List<MultipartFile> images,
-        @RequestPart(value = "modify_request") ProductImageModifyRequest request
+        @Valid @RequestPart(value = "modify_request") ProductImageModifyRequest request
     ) {
-        productImageService.modifyProductImages(seller.getId(), request, images == null ? Collections.EMPTY_LIST : images);
+        productImageService.modifyProductImages(seller.getId(), request,
+            images == null ? Collections.EMPTY_LIST : images);
         return ApiResponse.ok();
     }
 
@@ -119,14 +107,13 @@ public class ProductController {
      * 상품 상세 조회 API
      */
     @GetMapping("/products/{productId}")
-    public ApiResponse<ProductDetailRetrieveResponse> readDetail(
+    public ApiResponse<ProductDetailRetrieveResponse> retrieveDetail(
         @PathVariable Long productId
     ) {
         ProductDetailRetrieveResponse result = productService.retrieveDetail(productId);
         return ApiResponse.ok(result);
     }
 
-    // TODO: 추후 분리
     //========================= Seller 전용 =========================//
     @GetMapping("/seller/products")
     public ApiResponse<Page<ProductDetailRetrieveResponse>> retrieveAllBySeller(

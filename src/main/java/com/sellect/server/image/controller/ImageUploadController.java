@@ -31,8 +31,8 @@ import org.springframework.web.bind.annotation.RestController;
 public class ImageUploadController {
 
     private final TusFileUploadService fileUploadService;
-    private final StorageClient storageClient;
     private final TusProperties tusProperties;
+    private final StorageClient storageClient;
 
     // TODO: 서비스 로직으로 분리
     @RequestMapping(value = { "/upload", "/upload/**" },

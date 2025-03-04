@@ -7,7 +7,7 @@ import java.util.Optional;
 
 public interface ProductImageRepository {
 
-    void save(ProductImage productImage, Product product);
+    ProductImage save(ProductImage productImage, Product product);
 
     Optional<ProductImage> findByProductImageId(Long productId);
 

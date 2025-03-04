@@ -19,7 +19,7 @@ public class FakeProductImageRepository implements ProductImageRepository {
     }
 
     @Override
-    public void save(ProductImage productImage, Product product) {
+    public ProductImage save(ProductImage productImage, Product product) {
         if (productImage.getId() == null) {
             // ID가 없으면 자동 생성
             productImage = ProductImage.builder()
@@ -31,6 +31,7 @@ public class FakeProductImageRepository implements ProductImageRepository {
                 .build();
         }
         storage.put(productImage.getId(), new ImageWithProduct(productImage, product));
+        return productImage;
     }
 
     @Override

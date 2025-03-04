@@ -33,7 +33,7 @@ public class ProductImage {
             .build();
     }
 
-    public static ProductImage registerWhenUpdate(Product product, String imageUrl, ImageContextUpdateRequest request) {
+    public static ProductImage register(Product product, String imageUrl, ImageContextUpdateRequest request) {
         return ProductImage.builder()
             .product(product)
             .imageUrl(imageUrl)
