@@ -27,5 +27,5 @@ public interface ProductJpaRepository extends JpaRepository<ProductEntity, Long>
     // 판매자 아이디로 상품 조회
     Page<ProductEntity> findBySellerEntityId(Long sellerId, Pageable pageable);
 
-    List<ProductEntity> findAllBySellerEntityIdAndDeleteAtIsNull(Long sellerId);
+    List<Long> findIdBySellerEntityIdAndDeleteAtIsNull(Long sellerId);
 }

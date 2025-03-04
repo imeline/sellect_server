@@ -98,10 +98,11 @@ public class FakeProductRepository implements ProductRepository {
     }
 
     @Override
-    public List<Product> findAllBySellerId(Long sellerId) {
+    public List<Long> findProductIdsBySellerId(Long sellerId) {
         return data.stream()
             .filter(product -> product.getSeller().getId().equals(sellerId))
             .filter(product -> product.getDeleteAt() == null)
+            .map(Product::getId)
             .collect(Collectors.toList());
     }
 

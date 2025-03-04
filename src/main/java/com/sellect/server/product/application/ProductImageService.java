@@ -9,6 +9,7 @@ import com.sellect.server.product.domain.Product;
 import com.sellect.server.product.domain.ProductImage;
 import com.sellect.server.product.repository.ProductImageRepository;
 import com.sellect.server.product.repository.ProductRepository;
+import com.sellect.server.product.util.StorageUtil;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,15 +23,20 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 public class ProductImageService {
 
-    private final StorageService storageService;
+    private final StorageClient storageClient;
     private final ProductRepository productRepository;
     private final ProductImageRepository productImageRepository;
 
     @Transactional
     public void registerProductImage(Product product, ImageContextCreateRequest request, MultipartFile image) {
-        String fileName = generateFileName(image);
-        storageService.store(image, fileName);
-        ProductImage productImage = ProductImage.register(product, storageService.loadAsPath(fileName), request);
+        String originalFilename = image.getOriginalFilename();
+        if (originalFilename == null) {
+            throw new CommonException(BError.NOT_EXIST, "file name");
+        }
+
+        String newFilename = StorageUtil.generateFileName(originalFilename);
+        storageClient.store(image, newFilename);
+        ProductImage productImage = ProductImage.register(product, storageClient.loadAsPath(newFilename), request);
         productImageRepository.save(productImage, product);
     }
 
@@ -61,16 +67,21 @@ public class ProductImageService {
         // 새로운 상품 이미지를 이미지 저장소에 저장
         Map<String, String> newFileNames = new HashMap<>();
         images.forEach(image -> {
-            String newFileName = generateFileName(image);
+            String originalFilename = image.getOriginalFilename();
+            if (originalFilename == null) {
+                throw new CommonException(BError.NOT_EXIST, "file name");
+            }
+
+            String newFileName = StorageUtil.generateFileName(originalFilename);
             newFileNames.put(Objects.requireNonNull(image.getOriginalFilename())
                 .substring(0, image.getOriginalFilename().lastIndexOf(".")), newFileName);
-            storageService.store(image, newFileName);
+            storageClient.store(image, newFileName);
         });
 
         // 상품 이미지 수정 (이미지 순서 변경 및 새로운 이미지 DB에 추가)
         toUpdate.forEach(updateRequest -> {
             if (updateRequest.isNewImage()) {
-                String imageUrl = storageService.loadAsPath(newFileNames.get(updateRequest.uuid()));
+                String imageUrl = storageClient.loadAsPath(newFileNames.get(updateRequest.uuid()));
                 ProductImage productImage = ProductImage.registerWhenUpdate(product, imageUrl, updateRequest);
                 productImageRepository.save(productImage, product);
             } else {
@@ -80,14 +91,5 @@ public class ProductImageService {
                 productImageRepository.save(updatedProductImage, product);
             }
         });
-    }
-
-    private String generateFileName(MultipartFile image) {
-        String filename = image.getOriginalFilename();
-        assert filename != null;
-
-        String identifier = filename.substring(0, filename.lastIndexOf("."));
-        String fileExtension = filename.substring(filename.lastIndexOf("."));
-        return identifier + "_" + System.currentTimeMillis() + fileExtension;
     }
 }

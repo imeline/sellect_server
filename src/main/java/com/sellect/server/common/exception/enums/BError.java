@@ -15,7 +15,7 @@ public enum BError implements Error {
     FAIL("FAIL", "%1 failed"),
     SUCCESS("SUCCESS", "%1 succeeded"),
     FAIL_FOR_REASON("FAIL_FOR_REASON", "%1 failed for reason (%2)"),
-    NOT_SUPPORT("NOT_SUPPORT", "%1 not supported"),
+    NOT_SUPPORTED("NOT_SUPPORTED", "%1 not supported"),
     NOT_REGISTERED("NOT_REGISTERED", "%1 not registered"),
 
     NOT_SELLER("NOT_SELLER", "%1 is not a seller"),

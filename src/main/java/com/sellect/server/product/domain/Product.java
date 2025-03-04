@@ -114,4 +114,10 @@ public class Product {
             .deleteAt(LocalDateTime.now()) // 삭제 시간 업데이트
             .build();
     }
+
+    public void validateSeller(Long sellerId) {
+        if (!this.seller.getId().equals(sellerId)) {
+            throw new CommonException(BError.ACCESS_DENIED, "product");
+        }
+    }
 }
