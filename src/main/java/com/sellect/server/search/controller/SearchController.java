@@ -58,13 +58,7 @@ public class SearchController {
 
         // 3. USER / GUEST 식별자 생성
         SearchCondition condition = SearchCondition
-            .builder()
-            .keyword(keyword)
-            .categoryId(categoryId)
-            .brandId(brandId)
-            .minPrice(minPrice)
-            .maxPrice(maxPrice)
-            .build();
+            .create(keyword, categoryId, brandId, minPrice, maxPrice);
 
         Page<SearchResponse> results = searchService.searchTotal(userIdentifier, condition,
             page, size, sortType);
