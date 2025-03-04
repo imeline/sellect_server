@@ -25,7 +25,6 @@ public class OrderItem {
     // 주문 상품 생성
     public static OrderItem register(Orders orders, Product product, BigDecimal price,
         int quantity) {
-        //Inventory.validateStock(quantity);
         return OrderItem.builder()
             .orders(orders)
             .product(product)

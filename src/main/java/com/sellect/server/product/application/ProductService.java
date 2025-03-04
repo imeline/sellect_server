@@ -327,6 +327,6 @@ public class ProductService {
     @Transactional(readOnly = true)
     protected Inventory getInventoryByProductId(Long productId) {
         return inventoryRepository.findByProductId(productId)
-            .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "상품 id에 해당하는 재고가 없습니다."));
+            .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "inventory"));
     }
 }

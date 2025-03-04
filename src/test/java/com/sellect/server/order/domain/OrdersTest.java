@@ -1,124 +1,308 @@
-//package com.sellect.server.order.domain;
-//
-//import static org.junit.jupiter.api.Assertions.assertEquals;
-//import static org.junit.jupiter.api.Assertions.assertNotEquals;
-//import static org.junit.jupiter.api.Assertions.assertNotNull;
-//import static org.junit.jupiter.api.Assertions.assertNull;
-//
-//import com.sellect.server.auth.domain.User;
-//import com.sellect.server.coupon.domain.Coupon;
-//import com.sellect.server.coupon.domain.UserReceivedCoupon;
-//import com.sellect.server.order.repository.entity.OrderStatus;
-//import java.math.BigDecimal;
-//import java.time.LocalDateTime;
-//import org.junit.jupiter.api.BeforeEach;
-//import org.junit.jupiter.api.Test;
-//
-//public class OrdersTest {
-//
-//    private User user;
-//    private UserReceivedCoupon userReceivedCoupon;
-//    private BigDecimal totalPrice;
-//    private String orderNumber;
-//    private LocalDateTime time;
-//
-//    @BeforeEach
-//    void setUp() {
-//        user = User.builder()
-//            .id(1L)
-//            .build();
-//
-//        Coupon coupon = Coupon.builder()
-//            .id(1L)
-//            .discountCost(1000)
-//            .build();
-//
-//        userReceivedCoupon = UserReceivedCoupon.builder()
-//            .id(1L)
-//            .user(user)
-//            .coupon(coupon)
-//            .build();
-//
-//        totalPrice = new BigDecimal("100000");
-//        time = LocalDateTime.parse("2024-08-01T00:00:00");
-//        orderNumber = "test-order-number";
-//    }
-//
-//    @Test
-//    void testRegister() {
-//        // when
-//        Orders order = Orders.register(user, totalPrice, OrderStatus.PENDING);
-//
-//        // then
-//        assertNotNull(order);
-//        assertEquals(user, order.getUser());
-//        assertEquals(totalPrice, order.getTotalPrice());
-//        assertNotNull(order.getOrderNumber());
-//        assertEquals(OrderStatus.PENDING, order.getStatus());
-//        assertNull(order.getDeletedAt());
-//    }
-//
-//    @Test
-//    void testUpdateStatus() {
-//        // given
-//        Orders order = Orders.builder()
-//            .id(1L)
-//            .user(user)
-//            .userReceivedCoupon(userReceivedCoupon)
-//            .totalPrice(totalPrice)
-//            .orderNumber(orderNumber)
-//            .status(OrderStatus.PENDING)
-//            .createdAt(time)
-//            .updatedAt(time)
-//            .build();
-//
-//        // when
-//        OrderStatus newStatus = OrderStatus.COMPLETED;
-//        Orders updatedOrder = order.updateStatus(newStatus);
-//
-//        // then
-//        assertNotNull(updatedOrder);
-//        assertEquals(order.getId(), updatedOrder.getId());
-//        assertEquals(order.getUser(), updatedOrder.getUser());
-//        assertEquals(order.getUserReceivedCoupon(), updatedOrder.getUserReceivedCoupon());
-//        assertEquals(order.getTotalPrice(), updatedOrder.getTotalPrice());
-//        assertEquals(order.getOrderNumber(), updatedOrder.getOrderNumber());
-//        assertEquals(newStatus, updatedOrder.getStatus()); // 상태가 변경되었는지 확인
-//        assertEquals(order.getCreatedAt(), updatedOrder.getCreatedAt());
-//        assertNotEquals(order.getUpdatedAt(), updatedOrder.getUpdatedAt()); // 업데이트 시간이 변경되었는지 확인
-//        assertEquals(order.getDeletedAt(), updatedOrder.getDeletedAt());
-//    }
-//
-//    @Test
-//    void testUpdateCoupon() {
-//        // given
-//        Orders order = Orders.builder()
-//            .id(1L)
-//            .user(user)
-//            .userReceivedCoupon(null)
-//            .totalPrice(totalPrice)
-//            .orderNumber(orderNumber)
-//            .status(OrderStatus.PENDING)
-//            .createdAt(time)
-//            .updatedAt(time)
-//            .build();
-//
-//        // when
-//        Orders updatedOrder = order.updateCoupon(userReceivedCoupon);
-//        int discountCost = userReceivedCoupon.getCoupon().getDiscountCost();
-//
-//        // then
-//        assertNotNull(updatedOrder); // 업데이트된 주문 객체가 생성되었는지 확인
-//        assertEquals(order.getId(), updatedOrder.getId());
-//        assertEquals(order.getUser(), updatedOrder.getUser());
-//        assertEquals(userReceivedCoupon, updatedOrder.getUserReceivedCoupon()); // 쿠폰 정보가 설정되었는지 확인
-//        BigDecimal minusCouponPrice = order.getTotalPrice()
-//            .subtract(BigDecimal.valueOf(discountCost));
-//        assertEquals(minusCouponPrice, updatedOrder.getTotalPrice());
-//        assertEquals(order.getOrderNumber(), updatedOrder.getOrderNumber());
-//        assertEquals(order.getStatus(), updatedOrder.getStatus());
-//        assertEquals(order.getCreatedAt(), updatedOrder.getCreatedAt());
-//        assertNotEquals(order.getUpdatedAt(), updatedOrder.getUpdatedAt()); // 생성 시간이 변경되었는지 확인
-//        assertEquals(order.getDeletedAt(), updatedOrder.getDeletedAt());
-//    }
-//}
+package com.sellect.server.order.domain;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import com.sellect.server.auth.domain.User;
+import com.sellect.server.common.exception.CommonException;
+import com.sellect.server.coupon.domain.Coupon;
+import com.sellect.server.coupon.domain.UserReceivedCoupon;
+import com.sellect.server.order.repository.entity.OrderStatus;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+
+public class OrdersTest {
+
+    private User user;
+    private UserReceivedCoupon userReceivedCoupon;
+    private BigDecimal totalPrice;
+    private String orderNumber;
+    private LocalDateTime time;
+
+    @BeforeEach
+    void setUp() {
+        user = User.builder()
+            .id(1L)
+            .build();
+
+        Coupon coupon = Coupon.builder()
+            .id(1L)
+            .discountCost(1000)
+            .build();
+
+        userReceivedCoupon = UserReceivedCoupon.builder()
+            .id(1L)
+            .user(user)
+            .coupon(coupon)
+            .isUsed(false) // 기본적으로 사용되지 않은 상태로 설정
+            .build();
+
+        totalPrice = new BigDecimal("100000");
+        time = LocalDateTime.parse("2024-08-01T00:00:00");
+        orderNumber = "test-order-number";
+    }
+
+    @Test
+    @DisplayName("주문 등록 성공")
+    void testRegister() {
+        // when
+        Orders order = Orders.register(user, totalPrice, OrderStatus.PENDING);
+
+        // then
+        assertNotNull(order);
+        assertEquals(user, order.getUser());
+        assertEquals(totalPrice, order.getTotalPrice());
+        assertNotNull(order.getOrderNumber());
+        assertEquals(OrderStatus.PENDING, order.getStatus());
+        assertNotNull(order.getCreatedAt());
+        assertNull(order.getUpdatedAt());
+        assertNull(order.getDeletedAt());
+    }
+
+    @Nested
+    @DisplayName("주문 상태 변경 테스트")
+    class ChangeStatusTest {
+
+        @Test
+        @DisplayName("주문 상태 변경 성공")
+        void testChangeStatus() {
+            // given
+            Orders order = Orders.builder()
+                .id(1L)
+                .user(user)
+                .userReceivedCoupon(userReceivedCoupon)
+                .totalPrice(totalPrice)
+                .orderNumber(orderNumber)
+                .status(OrderStatus.PENDING)
+                .createdAt(time)
+                .updatedAt(time)
+                .build();
+
+            // when
+            OrderStatus newStatus = OrderStatus.COMPLETED;
+            Orders updatedOrder = order.changeStatus(newStatus);
+
+            // then
+            assertNotNull(updatedOrder);
+            assertEquals(order.getId(), updatedOrder.getId());
+            assertEquals(order.getUser(), updatedOrder.getUser());
+            assertEquals(order.getUserReceivedCoupon(), updatedOrder.getUserReceivedCoupon());
+            assertEquals(order.getTotalPrice(), updatedOrder.getTotalPrice());
+            assertEquals(order.getOrderNumber(), updatedOrder.getOrderNumber());
+            assertEquals(newStatus, updatedOrder.getStatus());
+            assertEquals(order.getCreatedAt(), updatedOrder.getCreatedAt());
+            assertNotEquals(order.getUpdatedAt(), updatedOrder.getUpdatedAt());
+            assertEquals(order.getDeletedAt(), updatedOrder.getDeletedAt());
+        }
+
+        @Test
+        @DisplayName("이미 완료된 주문 상태 변경 시 예외 발생")
+        void testChangeStatusAlreadyCompleted() {
+            // given
+            Orders order = Orders.builder()
+                .id(1L)
+                .user(user)
+                .status(OrderStatus.COMPLETED)
+                .createdAt(time)
+                .build();
+
+            // when & then
+            CommonException exception = assertThrows(CommonException.class,
+                () -> order.changeStatus(OrderStatus.PENDING));
+            assertEquals("이미 완료된 주문입니다. is not valid", exception.getMessage());
+        }
+    }
+
+    @Nested
+    @DisplayName("쿠폰 적용 테스트")
+    class ApplyCouponTest {
+
+        @Test
+        @DisplayName("쿠폰 적용 성공")
+        void testApplyCoupon() {
+            // given
+            Orders order = Orders.builder()
+                .id(1L)
+                .user(user)
+                .userReceivedCoupon(null)
+                .totalPrice(totalPrice)
+                .orderNumber(orderNumber)
+                .status(OrderStatus.PENDING)
+                .createdAt(time)
+                .updatedAt(time)
+                .build();
+
+            // when
+            Orders updatedOrder = order.applyCoupon(userReceivedCoupon);
+            int discountCost = userReceivedCoupon.getCoupon().getDiscountCost();
+
+            // then
+            assertNotNull(updatedOrder);
+            assertEquals(order.getId(), updatedOrder.getId());
+            assertEquals(order.getUser(), updatedOrder.getUser());
+            assertEquals(userReceivedCoupon, updatedOrder.getUserReceivedCoupon());
+            BigDecimal minusCouponPrice = order.getTotalPrice()
+                .subtract(BigDecimal.valueOf(discountCost));
+            assertEquals(minusCouponPrice, updatedOrder.getTotalPrice());
+            assertEquals(order.getOrderNumber(), updatedOrder.getOrderNumber());
+            assertEquals(order.getStatus(), updatedOrder.getStatus());
+            assertEquals(order.getCreatedAt(), updatedOrder.getCreatedAt());
+            assertNotEquals(order.getUpdatedAt(), updatedOrder.getUpdatedAt());
+            assertEquals(order.getDeletedAt(), updatedOrder.getDeletedAt());
+        }
+
+        @Test
+        @DisplayName("이미 사용된 쿠폰 적용 시 예외 발생")
+        void testApplyUsedCoupon() {
+            // given
+            UserReceivedCoupon usedCoupon = UserReceivedCoupon.builder()
+                .id(2L)
+                .user(user)
+                .coupon(Coupon.builder().id(2L).discountCost(500).build())
+                .isUsed(true)
+                .build();
+
+            Orders order = Orders.builder()
+                .id(1L)
+                .user(user)
+                .totalPrice(totalPrice)
+                .status(OrderStatus.PENDING)
+                .createdAt(time)
+                .build();
+
+            // when & then
+            CommonException exception = assertThrows(CommonException.class,
+                () -> order.applyCoupon(usedCoupon));
+            assertEquals("이미 사용된 쿠폰입니다. is not valid", exception.getMessage());
+        }
+
+        @Test
+        @DisplayName("쿠폰 소유자가 아닌 경우 예외 발생")
+        void testApplyCouponInvalidOwner() {
+            // given
+            User anotherUser = User.builder().id(2L).build();
+            UserReceivedCoupon anotherUserCoupon = UserReceivedCoupon.builder()
+                .id(2L)
+                .user(anotherUser)
+                .coupon(Coupon.builder().id(2L).discountCost(500).build())
+                .isUsed(false)
+                .build();
+
+            Orders order = Orders.builder()
+                .id(1L)
+                .user(user)
+                .totalPrice(totalPrice)
+                .status(OrderStatus.PENDING)
+                .createdAt(time)
+                .build();
+
+            // when & then
+            CommonException exception = assertThrows(CommonException.class,
+                () -> order.applyCoupon(anotherUserCoupon));
+            assertEquals("쿠폰 소유자가 아닙니다. is not valid", exception.getMessage());
+        }
+    }
+
+    @Nested
+    @DisplayName("유효성 검사 테스트")
+    class ValidationTest {
+
+        @Test
+        @DisplayName("PENDING 상태 검증 성공")
+        void testValidatePendingSuccess() {
+            // given
+            Orders order = Orders.builder()
+                .id(1L)
+                .user(user)
+                .status(OrderStatus.PENDING)
+                .build();
+
+            // when & then (예외가 발생하지 않으면 성공)
+            order.validatePending();
+        }
+
+        @Test
+        @DisplayName("PENDING 상태가 아닌 경우 예외 발생")
+        void testValidatePendingFailure() {
+            // given
+            Orders order = Orders.builder()
+                .id(1L)
+                .user(user)
+                .status(OrderStatus.COMPLETED)
+                .build();
+
+            // when & then
+            CommonException exception = assertThrows(CommonException.class,
+                () -> order.validatePending());
+            assertEquals("결제 대기 주문이 아닙니다. is not valid", exception.getMessage());
+        }
+
+        @Test
+        @DisplayName("COMPLETED 상태 검증 성공")
+        void testValidateCompletedSuccess() {
+            // given
+            Orders order = Orders.builder()
+                .id(1L)
+                .user(user)
+                .status(OrderStatus.COMPLETED)
+                .build();
+
+            // when & then (예외가 발생하지 않으면 성공)
+            order.validateCompleted();
+        }
+
+        @Test
+        @DisplayName("COMPLETED 상태가 아닌 경우 예외 발생")
+        void testValidateCompletedFailure() {
+            // given
+            Orders order = Orders.builder()
+                .id(1L)
+                .user(user)
+                .status(OrderStatus.PENDING)
+                .build();
+
+            // when & then
+            CommonException exception = assertThrows(CommonException.class,
+                () -> order.validateCompleted());
+            assertEquals("주문이 완료되지 않았습니다. is not valid", exception.getMessage());
+        }
+
+        @Test
+        @DisplayName("주문 소유자 검증 성공")
+        void testValidateOwnerSuccess() {
+            // given
+            Orders order = Orders.builder()
+                .id(1L)
+                .user(user)
+                .status(OrderStatus.PENDING)
+                .build();
+
+            // when & then (예외가 발생하지 않으면 성공)
+            order.validateOwner(user);
+        }
+
+        @Test
+        @DisplayName("주문 소유자가 아닌 경우 예외 발생")
+        void testValidateOwnerFailure() {
+            // given
+            User anotherUser = User.builder().id(2L).build();
+            Orders order = Orders.builder()
+                .id(1L)
+                .user(user)
+                .status(OrderStatus.PENDING)
+                .build();
+
+            // when & then
+            CommonException exception = assertThrows(CommonException.class,
+                () -> order.validateOwner(anotherUser));
+            assertEquals("해당 주문에 접근 권한이 없습니다. is not valid", exception.getMessage());
+        }
+    }
+}

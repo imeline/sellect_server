@@ -57,41 +57,43 @@ public class OrderService {
         Orders order = getOrderById(orderId);
         order.validateOwner(user);
 
+        // 쿠폰 적용
         if (userReceivedCouponId != null) {
             UserReceivedCoupon coupon = userReceivedCouponRepository.findById(userReceivedCouponId)
                 .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "쿠폰"));
             order = ordersRepository.save(order.applyCoupon(coupon));
         }
-
+        // 결제 요청
         return paymentService.getKakaoPayReadyResponse(user, orderId, order);
     }
 
     @Transactional
     public void approvePayment(String pid, String token) {
         Payment payment = paymentService.findReadyPaymentByPid(pid);
+
+        Long orderId = Long.valueOf(payment.getOrderId());
+        User user = userRepository.findByUuid(payment.getUid())
+            .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "user"));
+
+        Orders order = getOrderById(orderId);
+        List<OrderItem> orderItems = getOrderItemsByOrderId(orderId);
+
+        // 재고 확인 및 차감
+        List<Inventory> deductedInventories = orderItems.stream()
+            .map(orderItem -> {
+                Product product = orderItem.getProduct();
+                Inventory inventory = inventoryRepository.findByProductId(product.getId())
+                    .orElseThrow(
+                        () -> new CommonException(BError.NOT_EXIST, "inventory"));
+                return orderItem.deductStock(inventory);
+            })
+            .toList();
+        deductedInventories.forEach(inventoryRepository::save);
+        // 주문 완료
+        Orders savedOrder = ordersRepository.save(order.changeStatus(OrderStatus.COMPLETED));
+        // 장바구니 비우기 및 쿠폰 삭제
+        clearCartAndDeleteCouponAsync(user, savedOrder);
         try {
-            Long orderId = Long.valueOf(payment.getOrderId());
-            User user = userRepository.findByUuid(payment.getUid())
-                .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "user"));
-
-            Orders order = getOrderById(orderId);
-            List<OrderItem> orderItems = getOrderItemsByOrderId(orderId);
-
-            // 재고 확인 및 차감
-            List<Inventory> deductedInventories = orderItems.stream()
-                .map(orderItem -> {
-                    Product product = orderItem.getProduct();
-                    Inventory inventory = inventoryRepository.findByProductId(product.getId())
-                        .orElseThrow(
-                            () -> new CommonException(BError.NOT_EXIST, "상품 id에 해당하는 재고가 없습니다."));
-                    return orderItem.deductStock(inventory);
-                })
-                .toList();
-            deductedInventories.forEach(inventoryRepository::save);
-            // 주문 완료
-            Orders savedOrder = ordersRepository.save(order.changeStatus(OrderStatus.COMPLETED));
-            // 장바구니 비우기 및 쿠폰 삭제
-            clearCartAndDeleteCouponAsync(user, savedOrder);
             // 결제 승인
             paymentService.paymentApprove(pid, token, payment);
         } catch (Exception e) {
@@ -132,6 +134,7 @@ public class OrderService {
 
     @Transactional
     public Orders registerPendingOrder(User user, OrderAddRequest request) {
+
         Orders order = Orders.register(user, request.convertPriceAsBigDecimal(),
             OrderStatus.PENDING);
         Orders savedOrder = ordersRepository.save(order);
@@ -139,11 +142,17 @@ public class OrderService {
         Set<Long> productIds = new HashSet<>();
         List<OrderItem> orderItems = request.orderItems().stream()
             .map(orderItemAddRequest -> {
+                // 같은 상품이 다른 orderItem 에 중복 등록되는 경우 방지
                 if (!productIds.add(orderItemAddRequest.productId())) {
                     throw new CommonException(BError.EXIST, "productId");
                 }
                 Product product = productRepository.findById(orderItemAddRequest.productId())
                     .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "product"));
+                Inventory inventory = inventoryRepository.findByProductId(product.getId())
+                    .orElseThrow(
+                        () -> new CommonException(BError.NOT_EXIST, "inventory"));
+                // 재고 확인
+                inventory.validateStock(orderItemAddRequest.quantity());
                 return OrderItem.register(
                     savedOrder,
                     product,
