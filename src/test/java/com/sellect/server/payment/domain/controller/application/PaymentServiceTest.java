@@ -3,8 +3,10 @@ package com.sellect.server.payment.domain.controller.application;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.mock;
 
 import com.sellect.server.auth.domain.User;
+import com.sellect.server.order.Infrastructure.port.KakaoPayClient;
 import com.sellect.server.payment.application.PaymentService;
 import com.sellect.server.payment.controller.response.PaymentHistoryResponse;
 import com.sellect.server.payment.domain.Payment;
@@ -36,7 +38,7 @@ class PaymentServiceTest {
             .uuid(USER_UUID)
             .build();
         payment = Payment.ready("1032", "test-pid", USER_UUID, 1000, "test-tid");
-        paymentService = new PaymentService(paymentRepository);
+        paymentService = new PaymentService(paymentRepository, mock(KakaoPayClient.class));
     }
 
     @Nested
