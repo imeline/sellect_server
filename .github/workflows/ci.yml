@@ -2,7 +2,7 @@ name: CI with Gradle
 
 on:
   pull_request:
-    branches: [ "develop" ]
+    branches: [ "develop", "main" ]
   push:
     branches: [ "develop" ]
 
@@ -27,7 +27,6 @@ jobs:
           rm -rf ~/.gradle/wrapper
           echo "Gradle cache deleted!"
 
-
       - name: Set application.yml
         uses: microsoft/variable-substitution@v1
         with:
@@ -45,22 +44,6 @@ jobs:
           storage.s3.secret-key: ${{ secrets.S3_SECRET_KEY }}
           storage.s3.region: ${{ secrets.S3_REGION }}
           server.host: ${{ secrets.HOST_URL }}
-
-
-
-
-
-
-#      # gradle을 캐싱 - 시간 단축
-#      - name: Gradle Caching
-#        uses: actions/cache@v3
-#        with:
-#          path: |
-#            ~/.gradle/caches
-#            ~/.gradle/wrapper
-#          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-#          restore-keys: |
-#            ${{ runner.os }}-gradle-
 
       - name: Grant Execute Permission For Gradlew
         run: chmod +x gradlew
@@ -83,34 +66,3 @@ jobs:
         if: success() || failure() # always run even if the previous step fails
         with:
           report_paths: '**/build/test-results/test/TEST-*.xml'
-
-      - name: Docker build & Push
-        run: |
-          docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/sellect-app:latest .
-          docker push ${{ secrets.DOCKER_USERNAME }}/sellect-app:latest
-
-      - name: Deploy
-        uses: appleboy/ssh-action@master
-        env:
-          COMPOSE: "/home/ubuntu/compose/docker-compose.yml"
-        with:
-          username: ubuntu
-          host: ${{ secrets.EC2_HOST }}
-          key: ${{ secrets.EC2_PRIVATE_KEY }}
-          envs: COMPOSE
-          script: |
-            docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
-            sudo docker-compose -f $COMPOSE down
-            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/sellect-app:latest
-            sudo docker-compose -f $COMPOSE up -d
-
-#      - name: Configure AWS Credentials
-#        uses: aws-actions/configure-aws-credentials@v1
-#        with:
-#          aws-access-key-id: ${{ secrets.S3_ACCESS_KEY }}
-#          aws-secret-access-key: ${{ secrets.S3_SECRET_KEY }}
-#          aws-region: ${{ secrets.S3_REGION }}
-#
-#      - name: Deploy static site to S3 bucket
-#        run: aws s3 sync ./build s3://${{ secrets.S3_BUCKET_NAME }} --delete
