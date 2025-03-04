@@ -14,21 +14,17 @@ import lombok.Getter;
 public class OrderItem {
 
     private final Long id;
-
     private final Orders orders;
-
     private final Product product;
-
     private final BigDecimal price;
-
     private final int quantity;
-
     private final LocalDateTime createdAt;
-
     private final LocalDateTime deleteAt;
 
+    // 주문 상품 생성
     public static OrderItem register(Orders orders, Product product, BigDecimal price,
         int quantity) {
+        product.validateStock(quantity);
         return OrderItem.builder()
             .orders(orders)
             .product(product)
@@ -37,5 +33,10 @@ public class OrderItem {
             .createdAt(LocalDateTime.now())
             .deleteAt(null)
             .build();
+    }
+
+    // 재고 확인 및 차감
+    public Product deductStock() {
+        return this.product.updateStock(this.quantity);
     }
 }

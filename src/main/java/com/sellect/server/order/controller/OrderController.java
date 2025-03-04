@@ -13,7 +13,6 @@ import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -27,6 +26,16 @@ import org.springframework.web.bind.annotation.RestController;
 public class OrderController {
 
     private final OrderService orderService;
+
+    /**
+     * 결제하기 카카오 페이 api (/ready 호출)
+     */
+    @PostMapping("/order/payment/{orderId}/ready")
+    public ApiResponse<String> readyPayment(@AuthUser User user, @PathVariable Long orderId,
+        @RequestParam(name = "coupon_id", required = false) Long userReceivedCouponId) {
+        String redirectionUrl = orderService.payOrder(user, orderId, userReceivedCouponId);
+        return ApiResponse.ok(redirectionUrl);
+    }
 
     /**
      * 주문 페이지 조회용 (결제 전)
@@ -56,16 +65,6 @@ public class OrderController {
     }
 
     /**
-     * 결제하기 카카오 페이 api (/ready 호출)
-     */
-    @PostMapping("/order/payment/{orderId}/ready")
-    public ApiResponse<String> readyPayment(@AuthUser User user, @PathVariable Long orderId,
-        @RequestParam(name = "coupon_id", required = false) Long userReceivedCouponId) {
-        String redirectionUrl = orderService.payOrder(user, orderId, userReceivedCouponId);
-        return ApiResponse.ok(redirectionUrl);
-    }
-
-    /**
      * 주문 내역 확인
      */
     @GetMapping("/orders")
@@ -81,10 +80,13 @@ public class OrderController {
         return ApiResponse.ok(orderService.getOrderDetail(orderId));
     }
 
-    @PatchMapping("/order/{orderId}/appied-coupon/{userReceivedCouponId}")
-    public ApiResponse<Void> applyCoupon(@AuthUser User user, @PathVariable Long orderId,
-        @PathVariable Long userReceivedCouponId) {
-        orderService.applyCouponToOrder(user, orderId, userReceivedCouponId);
-        return ApiResponse.ok(null);
-    }
+//    /**
+//     * 주문에 쿠폰 정보 적용
+//     */
+//    @PatchMapping("/order/{orderId}/appied-coupon/{userReceivedCouponId}")
+//    public ApiResponse<Void> applyCoupon(@AuthUser User user, @PathVariable Long orderId,
+//        @PathVariable Long userReceivedCouponId) {
+//        orderService.applyCouponToOrder(user, orderId, userReceivedCouponId);
+//        return ApiResponse.ok(null);
+//    }
 }

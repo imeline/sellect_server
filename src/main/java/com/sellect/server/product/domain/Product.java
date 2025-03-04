@@ -3,6 +3,8 @@ package com.sellect.server.product.domain;
 import com.sellect.server.auth.domain.User;
 import com.sellect.server.brand.domain.Brand;
 import com.sellect.server.category.domain.Category;
+import com.sellect.server.common.exception.CommonException;
+import com.sellect.server.common.exception.enums.BError;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
@@ -65,12 +67,20 @@ public class Product {
     }
 
     /**
+     * 재고 부족 확인
+     */
+    public void validateStock(int quantity) {
+        if (this.stock < quantity) {
+            throw new CommonException(BError.NOT_VALID, "재고 부족");
+        }
+    }
+
+    /**
      * 재고 감소 후 새로운 Product 인스턴스를 반환 (불변성 유지)
      */
     public Product updateStock(int quantity) {
-        if (this.stock < quantity) {
-            throw new IllegalArgumentException("재고 부족");
-        }
+        // 재고 확인
+        validateStock(quantity);
         return Product.builder()
             .id(this.id)
             .seller(this.seller)
