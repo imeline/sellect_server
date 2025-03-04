@@ -110,6 +110,19 @@ public class CouponService {
         userReceivedCouponRepository.save(usedCoupon);
     }
 
+    
+    // TODO: 애플리케이션 로직으로 join 실행 2025-03-4, 14:25
+    /*
+    * 현재 동작
+    * 1. productIds를 통해 판매자 리스트 가져오기
+    * 2. UserReceivedCoupon을 모두 조회한  메모리에서 필터링
+    * 3. sellersId와 Coupon의 sellerId를 메모리에서 조인.
+    *
+    * 문제점
+    * 1. N+1 문제: productIds 개수만큼 개별 쿼리 발생 (findById 호출).
+    * 2. 메모리 부하: UserReceivedCoupon 전체를 메모리로 가져와 필터링.
+    * 3. 조인 비효율성: sellersId.contains()는 리스트 검색(O(n))으로, 데이터가 많을수록 성능 저하.
+    * */
     @Transactional(readOnly = true)
     public List<CouponPossibleOrderResponse> getCouponsByMatchingSeller(User user,
         List<Long> productIds) {
