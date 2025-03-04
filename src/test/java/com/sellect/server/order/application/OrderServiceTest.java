@@ -24,6 +24,7 @@ import com.sellect.server.order.domain.Orders;
 import com.sellect.server.order.repository.FakeOrderItemRepository;
 import com.sellect.server.order.repository.FakeOrdersRepository;
 import com.sellect.server.order.repository.entity.OrderStatus;
+import com.sellect.server.payment.application.PaymentService;
 import com.sellect.server.payment.domain.controller.repository.FakePaymentRepository;
 import com.sellect.server.product.domain.Product;
 import com.sellect.server.product.domain.ProductImage;
@@ -49,8 +50,8 @@ class OrderServiceTest {
     private final FakeuserReceivedCouponRepository userReceivedCouponRepository = new FakeuserReceivedCouponRepository();
     private final FakeProductImageRepository productImageRepository = new FakeProductImageRepository();
     private final FakeBrandRepository brandRepository = new FakeBrandRepository();
-    private final FakePaymentRepository paymentRepository = new FakePaymentRepository();
     private final FakeUserRepository userRepository = new FakeUserRepository();
+    private final PaymentService paymentService = new PaymentService(new FakePaymentRepository(), kakaoPayClient);
     private final OrderService sut = new OrderService(
         ordersRepository,
         orderItemRepository,
@@ -58,9 +59,8 @@ class OrderServiceTest {
         cartRepository,
         userReceivedCouponRepository,
         productImageRepository,
-        kakaoPayClient,
-        paymentRepository,
-        userRepository
+        userRepository,
+        paymentService
     );
     private User user;
 
