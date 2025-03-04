@@ -20,9 +20,9 @@ public class SearchLogEvent {
     private Long brandId;
 
     public static SearchLogEvent publish(String searchKeyword, String userIdentifier,
-        int resultCount,
-        boolean filterApplied, Long categoryId, Long brandId) {
+        int resultCount, Long categoryId, Long brandId) {
 
+        boolean checkUsedFiltered = false;
         /*
         * 검색 완료 후에 실행되라도 정상적인 데이터가 들어오지 않을 수 있기에 이를 대비해서 NPE 추가
         * */
@@ -36,12 +36,18 @@ public class SearchLogEvent {
         if (resultCount < 0) {
             throw new IllegalArgumentException("검색 결과 개수는 음수가 될 수 없습니다.");
         }
+        /*
+         * 필터 사용 여부 체크 (카테고리 또는 브랜드 필터 적용 여부)
+         * */
+        if (categoryId != null || brandId != null) {
+            checkUsedFiltered = true;
+        }
 
         return SearchLogEvent.builder()
             .searchKeyword(searchKeyword)
             .userIdentifier(userIdentifier)
             .resultCount(resultCount)
-            .filterApplied(filterApplied)
+            .filterApplied(checkUsedFiltered)
             .timestamp(LocalDateTime.now())
             .categoryId(categoryId)
             .brandId(brandId)
