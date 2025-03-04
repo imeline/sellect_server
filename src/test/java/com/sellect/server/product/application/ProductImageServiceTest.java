@@ -112,7 +112,8 @@ class ProductImageServiceTest {
             sut.modifyProductImages(sellerId, request, Collections.emptyList());
 
             // Then
-            assertThat(productImageRepository.findByProductImageId(productImage1.getId())).isEmpty();
+            assertThat(
+                productImageRepository.findByProductImageId(productImage1.getId())).isEmpty();
             assertThat(productImageRepository.findByProductImageId(productImage2.getId()))
                 .hasValueSatisfying(image -> {
                     assertThat(image.getSequence()).isEqualTo(1);
@@ -161,7 +162,8 @@ class ProductImageServiceTest {
             sut.modifyProductImages(sellerId, request, List.of(newImage));
 
             // Then
-            assertThat(productImageRepository.findByProductImageId(productImage2.getId())).isEmpty();
+            assertThat(
+                productImageRepository.findByProductImageId(productImage2.getId())).isEmpty();
             assertThat(productImageRepository.findByProductImageId(productImage1.getId()))
                 .hasValueSatisfying(image -> {
                     assertThat(image.getSequence()).isEqualTo(1);
@@ -255,11 +257,11 @@ class ProductImageServiceTest {
                 .productId(product.getId())
                 .productImageIdsToDelete(Collections.emptyList())
                 .productImagesToUpdate(List.of(
-                    ImageContextUpdateRequest.builder()
-                        .sequence(4)
-                        .isNewImage(true)
-                        .filename(newImageFilename)
-                        .build()
+                        ImageContextUpdateRequest.builder()
+                            .sequence(4)
+                            .isNewImage(true)
+                            .filename(newImageFilename)
+                            .build()
                     )
                 )
                 .build();
@@ -268,14 +270,16 @@ class ProductImageServiceTest {
             sut.modifyProductImages(sellerId, request, Collections.emptyList());
 
             // Then
-            List<ProductImage> updatedImages = productImageRepository.findByProductId(product.getId());
+            List<ProductImage> updatedImages = productImageRepository.findByProductId(
+                product.getId());
             assertThat(updatedImages).hasSize(4); // 기존 3개 + 새로운 이미지 1개
             assertThat(updatedImages)
                 .filteredOn(image -> image.getSequence() == 4)
                 .hasSize(1)
                 .first()
                 .satisfies(image -> {
-                    assertThat(image.getImageUrl()).isEqualTo(FAKE_IMAGE_STORAGE_URL + newImageFilename);
+                    assertThat(image.getImageUrl()).isEqualTo(
+                        FAKE_IMAGE_STORAGE_URL + newImageFilename);
                     assertThat(image.isRepresentative()).isFalse();
                 });
             // 기존 이미지들의 순서가 유지되는지 확인
@@ -338,13 +342,13 @@ class ProductImageServiceTest {
         }
 
         @Test
-        @DisplayName("삭제할 이미지가 존재하지 않으면 예외 발생")
+        @DisplayName("삭제 시 존재하지 않는 이미지로 접근하면 예외 발생")
         void modifyProductImages_ImageToDeleteNotFound() {
             // Given
-            Long nonExistentUuid = 999L;
+            Long nonExistentId = 999L;
             ProductImageModifyRequest request = ProductImageModifyRequest.builder()
                 .productId(product.getId())
-                .productImageIdsToDelete(List.of(nonExistentUuid))
+                .productImageIdsToDelete(List.of(nonExistentId))
                 .build();
 
             // When & Then
@@ -352,6 +356,51 @@ class ProductImageServiceTest {
                 () -> sut.modifyProductImages(sellerId, request, Collections.emptyList()))
                 .isInstanceOf(CommonException.class)
                 .hasMessageContaining(BError.NOT_EXIST.getMessage("product image"));
+        }
+
+        @Test
+        @DisplayName("수정 시 존재하지 않는 이미지로 접근하면 예외 발생")
+        void modifyProductImages_ImageToUpdateNotFound() {
+            // Given
+            Long nonExistentId = 999L;
+            ProductImageModifyRequest request = ProductImageModifyRequest.builder()
+                .productId(product.getId())
+                .productImageIdsToDelete(Collections.emptyList())
+                .productImagesToUpdate(List.of(
+                    ImageContextUpdateRequest.builder()
+                        .productImageId(nonExistentId)
+                        .build()))
+                .build();
+
+            // When & Then
+            assertThatThrownBy(
+                () -> sut.modifyProductImages(sellerId, request, Collections.emptyList()))
+                .isInstanceOf(CommonException.class)
+                .hasMessageContaining(BError.NOT_EXIST.getMessage("product image"));
+        }
+
+        @Test
+        @DisplayName("이미지 파일에 이름이 유효하지 않으면 예외 발생")
+        void modifyProductImages_NoFileName() {
+            // Given
+            ProductImageModifyRequest request = ProductImageModifyRequest.builder()
+                .productId(product.getId())
+                .productImageIdsToDelete(Collections.emptyList())
+                .productImagesToUpdate(List.of(
+                    ImageContextUpdateRequest.builder()
+                        .sequence(4)
+                        .filename("new-image-uuid.jpg")
+                        .isNewImage(true)
+                        .isRepresentative(false)
+                        .build()))
+                .build();
+            MultipartFile imageFile = new FakeMultipartFile("");
+
+            // When & Then
+            assertThatThrownBy(
+                () -> sut.modifyProductImages(sellerId, request, List.of(imageFile)))
+                .isInstanceOf(CommonException.class)
+                .hasMessageContaining(BError.NOT_VALID.getMessage("file name"));
         }
     }
 }

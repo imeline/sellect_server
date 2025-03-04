@@ -12,7 +12,6 @@ import com.sellect.server.product.util.StorageUtil;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -52,8 +51,8 @@ public class ProductImageService {
         Map<String, String> newFileNames = new HashMap<>();
         images.forEach(image -> {
             String originalFilename = image.getOriginalFilename();
-            if (originalFilename == null) {
-                throw new CommonException(BError.NOT_EXIST, "file name");
+            if (originalFilename == null || originalFilename.isBlank()) {
+                throw new CommonException(BError.NOT_VALID, "file name");
             }
 
             String newFileName = StorageUtil.generateFileName(originalFilename);
