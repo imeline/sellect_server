@@ -8,7 +8,6 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sellect.server.common.infrastructure.jwt.JwtFilter;
 import com.sellect.server.common.resolver.AuthenticationResolver;
 import com.sellect.server.config.JsonConfig;
@@ -72,8 +71,6 @@ class SearchControllerTest {
     // 필수
     @Autowired
     private MockMvc mockMvc;
-    @Autowired
-    private ObjectMapper objectMapper;
 
     @BeforeEach
     void setup() throws ServletException, IOException {

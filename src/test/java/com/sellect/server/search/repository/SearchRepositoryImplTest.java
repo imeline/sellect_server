@@ -2,7 +2,6 @@ package com.sellect.server.search.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.sellect.server.config.JpaConfig;
 import com.sellect.server.config.JsonConfig;
@@ -41,8 +40,6 @@ public class SearchRepositoryImplTest {
 
     @Autowired
     private SearchRepositoryImpl sut;
-    @Autowired
-    private ObjectMapper objectMapper;
 
     @TestConfiguration
     static class TestConfig {
