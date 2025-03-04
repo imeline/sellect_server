@@ -21,7 +21,7 @@ class S3StorageServiceTest {
 
     // TODO: Fake S3 서버를 사용하여 테스트를 진행해야 함
     private AmazonS3 s3Client;
-    private S3StorageService s3StorageService;
+    private S3StorageClient s3StorageClient;
 
     @BeforeEach
     void setUp() {
@@ -29,7 +29,7 @@ class S3StorageServiceTest {
         S3StorageProperties properties = new S3StorageProperties();
         String bucketName = "test-bucket";
         properties.setBucketName(bucketName);
-        s3StorageService = new S3StorageService(s3Client, properties);
+        s3StorageClient = new S3StorageClient(s3Client, properties);
     }
 
     @Nested
@@ -45,7 +45,7 @@ class S3StorageServiceTest {
             MockMultipartFile file = new MockMultipartFile("blank", "test.txt",
                 "text/plain", "Hello World".getBytes());
 
-            assertThatThrownBy(() -> s3StorageService.store(file, ""))
+            assertThatThrownBy(() -> s3StorageClient.store(file, ""))
                 .isInstanceOf(StorageException.class)
                 .hasMessageContaining(BError.NOT_EXIST.getMessage()
                     .replace("%1", "file name"));
@@ -57,7 +57,7 @@ class S3StorageServiceTest {
             MockMultipartFile file = mock(MockMultipartFile.class);
             when(file.getInputStream()).thenThrow(new IOException("Test IOException"));
 
-            assertThatThrownBy(() -> s3StorageService.store(file, file.getName()))
+            assertThatThrownBy(() -> s3StorageClient.store(file, file.getName()))
                 .isInstanceOf(StorageException.class)
                 .hasMessageContaining(BError.FAIL_FOR_REASON.getMessage()
                     .replace("%1", "file")

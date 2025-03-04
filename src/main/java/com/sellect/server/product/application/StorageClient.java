@@ -4,7 +4,7 @@ import java.io.InputStream;
 import org.springframework.core.io.Resource;
 import org.springframework.web.multipart.MultipartFile;
 
-public interface StorageService {
+public interface StorageClient {
 
     void init() throws Exception;
 

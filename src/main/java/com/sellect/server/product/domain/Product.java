@@ -3,6 +3,8 @@ package com.sellect.server.product.domain;
 import com.sellect.server.auth.domain.User;
 import com.sellect.server.brand.domain.Brand;
 import com.sellect.server.category.domain.Category;
+import com.sellect.server.common.exception.CommonException;
+import com.sellect.server.common.exception.enums.BError;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
@@ -103,5 +105,11 @@ public class Product {
             .updatedAt(this.updatedAt)
             .deleteAt(LocalDateTime.now()) // 삭제 시간 업데이트
             .build();
+    }
+
+    public void validateSeller(Long sellerId) {
+        if (!this.seller.getId().equals(sellerId)) {
+            throw new CommonException(BError.ACCESS_DENIED, "product");
+        }
     }
 }

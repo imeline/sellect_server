@@ -36,9 +36,10 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Page;
 
-import static com.sellect.server.product.application.FakeStorageService.FAKE_IMAGE_STORAGE_URL;
+import static com.sellect.server.product.application.FakeStorageClient.FAKE_IMAGE_STORAGE_URL;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import org.springframework.web.multipart.MultipartFile;
 
 class ProductServiceTest {
 
@@ -47,13 +48,10 @@ class ProductServiceTest {
     private final FakeCategoryRepository categoryRepository = new FakeCategoryRepository();
     private final FakeProductImageRepository productImageRepository = new FakeProductImageRepository();
     private final FakeOrderItemRepository orderItemRepository = new FakeOrderItemRepository();
-    private final FakeStorageService storageService = new FakeStorageService();
-    private final ProductImageService productImageService = new ProductImageService(
-        storageService, productRepository, productImageRepository
-    );
+    private final FakeStorageClient storageService = new FakeStorageClient();
     private final ProductService sut = new ProductService(
-        productImageService, productRepository, brandRepository,
-        categoryRepository, productImageRepository, orderItemRepository, storageService
+        productRepository, brandRepository, categoryRepository,
+        productImageRepository, orderItemRepository, storageService
     );
 
     private User seller;
@@ -148,8 +146,8 @@ class ProductServiceTest {
                         .build()
                 ))
                 .build();
-            FakeMultipartFile image1 = new FakeMultipartFile("image1-uuid.jpg");
-            FakeMultipartFile image2 = new FakeMultipartFile("image2-uuid.jpg");
+            MultipartFile image1 = new FakeMultipartFile("image1-uuid.jpg");
+            MultipartFile image2 = new FakeMultipartFile("image2-uuid.jpg");
 
             // When
             ProductRegisterResponse result = sut.register(seller, request, List.of(image1, image2));
@@ -182,6 +180,39 @@ class ProductServiceTest {
         }
 
         @Test
+        @DisplayName("이미지의 파일 이름이 null 이면 예외 발생")
+        void register_NullFileName_ThrowsException() {
+            // Given
+            ProductRegisterRequest request = ProductRegisterRequest.builder()
+                .categoryId(3L)
+                .brandId(1L)
+                .price("100.00")
+                .name("TV")
+                .description("Smart TV")
+                .stock(10)
+                .imageContexts(List.of(
+                    ImageContextCreateRequest.builder()
+                        .uuid("image1-uuid")
+                        .sequence(1)
+                        .isRepresentative(true)
+                        .build()
+                ))
+                .build();
+            // 파일 이름이 null 인 가짜 이미지 생성
+            MultipartFile nullFileNameImage = new FakeMultipartFile(null) {
+                @Override
+                public String getOriginalFilename() {
+                    return null; // 파일 이름 null 로 강제 설정
+                }
+            };
+
+            // When & Then
+            assertThatThrownBy(() -> sut.register(seller, request, List.of(nullFileNameImage)))
+                .isInstanceOf(CommonException.class)
+                .hasMessageContaining(BError.NOT_EXIST.getMessage("file name"));
+        }
+
+        @Test
         @DisplayName("이미지 UUID가 매핑되지 않으면 예외 발생")
         void register_UnmatchedImageUuid_ThrowsException() {
             // Given
@@ -201,7 +232,7 @@ class ProductServiceTest {
                         .build()
                 ))
                 .build();
-            FakeMultipartFile image = new FakeMultipartFile("wrong-uuid.jpg"); // 매핑되지 않음
+            MultipartFile image = new FakeMultipartFile("wrong-uuid.jpg"); // 매핑되지 않음
 
             // When & Then
             assertThatThrownBy(() -> sut.register(seller, request, List.of(image)))
@@ -263,7 +294,7 @@ class ProductServiceTest {
                         .build()
                 ))
                 .build();
-            FakeMultipartFile imageFile = new FakeMultipartFile("image-uuid.jpg");
+            MultipartFile imageFile = new FakeMultipartFile("image-uuid.jpg");
             storageService.store(imageFile, "image-uuid.jpg"); // 이미지를 별도로 저장할 때는 timestamp 가 붙지 않음
 
             // When
@@ -472,7 +503,7 @@ class ProductServiceTest {
             // When & Then
             assertThatThrownBy(() -> sut.modify(otherSeller.getId(), product.getId(), request))
                 .isInstanceOf(CommonException.class)
-                .hasMessageContaining(BError.ACCESS_DENIED.getMessage("modify product"));
+                .hasMessageContaining(BError.ACCESS_DENIED.getMessage("product"));
         }
     }
 
@@ -518,7 +549,7 @@ class ProductServiceTest {
             // When & Then
             assertThatThrownBy(() -> sut.remove(otherSeller.getId(), product.getId()))
                 .isInstanceOf(CommonException.class)
-                .hasMessageContaining(BError.ACCESS_DENIED.getMessage("remove product"));
+                .hasMessageContaining(BError.ACCESS_DENIED.getMessage("product"));
         }
     }
 

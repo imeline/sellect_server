@@ -57,9 +57,7 @@ public class ProductRepositoryImpl implements ProductRepository {
     }
 
     @Override
-    public List<Product> findAllBySellerId(Long sellerId) {
-        return productJpaRepository.findAllBySellerEntityIdAndDeleteAtIsNull(sellerId).stream()
-            .map(ProductEntity::toModel)
-            .toList();
+    public List<Long> findProductIdsBySellerId(Long sellerId) {
+        return productJpaRepository.findIdBySellerEntityIdAndDeleteAtIsNull(sellerId);
     }
 }

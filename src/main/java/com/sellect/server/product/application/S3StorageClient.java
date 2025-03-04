@@ -14,18 +14,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
-@Service
+@Component
 @Primary
-public class S3StorageService implements StorageService {
+public class S3StorageClient implements StorageClient {
 
     private final AmazonS3 s3Client;
     private final String bucketName;
 
     @Autowired
-    public S3StorageService(AmazonS3 s3Client, S3StorageProperties properties) {
+    public S3StorageClient(AmazonS3 s3Client, S3StorageProperties properties) {
         this.s3Client = s3Client;
         this.bucketName = properties.getBucketName();
     }

@@ -26,7 +26,7 @@ import org.springframework.web.multipart.MultipartFile;
 class FileSystemStorageServiceTest {
 
     private static Path tempDir;
-    private FileSystemStorageService storageService;
+    private FileSystemStorageClient storageService;
 
     @BeforeAll
     static void setupTempDir() throws IOException {
@@ -37,7 +37,7 @@ class FileSystemStorageServiceTest {
     void setUp() throws Exception {
         FileSystemStorageProperties properties = new FileSystemStorageProperties();
         properties.setLocation(tempDir.toString());
-        storageService = new FileSystemStorageService(properties);
+        storageService = new FileSystemStorageClient(properties);
         storageService.init();
     }
 
