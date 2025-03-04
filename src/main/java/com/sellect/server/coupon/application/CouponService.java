@@ -16,6 +16,7 @@ import com.sellect.server.coupon.repository.CouponRepository;
 import com.sellect.server.coupon.repository.UserReceivedCouponRepository;
 import com.sellect.server.product.domain.Product;
 import com.sellect.server.product.repository.ProductRepository;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 import lombok.RequiredArgsConstructor;
@@ -99,19 +100,6 @@ public class CouponService {
     }
 
     // [사용자] 쿠폰 사용
-    @Transactional
-    public void useCoupon(User user, Long couponId) {
-        Coupon coupon = couponRepository.findById(couponId)
-            .orElseThrow(() -> new CommonException(BError.NOT_EXIST, String.valueOf(couponId)));
-        UserReceivedCoupon userReceivedCoupon = userReceivedCouponRepository.findByUserAndCoupon(
-                user, coupon)
-            .orElseThrow(() -> new CommonException(BError.NOT_EXIST, String.valueOf(couponId)));
-
-        UserReceivedCoupon usedCoupon = userReceivedCoupon.useCoupon();
-        userReceivedCouponRepository.save(usedCoupon);
-    }
-
-    
     // TODO: 애플리케이션 로직으로 join 실행 2025-03-4, 14:25
     /*
     * 현재 동작
@@ -148,11 +136,13 @@ public class CouponService {
         // 3. 판매자가 일치하는 쿠폰만 선택하여 변환
         return validCoupons.stream()
             .filter(c -> sellersId.contains(c.getCoupon().getSeller().getId()))
+            .sorted(Comparator.comparing(c -> c.getCoupon().getExpirationDate()))
             .map(c -> new CouponPossibleOrderResponse(
                 c.getId(),
                 c.getCoupon().getDiscountCost(),
                 c.getCoupon().getExpirationDate())
-            ).toList();
+            )
+            .toList();
     }
 
 
