@@ -1,5 +1,9 @@
 package com.sellect.server.product.application;
 
+import static com.sellect.server.product.application.FakeStorageService.FAKE_IMAGE_STORAGE_URL;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import com.sellect.server.auth.domain.User;
 import com.sellect.server.auth.repository.entity.Role;
 import com.sellect.server.brand.domain.Brand;
@@ -10,8 +14,8 @@ import com.sellect.server.common.exception.CommonException;
 import com.sellect.server.common.exception.enums.BError;
 import com.sellect.server.order.domain.OrderItem;
 import com.sellect.server.order.domain.Orders;
-import com.sellect.server.order.repository.FakeOrderItemRepository;
 import com.sellect.server.order.repository.entity.OrderStatus;
+import com.sellect.server.order.repository.fake.FakeOrderItemRepository;
 import com.sellect.server.product.controller.request.ImageContextCreateRequest;
 import com.sellect.server.product.controller.request.ProductModifyRequest;
 import com.sellect.server.product.controller.request.ProductRegisterRequest;
@@ -35,10 +39,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Page;
-
-import static com.sellect.server.product.application.FakeStorageService.FAKE_IMAGE_STORAGE_URL;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class ProductServiceTest {
 
@@ -714,8 +714,10 @@ class ProductServiceTest {
                 new BigDecimal("100.00"), "TV", "Smart TV", 10
             );
             product = productRepository.save(product);
-            ProductImage image = ProductImage.register(product, FAKE_IMAGE_STORAGE_URL + "image1.jpg",
-                ImageContextCreateRequest.builder().sequence(1).isRepresentative(true).filename("image1.jpg").build());
+            ProductImage image = ProductImage.register(product,
+                FAKE_IMAGE_STORAGE_URL + "image1.jpg",
+                ImageContextCreateRequest.builder().sequence(1).isRepresentative(true)
+                    .filename("image1.jpg").build());
             productImageRepository.save(image, product);
         }
 
@@ -723,7 +725,8 @@ class ProductServiceTest {
         @DisplayName("판매자의 상품 상세를 성공적으로 조회")
         void retrieveDetailBySeller_Success() {
             // When
-            ProductDetailRetrieveBySellerResponse result = sut.retrieveDetailBySeller(seller, product.getId());
+            ProductDetailRetrieveBySellerResponse result = sut.retrieveDetailBySeller(seller,
+                product.getId());
 
             // Then
             assertThat(result).isNotNull();
@@ -862,7 +865,8 @@ class ProductServiceTest {
                 .uuid(UUID.randomUUID().toString())
                 .role(Role.USER)
                 .build();
-            Orders completedOrder = Orders.register(user, new BigDecimal("400.00"), OrderStatus.COMPLETED);
+            Orders completedOrder = Orders.register(user, new BigDecimal("400.00"),
+                OrderStatus.COMPLETED);
             orderItemRepository.addOrderItem(OrderItem.builder()
                 .orders(completedOrder)
                 .product(product1)
@@ -881,7 +885,8 @@ class ProductServiceTest {
 
             // Then
             assertThat(result).isNotNull();
-            assertThat(result.totalSales()).isEqualTo(new BigDecimal("400.00")); // (100 * 2) + (200 * 1)
+            assertThat(result.totalSales()).isEqualTo(
+                new BigDecimal("400.00")); // (100 * 2) + (200 * 1)
             assertThat(result.totalProductsCount()).isEqualTo(2);
         }
 
@@ -899,8 +904,10 @@ class ProductServiceTest {
                 .uuid(UUID.randomUUID().toString())
                 .role(Role.USER)
                 .build();
-            Orders completedOrder = Orders.register(user1, new BigDecimal("400.00"), OrderStatus.COMPLETED);
-            Orders pendingOrder = Orders.register(user2, new BigDecimal("50.00"), OrderStatus.PENDING);
+            Orders completedOrder = Orders.register(user1, new BigDecimal("400.00"),
+                OrderStatus.COMPLETED);
+            Orders pendingOrder = Orders.register(user2, new BigDecimal("50.00"),
+                OrderStatus.PENDING);
 
             orderItemRepository.addOrderItem(OrderItem.builder()
                 .orders(completedOrder)
@@ -939,7 +946,8 @@ class ProductServiceTest {
                 .uuid(UUID.randomUUID().toString())
                 .role(Role.USER)
                 .build();
-            Orders completedOrder = Orders.register(user, new BigDecimal("300.00"), OrderStatus.COMPLETED);
+            Orders completedOrder = Orders.register(user, new BigDecimal("300.00"),
+                OrderStatus.COMPLETED);
             orderItemRepository.addOrderItem(OrderItem.builder()
                 .orders(completedOrder)
                 .product(product1)
@@ -965,7 +973,8 @@ class ProductServiceTest {
                 .uuid(UUID.randomUUID().toString())
                 .role(Role.USER)
                 .build();
-            Orders pendingOrder = Orders.register(user, new BigDecimal("500.00"), OrderStatus.PENDING);
+            Orders pendingOrder = Orders.register(user, new BigDecimal("500.00"),
+                OrderStatus.PENDING);
             orderItemRepository.addOrderItem(OrderItem.builder()
                 .orders(pendingOrder)
                 .product(product1)
