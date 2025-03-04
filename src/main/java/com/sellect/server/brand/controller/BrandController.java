@@ -18,7 +18,8 @@ public class BrandController {
     private final BrandService brandService;
 
     @GetMapping("/brands")
-    public ApiResponse<List<BrandRetrieveResponse>> retrieveBrandsByCategory(@RequestParam("brand_name") String brandName) {
+    public ApiResponse<List<BrandRetrieveResponse>> retrieveBrandsByCategory(
+        @RequestParam("brand_name") String brandName) {
         List<BrandRetrieveResponse> results = brandService.retrieveBrandsContainingName(brandName);
         return ApiResponse.ok(results);
     }

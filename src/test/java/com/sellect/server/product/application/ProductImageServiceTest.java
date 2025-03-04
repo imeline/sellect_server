@@ -3,7 +3,7 @@ package com.sellect.server.product.application;
 import com.sellect.server.auth.domain.User;
 import com.sellect.server.common.exception.CommonException;
 import com.sellect.server.common.exception.enums.BError;
-import static com.sellect.server.product.application.FakeStorageService.FAKE_IMAGE_STORAGE_URL;
+import static com.sellect.server.product.application.FakeStorageClient.FAKE_IMAGE_STORAGE_URL;
 import com.sellect.server.product.controller.request.ImageContextUpdateRequest;
 import com.sellect.server.product.controller.request.ProductImageModifyRequest;
 import com.sellect.server.product.domain.Product;
@@ -27,9 +27,9 @@ class ProductImageServiceTest {
 
     private final FakeProductRepository productRepository = new FakeProductRepository();
     private final FakeProductImageRepository productImageRepository = new FakeProductImageRepository();
-    private final FakeStorageService storageService = new FakeStorageService();
+    private final FakeStorageClient storageClient = new FakeStorageClient();
     private final ProductImageService sut = new ProductImageService(
-        storageService,
+        storageClient,
         productRepository,
         productImageRepository);
 
@@ -67,9 +67,9 @@ class ProductImageServiceTest {
         productImageRepository.save(productImage1, product);
         productImageRepository.save(productImage2, product);
         productImageRepository.save(productImage3, product);
-        storageService.store(mock(MultipartFile.class), "image1-uuid.jpg");
-        storageService.store(mock(MultipartFile.class), "image2-uuid.jpg");
-        storageService.store(mock(MultipartFile.class), "image3-uuid.jpg");
+        storageClient.store(mock(MultipartFile.class), "image1-uuid.jpg");
+        storageClient.store(mock(MultipartFile.class), "image2-uuid.jpg");
+        storageClient.store(mock(MultipartFile.class), "image3-uuid.jpg");
     }
 
     @AfterEach
