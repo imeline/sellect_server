@@ -3,7 +3,6 @@ package com.sellect.server.coupon.application;
 import static org.assertj.core.api.BDDAssertions.then;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import com.sellect.server.auth.domain.User;
 import com.sellect.server.auth.repository.entity.Role;
@@ -312,8 +311,8 @@ class CouponServiceTest {
 
             // then
             assertEquals(2, couponList.size());
-            assertEquals(5000, couponList.get(0).couponInfo().discountCost());
-            assertEquals(3000, couponList.get(1).couponInfo().discountCost());
+            assertEquals(3000, couponList.get(0).couponInfo().discountCost());
+            assertEquals(5000, couponList.get(1).couponInfo().discountCost());
         }
 
         @Test
