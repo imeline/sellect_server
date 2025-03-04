@@ -12,6 +12,8 @@ import com.sellect.server.coupon.controller.response.CouponResponse;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -55,10 +57,11 @@ public class CouponController {
     @GetMapping("/actives")
     public ApiResponse<Page<ActiveCouponResponse>> getActiveCouponList(
         @AuthUser User user,
-        @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "5") int size
+        @PageableDefault(page = 0, size = 5) Pageable pageable
+//        @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "5") int size
     ) {
-        Page<ActiveCouponResponse> activeCouponList = couponService.getActiveCouponList(user, page,
-            size);
+//        Page<ActiveCouponResponse> activeCouponList = couponService.getActiveCouponList(user, page, size);
+        Page<ActiveCouponResponse> activeCouponList = couponService.getActiveCouponList(user, pageable);
         return ApiResponse.ok(activeCouponList);
     }
 

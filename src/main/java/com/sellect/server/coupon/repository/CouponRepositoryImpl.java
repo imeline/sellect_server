@@ -3,11 +3,10 @@ package com.sellect.server.coupon.repository;
 import com.sellect.server.coupon.domain.Coupon;
 import com.sellect.server.coupon.repository.entity.CouponEntity;
 import java.time.LocalDate;
-import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -17,8 +16,9 @@ public class CouponRepositoryImpl implements CouponRepository {
     private final CouponJpaRepository couponJpaRepository;
 
     @Override
-    public void save(Coupon coupon) {
-        couponJpaRepository.save(CouponEntity.from(coupon));
+    public Coupon save(Coupon coupon) {
+        CouponEntity save = couponJpaRepository.save(CouponEntity.from(coupon));
+        return save.toModel();
     }
 
     @Override
@@ -28,10 +28,10 @@ public class CouponRepositoryImpl implements CouponRepository {
     }
 
     @Override
-    public Page<Coupon> findAllActiveCouponList(PageRequest request) {
+    public Page<Coupon> findAllActiveCouponList(Pageable pageable) {
         Page<CouponEntity> activeCouponList = couponJpaRepository.findByDeleteAtNullAndQuantityGreaterThanAndExpirationDateAfter(
             0,
-            LocalDate.now(), request);
+            LocalDate.now(), pageable);
         return activeCouponList.map(CouponEntity::toModel);
     }
 }

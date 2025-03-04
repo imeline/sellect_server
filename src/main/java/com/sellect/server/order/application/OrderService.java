@@ -1,6 +1,7 @@
 package com.sellect.server.order.application;
 
 import com.sellect.server.auth.domain.User;
+import com.sellect.server.auth.repository.user.UserRepository;
 import com.sellect.server.cart.domain.CartItem;
 import com.sellect.server.cart.repository.CartItemRepository;
 import com.sellect.server.common.exception.CommonException;
@@ -8,6 +9,7 @@ import com.sellect.server.common.exception.enums.BError;
 import com.sellect.server.coupon.domain.Coupon;
 import com.sellect.server.coupon.domain.UserReceivedCoupon;
 import com.sellect.server.coupon.repository.UserReceivedCouponRepository;
+import com.sellect.server.order.Infrastructure.port.KakaoPayClient;
 import com.sellect.server.order.controller.request.OrderAddRequest;
 import com.sellect.server.order.controller.response.OrderDetailGetResponse;
 import com.sellect.server.order.controller.response.OrderGetResponse;
@@ -17,6 +19,8 @@ import com.sellect.server.order.domain.Orders;
 import com.sellect.server.order.repository.OrderItemRepository;
 import com.sellect.server.order.repository.OrdersRepository;
 import com.sellect.server.order.repository.entity.OrderStatus;
+import com.sellect.server.payment.application.PaymentService;
+import com.sellect.server.payment.domain.Payment;
 import com.sellect.server.product.domain.Product;
 import com.sellect.server.product.repository.ProductImageRepository;
 import com.sellect.server.product.repository.ProductRepository;
@@ -44,6 +48,8 @@ public class OrderService {
     private final CartItemRepository cartRepository;
     private final UserReceivedCouponRepository userReceivedCouponRepository;
     private final ProductImageRepository productImageRepository;
+    private final UserRepository userRepository;
+    private final PaymentService paymentService;
 
     public List<OrderItemGetResponse> readPending(User user, Long orderId) {
         // 주문이 실제로 존재하는지 체크
@@ -214,16 +220,8 @@ public class OrderService {
             throw new CommonException(BError.NOT_VALID, "이미 완료(확정)된 주문입니다.");
         }
         // 쿠폰 조회
-        UserReceivedCoupon coupon = userReceivedCouponRepository.findById(couponId)
-            .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "쿠폰"));
-        // 쿠폰 사용 여부 확인
-        if (coupon.getIsUsed()) {
-            throw new CommonException(BError.NOT_VALID, "이미 사용된 쿠폰입니다.");
-        }
-        // 쿠폰 소유자 확인
-        if (!coupon.getUser().getId().equals(user.getId())) {
-            throw new CommonException(BError.NOT_VALID, "쿠폰 소유자가 아닙니다.");
-        }
+        UserReceivedCoupon coupon = getUserValidateReceivedCoupon(user,
+            couponId);
         // 주문에 쿠폰 정보 저장
         ordersRepository.save(order.updateCoupon(coupon));
         // 쿠폰 사용 처리는 주문 확정 후 적용
@@ -255,5 +253,78 @@ public class OrderService {
     private Orders getOrderById(Long orderId) {
         return ordersRepository.findById(orderId)
             .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "주문"));
+    }
+
+    @Transactional
+    public String payOrder(User user, Long orderId, Long userReceivedCouponId) {
+        // 주문에 쿠폰 적용
+        Orders order = getOrderById(orderId);
+
+        // 이미 완료된 주문인지 확인
+        if (order.getStatus() == OrderStatus.COMPLETED) {
+            throw new CommonException(BError.NOT_VALID, "이미 완료(확정)된 주문입니다.");
+        }
+
+        if (userReceivedCouponId != null) {
+            UserReceivedCoupon coupon = getUserValidateReceivedCoupon(user, userReceivedCouponId);
+            // 주문에 쿠폰 정보 저장
+            order = ordersRepository.save(order.updateCoupon(coupon));
+        }
+        return paymentService.getKakaoPayReadyResponse(user, orderId, order);
+    }
+
+    private UserReceivedCoupon getUserValidateReceivedCoupon(User user, Long userReceivedCouponId) {
+        UserReceivedCoupon coupon = userReceivedCouponRepository.findById(userReceivedCouponId)
+            .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "쿠폰"));
+        // 쿠폰 사용 여부 확인
+        if (coupon.getIsUsed()) {
+            throw new CommonException(BError.NOT_VALID, "이미 사용된 쿠폰입니다.");
+        }
+        // 쿠폰 소유자 확인
+        if (!coupon.getUser().getId().equals(user.getId())) {
+            throw new CommonException(BError.NOT_VALID, "쿠폰 소유자가 아닙니다.");
+        }
+        return coupon;
+    }
+
+
+    @Transactional
+    public void approvePayment(String pid, String token) {
+        Payment payment = paymentService.findReadyPaymentByPid(pid);
+        try {
+            // order
+            // start
+            Long orderId = Long.valueOf(payment.getOrderId());
+            User user = userRepository.findByUuid(payment.getUid())
+                .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "user"));
+
+            Orders order = getOrderById(orderId);
+            // 이미 완료된 주문인지 확인
+            if (order.getStatus() == OrderStatus.COMPLETED) {
+                throw new CommonException(BError.NOT_VALID, "이미 완료(확정)된 주문입니다.");
+            }
+            List<OrderItem> orderItems = getOrderItemsByOrderId(orderId);
+
+            orderItems.forEach(orderItem -> {
+                // DB 락
+                productRepository.findByIdWithLock(orderItem.getProduct().getId())
+                    .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "상품이 존재하지 않습니다."));
+                // 재고 확인
+                if (orderItem.getProduct().getStock() < orderItem.getQuantity()) {
+                    throw new CommonException(BError.NOT_VALID, "재고 부족");
+                }
+                // 재고 차감
+                productRepository.save(orderItem.getProduct().updateStock(orderItem.getQuantity()));
+            });
+            // 주문 확정
+            Orders savedOrder = ordersRepository.save(order.updateStatus(OrderStatus.COMPLETED));
+
+            // 쿠폰 사용 처리, 장바구니 비우기
+            clearCartAndDeleteCouponAsync(user, savedOrder);
+
+            paymentService.paymentApprove(pid, token, payment);
+        } catch (Exception e) {
+            log.error("Failed to approve payment for pid: {}", pid, e);
+        }
     }
 }
