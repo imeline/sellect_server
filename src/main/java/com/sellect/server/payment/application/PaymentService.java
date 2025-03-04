@@ -18,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,8 +35,7 @@ public class PaymentService {
     // 최근 결제 내역 조회
     // 상위 5개 조회
     @Transactional(readOnly = true)
-    public List<PaymentHistoryResponse> getPaymentHistory(User user, int page, int size) {
-        PageRequest pageable = PageRequest.of(page, size, Direction.DESC, "createdAt");
+    public List<PaymentHistoryResponse> getPaymentHistory(User user, Pageable pageable) {
         Page<Payment> paymentHistoryByUser = paymentRepository.findPaymentHistoryByUser(
             user.getUuid(), pageable);
 
@@ -76,7 +76,8 @@ public class PaymentService {
 
     public Payment findReadyPaymentByPid(String pid) {
         return paymentRepository.findByPid(pid)
-            .orElseThrow(() -> new CommonException(BError.NOT_EXIST, String.format("Payment %s", pid)));
+            .orElseThrow(
+                () -> new CommonException(BError.NOT_EXIST, String.format("Payment %s", pid)));
     }
 
     public void paymentApprove(String pid, String token, Payment payment) {
@@ -92,7 +93,8 @@ public class PaymentService {
             .pgToken(token)
             .build();
 
-        KakaoPayApproveResponse kakaoPayApproveResponse = kakaoPayClient.paymentApprove(approveRequest);
+        KakaoPayApproveResponse kakaoPayApproveResponse = kakaoPayClient.paymentApprove(
+            approveRequest);
         log.info("Payment approved for pid: {}", pid);
     }
 }
