@@ -1,27 +1,28 @@
 plugins {
-	id 'java'
-	id 'org.springframework.boot' version '3.2.2'
-	id 'io.spring.dependency-management' version '1.1.4'
-	id "org.springdoc.openapi-gradle-plugin" version "1.8.0"
+    id 'java'
+    id 'org.springframework.boot' version '3.2.2'
+    id 'io.spring.dependency-management' version '1.1.4'
+    id "org.springdoc.openapi-gradle-plugin" version "1.8.0"
+    id 'jacoco'
 }
 
 group = 'com.sellect'
 version = '0.0.1-SNAPSHOT'
 
 java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(17)
-	}
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
 }
 
 configurations {
-	compileOnly {
-		extendsFrom annotationProcessor
-	}
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
 }
 
 repositories {
-	mavenCentral()
+    mavenCentral()
 }
 
 dependencies {
@@ -73,14 +74,56 @@ dependencies {
 }
 
 tasks.named('test') {
-	useJUnitPlatform()
+    useJUnitPlatform()
+    finalizedBy jacocoTestReport // 테스트 후 JaCoCo 리포트 자동 생성
 }
 
 // QueryDSL 관련 설정
 def querydslSrcDir = 'src/main/generated'
 clean {
-	delete file(querydslSrcDir)
+    delete file(querydslSrcDir)
 }
+
 tasks.withType(JavaCompile) {
-	options.generatedSourceOutputDirectory = file(querydslSrcDir)
+    options.generatedSourceOutputDirectory = file(querydslSrcDir)
 }
+
+jacoco {
+    toolVersion = "0.8.12" // 2025년 2월 기준 최신 버전
+}
+
+jacocoTestReport {
+    dependsOn test // 테스트가 실행된 후에 리포트 생성
+    reports {
+        xml.required = true  // XML 리포트 생성 (CI 도구에서 활용 가능)
+        csv.required = false
+        html.required = true // HTML 리포트 생성 (브라우저로 확인 가능)
+        html.outputLocation = layout.buildDirectory.dir('jacocoHtml') // 리포트 저장 경로
+    }
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: [
+                    '**/*Entity.class',      // 엔티티 제외
+                    '**/*Config.class',      // 설정 클래스 제외
+                    '**/Q*.class'            // QueryDSL Q클래스 제외
+            ])
+        }))
+    }
+}
+
+
+// 커버리지 목표 설정 (선택적)
+//jacocoTestCoverageVerification {
+//    dependsOn jacocoTestReport
+//    violationRules {
+//        rule {
+//            limit {
+//                counter = 'LINE'
+//                value = 'COVEREDRATIO'
+//                minimum = 0.80 // 80% 커버리지 목표
+//            }
+//        }
+//    }
+//}
+//
+//check.dependsOn jacocoTestCoverageVerification // 빌드 체크 시 커버리지 검증

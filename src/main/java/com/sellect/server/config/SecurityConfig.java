@@ -47,6 +47,7 @@ public class SecurityConfig {
         "/api/v1/images/**",
         "/api/v1/categories/**",
         "/api/v1/brands/**",
+        "/api/v1/kakao-pay/**",
         "/api/v1/seller/**"
     };
     private final JwtFilter jwtFilter;

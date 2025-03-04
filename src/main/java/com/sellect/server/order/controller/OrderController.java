@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RequestMapping("/api/v1")
@@ -55,12 +56,13 @@ public class OrderController {
     }
 
     /**
-     * 주문 완료 -  DB 락, 재고 차감, 주문 상태 확정, 쿠폰 삭제, 장바구니 비우기
+     * 결제하기 카카오 페이 api (/ready 호출)
      */
-    @PostMapping("/order/complete/{orderId}")
-    public ApiResponse<Void> lockAndCompleteOrder(@AuthUser User user, @PathVariable Long orderId) {
-        orderService.lockAndCompleteOrder(user, orderId);
-        return ApiResponse.ok(null);
+    @PostMapping("/order/payment/{orderId}/ready")
+    public ApiResponse<String> readyPayment(@AuthUser User user, @PathVariable Long orderId,
+        @RequestParam(name = "coupon_id", required = false) Long userReceivedCouponId) {
+        String redirectionUrl = orderService.payOrder(user, orderId, userReceivedCouponId);
+        return ApiResponse.ok(redirectionUrl);
     }
 
     /**

@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.sellect.server.auth.domain.User;
+import com.sellect.server.auth.repository.FakeUserRepository;
 import com.sellect.server.brand.domain.Brand;
 import com.sellect.server.brand.repository.FakeBrandRepository;
 import com.sellect.server.cart.domain.CartItem;
@@ -13,6 +14,7 @@ import com.sellect.server.common.exception.CommonException;
 import com.sellect.server.coupon.domain.Coupon;
 import com.sellect.server.coupon.domain.UserReceivedCoupon;
 import com.sellect.server.coupon.repository.FakeuserReceivedCouponRepository;
+import com.sellect.server.order.Infrastructure.port.KakaoPayClient;
 import com.sellect.server.order.controller.request.OrderAddRequest;
 import com.sellect.server.order.controller.request.OrderItemAddRequest;
 import com.sellect.server.order.controller.response.OrderDetailGetResponse;
@@ -22,6 +24,8 @@ import com.sellect.server.order.domain.Orders;
 import com.sellect.server.order.repository.FakeOrderItemRepository;
 import com.sellect.server.order.repository.FakeOrdersRepository;
 import com.sellect.server.order.repository.entity.OrderStatus;
+import com.sellect.server.payment.application.PaymentService;
+import com.sellect.server.payment.domain.controller.repository.FakePaymentRepository;
 import com.sellect.server.product.domain.Product;
 import com.sellect.server.product.domain.ProductImage;
 import com.sellect.server.product.repository.FakeProductImageRepository;
@@ -32,8 +36,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
 
 class OrderServiceTest {
+
+    @Mock
+    KakaoPayClient kakaoPayClient;
 
     private final FakeOrdersRepository ordersRepository = new FakeOrdersRepository();
     private final FakeOrderItemRepository orderItemRepository = new FakeOrderItemRepository();
@@ -42,8 +50,18 @@ class OrderServiceTest {
     private final FakeuserReceivedCouponRepository userReceivedCouponRepository = new FakeuserReceivedCouponRepository();
     private final FakeProductImageRepository productImageRepository = new FakeProductImageRepository();
     private final FakeBrandRepository brandRepository = new FakeBrandRepository();
-    private final OrderService sut = new OrderService(ordersRepository, orderItemRepository,
-        productRepository, cartRepository, userReceivedCouponRepository, productImageRepository);
+    private final FakeUserRepository userRepository = new FakeUserRepository();
+    private final PaymentService paymentService = new PaymentService(new FakePaymentRepository(), kakaoPayClient);
+    private final OrderService sut = new OrderService(
+        ordersRepository,
+        orderItemRepository,
+        productRepository,
+        cartRepository,
+        userReceivedCouponRepository,
+        productImageRepository,
+        userRepository,
+        paymentService
+    );
     private User user;
 
     @BeforeEach
