@@ -356,6 +356,65 @@ class CouponServiceTest {
             then(couponList).isEmpty();
             then(couponList.size()).isEqualTo(0);
         }
+
+        @Test
+        @DisplayName("사용된 쿠폰이 포함되지 않는다")
+        void usedCouponNotIncluded() {
+            //given
+            User user = User.builder()
+                .id(1L)
+                .nickname("testUser")
+                .role(Role.USER)
+                .build();
+
+            Coupon coupon = Coupon.builder()
+                .id(1L)
+                .seller(User.builder().id(2L).nickname("seller").role(Role.SELLER).build())
+                .discountCost(3000)
+                .quantity(1)
+                .expirationDate(LocalDate.now().plusDays(3))
+                .build();
+
+            Coupon anotherCoupon = Coupon.builder()
+                .id(2L)
+                .seller(User.builder().id(2L).nickname("seller").role(Role.SELLER).build())
+                .discountCost(5000)
+                .quantity(10)
+                .expirationDate(LocalDate.now().plusDays(20))
+                .build();
+
+            couponRepository.save(coupon);
+            couponRepository.save(anotherCoupon);
+            UserReceivedCoupon userReceivedCoupon = UserReceivedCoupon.create(user, coupon);
+            UserReceivedCoupon userReceivedCoupon2 = UserReceivedCoupon.create(user, anotherCoupon);
+            userReceivedCoupon2 = userReceivedCoupon2.useCoupon();
+            userReceivedCouponRepository.save(userReceivedCoupon);
+            userReceivedCouponRepository.save(userReceivedCoupon2);
+
+            //when
+            List<CouponResponse> couponList = couponService.getCouponList(user, 0, 5,  false);
+
+            //then
+            then(couponList.size()).isEqualTo(1);
+            then(couponList.get(0).couponInfo().discountCost()).isEqualTo(3000);
+        }
+
+        @Test
+        @DisplayName("쿠폰이 없는 경우 빈 리스트 반환")
+        void noCouponsReturnsEmptyList() {
+            //given
+            User user = User.builder()
+                .id(1L)
+                .nickname("testUser")
+                .role(Role.USER)
+                .build();
+
+            //when
+            List<CouponResponse> couponList = couponService.getCouponList(user, 0, 5, false);
+
+            //then
+            then(couponList).isEmpty();
+        }
     }
 
 }
