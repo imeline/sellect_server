@@ -48,7 +48,6 @@ public class FakeProductRepository implements ProductRepository {
                 .price(product.getPrice())
                 .name(product.getName())
                 .description(product.getDescription())
-                .stock(product.getStock())
                 .createdAt(product.getCreatedAt()) // 생성 시간 유지
                 .updatedAt(product.getUpdatedAt()) // 업데이트 시간 유지
                 .deleteAt(product.getDeleteAt())   // 삭제 시간 유지
@@ -76,7 +75,8 @@ public class FakeProductRepository implements ProductRepository {
             .collect(Collectors.toList());
         int start = (int) pageable.getOffset();
         int end = Math.min(start + pageable.getPageSize(), findProducts.size());
-        List<Product> pagedProducts = (start < end) ? findProducts.subList(start, end) : Collections.emptyList();
+        List<Product> pagedProducts =
+            (start < end) ? findProducts.subList(start, end) : Collections.emptyList();
         return new PageImpl<>(pagedProducts, pageable, findProducts.size());
     }
 
@@ -93,7 +93,8 @@ public class FakeProductRepository implements ProductRepository {
             .collect(Collectors.toList());
         int start = (int) pageable.getOffset();
         int end = Math.min(start + pageable.getPageSize(), sellerProducts.size());
-        List<Product> pagedProducts = (start < end) ? sellerProducts.subList(start, end) : Collections.emptyList();
+        List<Product> pagedProducts =
+            (start < end) ? sellerProducts.subList(start, end) : Collections.emptyList();
         return new PageImpl<>(pagedProducts, pageable, sellerProducts.size());
     }
 

@@ -1,6 +1,7 @@
 package com.sellect.server.product.repository;
 
 import com.sellect.server.product.domain.Inventory;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -15,5 +16,17 @@ public class InventoryRepositoryImpl implements InventoryRepository {
         InventoryEntity inventoryEntity = inventoryJpaRepository.save(
             InventoryEntity.from(inventory));
         return inventoryEntity.toModel();
+    }
+
+    @Override
+    public Optional<Inventory> findByProductId(Long productId) {
+        return inventoryJpaRepository.findByProductEntityId(productId)
+            .map(InventoryEntity::toModel);
+    }
+
+    @Override
+    public Optional<Inventory> findById(Long id) {
+        return inventoryJpaRepository.findById(id)
+            .map(InventoryEntity::toModel);
     }
 }

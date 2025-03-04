@@ -1,5 +1,9 @@
 package com.sellect.server.product.application;
 
+import static com.sellect.server.product.application.FakeStorageClient.FAKE_IMAGE_STORAGE_URL;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import com.sellect.server.auth.domain.User;
 import com.sellect.server.auth.repository.entity.Role;
 import com.sellect.server.brand.domain.Brand;
@@ -20,8 +24,10 @@ import com.sellect.server.product.controller.response.ProductDetailRetrieveRespo
 import com.sellect.server.product.controller.response.ProductModifyResponse;
 import com.sellect.server.product.controller.response.ProductRegisterResponse;
 import com.sellect.server.product.controller.response.SellerStatsRetrieveResponse;
+import com.sellect.server.product.domain.Inventory;
 import com.sellect.server.product.domain.Product;
 import com.sellect.server.product.domain.ProductImage;
+import com.sellect.server.product.repository.FakeInventoryRepository;
 import com.sellect.server.product.repository.FakeProductImageRepository;
 import com.sellect.server.product.repository.FakeProductRepository;
 import java.math.BigDecimal;
@@ -35,10 +41,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Page;
-
-import static com.sellect.server.product.application.FakeStorageClient.FAKE_IMAGE_STORAGE_URL;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import org.springframework.web.multipart.MultipartFile;
 
 class ProductServiceTest {
@@ -48,10 +50,11 @@ class ProductServiceTest {
     private final FakeCategoryRepository categoryRepository = new FakeCategoryRepository();
     private final FakeProductImageRepository productImageRepository = new FakeProductImageRepository();
     private final FakeOrderItemRepository orderItemRepository = new FakeOrderItemRepository();
-    private final FakeStorageClient storageService = new FakeStorageClient();
+    private final FakeStorageClient storageClient = new FakeStorageClient();
+    private final FakeInventoryRepository inventoryRepository = new FakeInventoryRepository();
     private final ProductService sut = new ProductService(
         productRepository, brandRepository, categoryRepository,
-        productImageRepository, orderItemRepository, storageService
+        productImageRepository, orderItemRepository, inventoryRepository, storageClient
     );
 
     private User seller;
@@ -66,6 +69,8 @@ class ProductServiceTest {
         brandRepository.clear();
         categoryRepository.clear();
         productImageRepository.clear();
+        orderItemRepository.clear();
+        inventoryRepository.clear();
 
         seller = User.builder()
             .id(1L)
@@ -112,8 +117,7 @@ class ProductServiceTest {
         brandRepository.clear();
         categoryRepository.clear();
         productImageRepository.clear();
-
-        storageService.deleteAll();
+        storageClient.deleteAll();
     }
 
     @Nested
@@ -176,6 +180,10 @@ class ProductServiceTest {
                         FAKE_IMAGE_STORAGE_URL + "image2-uuid_\\d+\\.jpg");
                     assertThat(images.get(1).getSequence()).isEqualTo(2);
                     assertThat(images.get(1).isRepresentative()).isFalse();
+                });
+            assertThat(inventoryRepository.findByProductId(result.productId()))
+                .hasValueSatisfying(inventory -> {
+                    assertThat(inventory.getStock()).isEqualTo(10);
                 });
         }
 
@@ -295,7 +303,7 @@ class ProductServiceTest {
                 ))
                 .build();
             MultipartFile imageFile = new FakeMultipartFile("image-uuid.jpg");
-            storageService.store(imageFile, "image-uuid.jpg"); // 이미지를 별도로 저장할 때는 timestamp 가 붙지 않음
+            storageClient.store(imageFile, "image-uuid.jpg"); // 이미지를 별도로 저장할 때는 timestamp 가 붙지 않음
 
             // When
             ProductRegisterResponse result = sut.register(seller, request);
@@ -312,6 +320,10 @@ class ProductServiceTest {
                         FAKE_IMAGE_STORAGE_URL + "image-uuid.jpg");
                     assertThat(image.getSequence()).isEqualTo(1);
                     assertThat(image.isRepresentative()).isTrue();
+                });
+            assertThat(inventoryRepository.findByProductId(result.productId()))
+                .hasValueSatisfying(inventory -> {
+                    assertThat(inventory.getStock()).isEqualTo(10);
                 });
         }
 
@@ -392,7 +404,7 @@ class ProductServiceTest {
         void register_DuplicateProductName_ThrowsException() {
             // Given
             Product existingProduct = Product.register(
-                seller, smallCategory, brand, new BigDecimal("100.00"), "TV", "Old TV", 5
+                seller, smallCategory, brand, new BigDecimal("100.00"), "TV", "Old TV"
             );
             productRepository.save(existingProduct);
 
@@ -428,8 +440,12 @@ class ProductServiceTest {
         @BeforeEach
         void setUp() {
             product = Product.register(seller, smallCategory, brand, new BigDecimal("100.00"), "TV",
-                "Smart TV", 10);
+                "Smart TV");
             product = productRepository.save(product);
+            inventoryRepository.save(Inventory.builder()
+                .product(product)
+                .stock(10)
+                .build());
         }
 
         @Test
@@ -451,8 +467,11 @@ class ProductServiceTest {
             assertThat(productRepository.findById(result.productId())).hasValueSatisfying(p -> {
                 assertThat(p.getPrice()).isEqualTo(new BigDecimal("150.00"));
                 assertThat(p.getDescription()).isEqualTo("Updated Smart TV");
-                assertThat(p.getStock()).isEqualTo(20);
             });
+            assertThat(inventoryRepository.findByProductId(result.productId()))
+                .hasValueSatisfying(inventory -> {
+                    assertThat(inventory.getStock()).isEqualTo(20);
+                });
         }
 
         @Test
@@ -471,8 +490,11 @@ class ProductServiceTest {
             assertThat(productRepository.findById(result.productId())).hasValueSatisfying(p -> {
                 assertThat(p.getPrice()).isEqualTo(new BigDecimal("150.00"));
                 assertThat(p.getDescription()).isEqualTo("Smart TV");
-                assertThat(p.getStock()).isEqualTo(10);
             });
+            assertThat(inventoryRepository.findByProductId(result.productId()))
+                .hasValueSatisfying(inventory -> {
+                    assertThat(inventory.getStock()).isEqualTo(10);
+                });
         }
 
         @Test
@@ -516,8 +538,12 @@ class ProductServiceTest {
         @BeforeEach
         void setUp() {
             product = Product.register(seller, smallCategory, brand, new BigDecimal("100.00"), "TV",
-                "Smart TV", 10);
+                "Smart TV");
             product = productRepository.save(product);
+            inventoryRepository.save(Inventory.builder()
+                .product(product)
+                .stock(10)
+                .build());
         }
 
         @Test
@@ -528,6 +554,7 @@ class ProductServiceTest {
 
             // Then
             assertThat(productRepository.findById(product.getId())).isEmpty();
+            assertThat(inventoryRepository.findByProductId(product.getId())).isEmpty();
         }
 
         @Test
@@ -562,8 +589,12 @@ class ProductServiceTest {
         @BeforeEach
         void setUp() {
             product = Product.register(seller, smallCategory, brand, new BigDecimal("100.00"), "TV",
-                "Smart TV", 10);
+                "Smart TV");
             product = productRepository.save(product);
+            inventoryRepository.save(Inventory.builder()
+                .product(product)
+                .stock(10)
+                .build());
             ProductImage image = ProductImage.register(
                 product,
                 "/path/to/image.jpg",
@@ -586,6 +617,7 @@ class ProductServiceTest {
             assertThat(result).isNotNull();
             assertThat(result.name()).isEqualTo("TV");
             assertThat(result.images()).hasSize(1);
+            assertThat(result.stock()).isEqualTo(10);
         }
 
         @Test
@@ -607,11 +639,11 @@ class ProductServiceTest {
             // 테스트 데이터 추가
             Product product1 = Product.register(
                 seller, smallCategory, brand,
-                new BigDecimal("100.00"), "TV1", "TV 1 Description", 10
+                new BigDecimal("100.00"), "TV1", "TV 1 Description"
             );
             Product product2 = Product.register(
                 seller, smallCategory, brand,
-                new BigDecimal("200.00"), "TV2", "TV 2 Description", 5
+                new BigDecimal("200.00"), "TV2", "TV 2 Description"
             );
             product1 = productRepository.save(product1);
             product2 = productRepository.save(product2);
@@ -627,6 +659,16 @@ class ProductServiceTest {
                     .filename("image2.jpg").build());
             productImageRepository.save(image1, product1);
             productImageRepository.save(image2, product2);
+
+            // 재고 추가
+            inventoryRepository.save(Inventory.builder()
+                .product(product1)
+                .stock(10)
+                .build());
+            inventoryRepository.save(Inventory.builder()
+                .product(product2)
+                .stock(5)
+                .build());
         }
 
         @Test
@@ -703,7 +745,7 @@ class ProductServiceTest {
             // Given
             Product deletedProduct = Product.register(
                 seller, smallCategory, brand,
-                new BigDecimal("300.00"), "TV3", "TV 3 Description", 3
+                new BigDecimal("300.00"), "TV3", "TV 3 Description"
             );
             productRepository.save(deletedProduct.remove());
 
@@ -742,19 +784,27 @@ class ProductServiceTest {
         void setUp() {
             product = Product.register(
                 seller, smallCategory, brand,
-                new BigDecimal("100.00"), "TV", "Smart TV", 10
+                new BigDecimal("100.00"), "TV", "Smart TV"
             );
             product = productRepository.save(product);
-            ProductImage image = ProductImage.register(product, FAKE_IMAGE_STORAGE_URL + "image1.jpg",
-                ImageContextCreateRequest.builder().sequence(1).isRepresentative(true).filename("image1.jpg").build());
+            ProductImage image = ProductImage.register(product,
+                FAKE_IMAGE_STORAGE_URL + "image1.jpg",
+                ImageContextCreateRequest.builder().sequence(1).isRepresentative(true)
+                    .filename("image1.jpg").build());
             productImageRepository.save(image, product);
+
+            inventoryRepository.save(Inventory.builder()
+                .product(product)
+                .stock(10)
+                .build());
         }
 
         @Test
         @DisplayName("판매자의 상품 상세를 성공적으로 조회")
         void retrieveDetailBySeller_Success() {
             // When
-            ProductDetailRetrieveBySellerResponse result = sut.retrieveDetailBySeller(seller, product.getId());
+            ProductDetailRetrieveBySellerResponse result = sut.retrieveDetailBySeller(seller,
+                product.getId());
 
             // Then
             assertThat(result).isNotNull();
@@ -824,11 +874,11 @@ class ProductServiceTest {
         void setUp() {
             product1 = Product.register(
                 seller, smallCategory, brand,
-                new BigDecimal("100.00"), "TV1", "TV 1", 10
+                new BigDecimal("100.00"), "TV1", "TV 1"
             );
             product2 = Product.register(
                 seller, smallCategory, brand,
-                new BigDecimal("200.00"), "TV2", "TV 2", 5
+                new BigDecimal("200.00"), "TV2", "TV 2"
             );
             product1 = productRepository.save(product1);
             product2 = productRepository.save(product2);
@@ -871,7 +921,7 @@ class ProductServiceTest {
             // Given
             Product deletedProduct = Product.register(
                 seller, smallCategory, brand,
-                new BigDecimal("300.00"), "TV3", "TV 3", 3
+                new BigDecimal("300.00"), "TV3", "TV 3"
             );
             productRepository.save(deletedProduct.remove());
 
@@ -1001,7 +1051,8 @@ class ProductServiceTest {
                 .uuid(UUID.randomUUID().toString())
                 .role(Role.USER)
                 .build();
-            Orders pendingOrder = Orders.register(user, new BigDecimal("500.00"), OrderStatus.PENDING);
+            Orders pendingOrder = Orders.register(user, new BigDecimal("500.00"),
+                OrderStatus.PENDING);
             orderItemRepository.addOrderItem(OrderItem.builder()
                 .orders(pendingOrder)
                 .product(product1)

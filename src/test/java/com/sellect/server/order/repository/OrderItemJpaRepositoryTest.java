@@ -70,7 +70,6 @@ class OrderItemJpaRepositoryTest {
         testProduct = productJpaRepository.save(ProductEntity.builder()
             .name("Test Product")
             .price(BigDecimal.valueOf(1000))
-            .stock(100)
             .build());
 
         time = LocalDateTime.parse("2024-08-01T00:00:00");

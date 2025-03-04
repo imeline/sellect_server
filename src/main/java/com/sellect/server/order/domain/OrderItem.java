@@ -1,5 +1,6 @@
 package com.sellect.server.order.domain;
 
+import com.sellect.server.product.domain.Inventory;
 import com.sellect.server.product.domain.Product;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -24,7 +25,7 @@ public class OrderItem {
     // 주문 상품 생성
     public static OrderItem register(Orders orders, Product product, BigDecimal price,
         int quantity) {
-        product.validateStock(quantity);
+        //Inventory.validateStock(quantity);
         return OrderItem.builder()
             .orders(orders)
             .product(product)
@@ -36,7 +37,7 @@ public class OrderItem {
     }
 
     // 재고 확인 및 차감
-    public Product deductStock() {
-        return this.product.updateStock(this.quantity);
+    public Inventory deductStock(Inventory inventory) {
+        return inventory.deductStock(this.quantity);
     }
 }

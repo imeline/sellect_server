@@ -20,7 +20,9 @@ import com.sellect.server.order.repository.OrdersRepository;
 import com.sellect.server.order.repository.entity.OrderStatus;
 import com.sellect.server.payment.application.PaymentService;
 import com.sellect.server.payment.domain.Payment;
+import com.sellect.server.product.domain.Inventory;
 import com.sellect.server.product.domain.Product;
+import com.sellect.server.product.repository.InventoryRepository;
 import com.sellect.server.product.repository.ProductImageRepository;
 import com.sellect.server.product.repository.ProductRepository;
 import java.math.BigDecimal;
@@ -43,6 +45,7 @@ public class OrderService {
     private final OrdersRepository ordersRepository;
     private final OrderItemRepository orderItemRepository;
     private final ProductRepository productRepository;
+    private final InventoryRepository inventoryRepository;
     private final CartItemRepository cartRepository;
     private final UserReceivedCouponRepository userReceivedCouponRepository;
     private final ProductImageRepository productImageRepository;
@@ -75,10 +78,16 @@ public class OrderService {
             List<OrderItem> orderItems = getOrderItemsByOrderId(orderId);
 
             // 재고 확인 및 차감
-            List<Product> updatedProducts = orderItems.stream()
-                .map(OrderItem::deductStock) // Product 반환
+            List<Inventory> deductedInventories = orderItems.stream()
+                .map(orderItem -> {
+                    Product product = orderItem.getProduct();
+                    Inventory inventory = inventoryRepository.findByProductId(product.getId())
+                        .orElseThrow(
+                            () -> new CommonException(BError.NOT_EXIST, "상품 id에 해당하는 재고가 없습니다."));
+                    return orderItem.deductStock(inventory);
+                })
                 .toList();
-            productRepository.saveAll(updatedProducts);
+            deductedInventories.forEach(inventoryRepository::save);
             // 주문 완료
             Orders savedOrder = ordersRepository.save(order.changeStatus(OrderStatus.COMPLETED));
             // 장바구니 비우기 및 쿠폰 삭제

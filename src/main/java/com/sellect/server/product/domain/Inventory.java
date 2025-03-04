@@ -27,6 +27,17 @@ public class Inventory {
             .build();
     }
 
+    public Inventory modifyStock(int stock) {
+        return Inventory.builder()
+            .id(this.id)
+            .product(this.product)
+            .stock(stock)
+            .createdAt(this.createdAt)
+            .updatedAt(LocalDateTime.now())
+            .deleteAt(this.deleteAt)
+            .build();
+    }
+
     // 재고 부족 확인
     public void validateStock(int quantity) {
         if (this.stock < quantity) {
@@ -35,7 +46,7 @@ public class Inventory {
     }
 
     // 재고 차감
-    public Inventory updateStock(int quantity) {
+    public Inventory deductStock(int quantity) {
         // 재고 확인
         validateStock(quantity);
         return Inventory.builder()
@@ -45,6 +56,17 @@ public class Inventory {
             .createdAt(this.createdAt)
             .updatedAt(LocalDateTime.now())
             .deleteAt(this.deleteAt)
+            .build();
+    }
+
+    public Inventory deleteStock() {
+        return Inventory.builder()
+            .id(this.id)
+            .product(this.product)
+            .stock(0)
+            .createdAt(this.createdAt)
+            .updatedAt(this.updatedAt)
+            .deleteAt(LocalDateTime.now())
             .build();
     }
 }
