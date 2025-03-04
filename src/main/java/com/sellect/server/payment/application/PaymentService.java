@@ -40,17 +40,9 @@ public class PaymentService {
             user.getUuid(), pageable);
 
         return paymentHistoryByUser.getContent().stream()
-            .map(payment ->
-                PaymentHistoryResponse.builder()
-                    .id(payment.getId())
-                    .orderId(payment.getOrderId())
-                    .pid(payment.getPid())
-                    .status(String.valueOf(payment.getStatus()))
-                    .price(String.valueOf(payment.getPrice()))
-                    .createdAt(payment.getCreatedAt().toString())
-                    .build()).toList();
+            .map(PaymentHistoryResponse::of)
+            .toList();
     }
-
 
     public void readyPayment(User user, Long orderId, String pid, Orders order, String tid) {
         Payment payment = Payment.ready(String.valueOf(orderId),
@@ -65,8 +57,6 @@ public class PaymentService {
     public String getKakaoPayReadyResponse(User user, Long orderId, Orders order) {
         String pid = generatePaymentId();
         Integer quantity = 0;
-        // http 호출
-        // 카카오 페이 API 호출
         KakaoPayReadyRequest request = kakaoPayClient.createKakaoPayReadyRequest(
             String.valueOf(orderId),
             user.getUuid(),

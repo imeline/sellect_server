@@ -93,7 +93,7 @@ public class CouponService {
             : userReceivedCouponRepository.findByUser(user, pageRequest);
 
         return receivedCoupons.stream()
-            .filter(c -> c.getCoupon().getExpirationDate().isAfter(LocalDate.now().minusDays(1)))
+            .filter(UserReceivedCoupon::isActive)
             .map(this::toCouponResponse)
             .toList();
     }
@@ -105,8 +105,8 @@ public class CouponService {
         UserReceivedCoupon userReceivedCoupon = userReceivedCouponRepository.findByUserAndCoupon(
                 user, coupon)
             .orElseThrow(() -> new CommonException(BError.NOT_EXIST, String.valueOf(couponId)));
-        UserReceivedCoupon usedCoupon = userReceivedCoupon.useCoupon();
 
+        UserReceivedCoupon usedCoupon = userReceivedCoupon.useCoupon();
         userReceivedCouponRepository.save(usedCoupon);
     }
 
@@ -115,9 +115,10 @@ public class CouponService {
         List<Long> productIds) {
         // 1. productIds를 통해 판매자 리스트 가져오기
         List<Long> sellersId = productIds.stream()
-            .map(productId -> productRepository.findById(productId)
-                .orElseThrow(
-                    () -> new CommonException(BError.NOT_EXIST, String.valueOf(productId))))
+            .map(productId ->
+                productRepository.findById(productId)
+                    .orElseThrow(
+                        () -> new CommonException(BError.NOT_EXIST, String.valueOf(productId))))
             .map(Product::getSeller)
             .map(User::getId)
             .toList();
@@ -125,7 +126,7 @@ public class CouponService {
         // 2. 사용하지 않은 쿠폰 중 유효기간이 남아 있는 것 필터링
         List<UserReceivedCoupon> validCoupons = userReceivedCouponRepository.findAllByUserAndIsUsed(
                 user, false).stream()
-            .filter(c -> c.getCoupon().getExpirationDate().isAfter(LocalDate.now().minusDays(1)))
+            .filter(UserReceivedCoupon::isActive)
             .toList();
 
         // 3. 판매자가 일치하는 쿠폰만 선택하여 변환
@@ -139,12 +140,6 @@ public class CouponService {
             ).toList();
     }
 
-    @Transactional(readOnly = true)
-    public Page<ActiveCouponResponse> getActiveCouponList(User user, int page, int size) {
-        PageRequest pageRequest = PageRequest.of(page, size, DEFAULT_SORT);
-        Page<Coupon> activeCoupons = couponRepository.findAllActiveCouponList(pageRequest);
-        return activeCoupons.map(coupon -> createActiveCouponResponse(user, coupon));
-    }
 
     @Transactional(readOnly = true)
     public Page<ActiveCouponResponse> getActiveCouponList(User user, Pageable pageable) {
