@@ -3,11 +3,126 @@ package com.sellect.server.payment.domain;
 import static org.assertj.core.api.BDDAssertions.then;
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.sellect.server.common.exception.CommonException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 class PaymentTest {
+
+    @Nested
+    @DisplayName("결제 생성 테스트")
+    class PaymentCreateTest{
+        @Test
+        @DisplayName("유효한 입력으로 결제 준비 상태 생성 성공")
+        void testReadySuccess() {
+            // Given
+            String orderId = "order123";
+            String pid = "product456";
+            String uid = "user789";
+            Integer price = 1000;
+            String tid = "transaction101";
+
+            // When
+            Payment payment = Payment.ready(orderId, pid, uid, price, tid);
+
+            // Then
+            assertNotNull(payment);
+            assertEquals(orderId, payment.getOrderId());
+            assertEquals(pid, payment.getPid());
+            assertEquals(uid, payment.getUid());
+            assertEquals(price, payment.getPrice());
+            assertEquals(tid, payment.getTid());
+            assertEquals(PaymentStatus.READY, payment.getStatus());
+            assertNotNull(payment.getCreatedAt());
+            assertNotNull(payment.getUpdatedAt());
+        }
+
+        @Test
+        @DisplayName("결제 금액이 음수일 때 예외 발생")
+        void testReadyWithNegativePrice() {
+            // Given
+            String orderId = "order123";
+            String pid = "product456";
+            String uid = "user789";
+            Integer price = -100; // 음수 가격
+            String tid = "transaction101";
+
+            // When & Then
+            CommonException exception = assertThrows(CommonException.class, () -> {
+                Payment.ready(orderId, pid, uid, price, tid);
+            });
+            assertEquals("결제 금액은 0원 보다 높어야 합니다.", exception.getMessage());
+        }
+
+        @Test
+        @DisplayName("orderId가 null일 때 예외 발생")
+        void testReadyWithNullOrderId() {
+            // Given
+            String orderId = null; // null 입력
+            String pid = "product456";
+            String uid = "user789";
+            Integer price = 1000;
+            String tid = "transaction101";
+
+            // When & Then
+            CommonException exception = assertThrows(CommonException.class, () -> {
+                Payment.ready(orderId, pid, uid, price, tid);
+            });
+            assertEquals("결제 정보가 올바르지 않습니다.", exception.getMessage());
+        }
+
+        @Test
+        @DisplayName("pid가 null일 때 예외 발생")
+        void testReadyWithNullPid() {
+            // Given
+            String orderId = "order123";
+            String pid = null; // null 입력
+            String uid = "user789";
+            Integer price = 1000;
+            String tid = "transaction101";
+
+            // When & Then
+            CommonException exception = assertThrows(CommonException.class, () -> {
+                Payment.ready(orderId, pid, uid, price, tid);
+            });
+            assertEquals("결제 정보가 올바르지 않습니다.", exception.getMessage());
+        }
+
+        @Test
+        @DisplayName("uid가 null일 때 예외 발생")
+        void testReadyWithNullUid() {
+            // Given
+            String orderId = "order123";
+            String pid = "product456";
+            String uid = null; // null 입력
+            Integer price = 1000;
+            String tid = "transaction101";
+
+            // When & Then
+            CommonException exception = assertThrows(CommonException.class, () -> {
+                Payment.ready(orderId, pid, uid, price, tid);
+            });
+            assertEquals("결제 정보가 올바르지 않습니다.", exception.getMessage());
+        }
+
+        @Test
+        @DisplayName("tid가 null일 때 예외 발생")
+        void testReadyWithNullTid() {
+            // Given
+            String orderId = "order123";
+            String pid = "product456";
+            String uid = "user789";
+            Integer price = 1000;
+            String tid = null; // null 입력
+
+            // When & Then
+            CommonException exception = assertThrows(CommonException.class, () -> {
+                Payment.ready(orderId, pid, uid, price, tid);
+            });
+            assertEquals("결제 정보가 올바르지 않습니다.", exception.getMessage());
+        }
+    }
 
     @Test
     @DisplayName("결제 승인")
@@ -80,11 +195,10 @@ class PaymentTest {
             PaymentStatus initialStatus = failedPayment.getStatus();
 
             // when
-            Payment result = failedPayment;
 
             // then
-            then(result.getStatus()).isEqualTo(initialStatus);
-            then(result.getStatus()).isNotEqualTo(PaymentStatus.READY);
+            then(failedPayment.getStatus()).isEqualTo(initialStatus);
+            then(failedPayment.getStatus()).isNotEqualTo(PaymentStatus.READY);
         }
     }
 }
