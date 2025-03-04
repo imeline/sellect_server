@@ -1,4 +1,4 @@
-package com.sellect.server.search.event;
+package com.sellect.server.search.event.listener;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -9,7 +9,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.sellect.server.search.domain.SearchLog;
-import com.sellect.server.search.event.config.TestAsyncConfig;
+import com.sellect.server.search.event.SearchLogEvent;
+import com.sellect.server.search.event.SearchLogEventListener;
+import com.sellect.server.search.event.listener.config.TestAsyncConfig;
 import com.sellect.server.search.repository.SearchLogRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

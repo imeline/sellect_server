@@ -1,4 +1,4 @@
-package com.sellect.server.search.event.config;
+package com.sellect.server.search.event.listener.config;
 
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;

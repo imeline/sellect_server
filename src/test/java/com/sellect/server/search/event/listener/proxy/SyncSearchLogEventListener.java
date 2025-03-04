@@ -1,4 +1,4 @@
-package com.sellect.server.search.event.proxy;
+package com.sellect.server.search.event.listener.proxy;
 
 import com.sellect.server.search.event.SearchLogEvent;
 import com.sellect.server.search.event.SearchLogEventListener;
