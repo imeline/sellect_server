@@ -49,7 +49,7 @@ public class FakeCouponRepository implements CouponRepository {
             .filter(coupon -> coupon.getDeleteAt() == null)           // 삭제되지 않은 쿠폰
             .filter(coupon -> coupon.getQuantity() > 0)              // 수량이 남아 있는 쿠폰
             .filter(coupon -> coupon.getExpirationDate().isAfter(now)) // 만료되지 않은 쿠폰
-            .sorted((Comparator<? super Coupon>) pageable.getSort()) // 정렬 적용
+            .sorted(Comparator.comparing(Coupon::getCreatedAt).reversed()) // 최신 등록순
             .toList();
 
         // 2. 페이지네이션 적용

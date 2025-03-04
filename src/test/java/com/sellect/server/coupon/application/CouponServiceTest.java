@@ -9,6 +9,7 @@ import com.sellect.server.auth.domain.User;
 import com.sellect.server.auth.repository.entity.Role;
 import com.sellect.server.common.exception.CommonException;
 import com.sellect.server.coupon.controller.request.IssueCouponRequest;
+import com.sellect.server.coupon.controller.response.ActiveCouponResponse;
 import com.sellect.server.coupon.controller.response.CouponResponse;
 import com.sellect.server.coupon.domain.Coupon;
 import com.sellect.server.coupon.domain.UserReceivedCoupon;
@@ -19,6 +20,7 @@ import com.sellect.server.coupon.repository.UserReceivedCouponRepository;
 import com.sellect.server.product.repository.FakeProductRepository;
 import com.sellect.server.product.repository.ProductRepository;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -29,6 +31,9 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 class CouponServiceTest {
 
@@ -414,6 +419,47 @@ class CouponServiceTest {
 
             //then
             then(couponList).isEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("getActiveCouponList() 메소드는")
+    class GetActiveCouponLiset{
+        @Test
+        @DisplayName("유저가 등록 할 수 있는 쿠폰 목록을 조회한다.")
+        void willSuccess() {
+            //given
+            Coupon coupon = Coupon.builder()
+                .id(1L)
+                .seller(User.builder().id(2L).nickname("seller").role(Role.SELLER).build())
+                .discountCost(3000)
+                .quantity(10)
+                .expirationDate(LocalDate.now().plusDays(10))
+                .createdAt(LocalDateTime.now())
+                .build();
+
+            Coupon coupon2 = Coupon.builder()
+                .id(3L)
+                .seller(User.builder().id(2L).nickname("seller").role(Role.SELLER).build())
+                .discountCost(10000)
+                .quantity(10)
+                .expirationDate(LocalDate.now().plusDays(30))
+                .createdAt(LocalDateTime.now())
+                .build();
+
+            couponRepository.save(coupon);
+            couponRepository.save(coupon2);
+            Pageable pageable = PageRequest.of(0, 5);
+
+
+            //when
+            Page<ActiveCouponResponse> activeCouponList = couponService.getActiveCouponList(
+                User.builder().id(1L).role(Role.USER).build(), pageable);
+
+            //then
+            assertEquals(2, activeCouponList.getContent().size());
+            assertEquals(10000, activeCouponList.getContent().get(0).couponInfo().discountCost());
+            assertEquals(3000, activeCouponList.getContent().get(1).couponInfo().discountCost());
         }
     }
 
