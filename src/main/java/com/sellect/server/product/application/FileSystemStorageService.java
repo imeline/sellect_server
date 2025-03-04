@@ -56,7 +56,7 @@ public class FileSystemStorageService implements StorageService {
                 throw new StorageException(BError.NOT_EXIST, "file");
             }
 
-            if (Objects.isNull(filename)) {
+            if (Objects.isNull(filename) || filename.isBlank()) {
                 throw new StorageException(BError.NOT_EXIST, "file name");
             }
             Path destinationFile = this.rootLocation.resolve(
@@ -70,8 +70,32 @@ public class FileSystemStorageService implements StorageService {
 
             // InputStream 자원을 사용한 후에는 반드시 닫아주어야 함
             try (InputStream inputStream = file.getInputStream()) {
-                Files.copy(inputStream, destinationFile,
-                    StandardCopyOption.REPLACE_EXISTING);
+                Files.copy(inputStream, destinationFile, StandardCopyOption.REPLACE_EXISTING);
+            }
+        } catch (IOException e) {
+            throw new StorageException(BError.FAIL_FOR_REASON,
+                "store file",
+                e.getMessage());
+        }
+    }
+
+    @Override
+    public void store(InputStream inputStream, String filename) {
+        try {
+            if (Objects.isNull(filename) || filename.isBlank()) {
+                throw new StorageException(BError.NOT_EXIST, "file name");
+            }
+            Path destinationFile = this.rootLocation.resolve(
+                    Paths.get(filename))
+                .normalize().toAbsolutePath();
+            if (!destinationFile.getParent().equals(this.rootLocation.toAbsolutePath())) {
+                throw new StorageException(BError.FAIL_FOR_REASON,
+                    "store file",
+                    "cannot store file outside current directory.");
+            }
+
+            try (inputStream) {
+                Files.copy(inputStream, destinationFile, StandardCopyOption.REPLACE_EXISTING);
             }
         } catch (IOException e) {
             throw new StorageException(BError.FAIL_FOR_REASON,

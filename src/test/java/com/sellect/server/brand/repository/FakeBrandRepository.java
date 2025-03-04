@@ -16,10 +16,17 @@ public class FakeBrandRepository implements BrandRepository {
             .findFirst();
     }
 
-    // todo: MVP 이후 테스트 작성 시 구현
     @Override
     public List<Brand> findAll() {
-        return null;
+        return new ArrayList<>(data);
+    }
+
+    @Override
+    public List<Brand> findByNameContaining(String brandName) {
+        return data.stream()
+            .filter(brand -> brand.getName().contains(brandName))
+            .filter(brand -> brand.getDeleteAt() == null)
+            .toList();
     }
 
     public Brand save(Brand brand) {

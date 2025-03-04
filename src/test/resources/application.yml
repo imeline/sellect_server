@@ -14,7 +14,14 @@ spring:
     properties:
       hibernate:
         format_sql: true
-
+  sql:
+    init:
+      mode: never
+      schema-locations: classpath:db/init/schema-h2.sql
+      platform: h2
+  batch:
+    jdbc:
+      initialize-schema: never
 
 # 사용해야하는 경우 주석해제
 jwt:
@@ -33,6 +40,10 @@ server:
 storage:
   file-system:
     location: /tmp/spring-boot-upload-test
+  tus:
+    storage-path: /tmp/tus-upload-test
+    upload-uri: /api/v1/images/upload
+    upload-expiration: 86400
 
 
 cloudfront:

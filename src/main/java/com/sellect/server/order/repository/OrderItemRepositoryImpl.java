@@ -4,6 +4,7 @@ import com.sellect.server.order.domain.OrderItem;
 import com.sellect.server.order.repository.entity.OrderItemEntity;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -36,17 +37,17 @@ public class OrderItemRepositoryImpl implements OrderItemRepository {
     }
 
     @Override
-    public BigDecimal calculateSalesByProductId(Long productId) {
+    public Optional<BigDecimal> calculateSalesByProductId(Long productId) {
         return orderItemJpaRepository.calculateSalesByProductId(productId);
     }
 
     @Override
-    public Integer countCompleteOrdersByProductId(Long productId) {
+    public Optional<Integer> countCompleteOrdersByProductId(Long productId) {
         return orderItemJpaRepository.countCompletedOrdersByProductId(productId);
     }
 
     @Override
-    public BigDecimal calculateTotalSalesByProductIds(List<Long> productIds) {
+    public Optional<BigDecimal> calculateTotalSalesByProductIds(List<Long> productIds) {
         return orderItemJpaRepository.calculateTotalSalesByProductIds(productIds);
     }
 }

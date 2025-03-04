@@ -10,7 +10,7 @@ import java.util.List;
 import lombok.Builder;
 
 @Builder
-public record ProductDetailReadResponse(
+public record ProductDetailRetrieveResponse(
     Long productId,
     String smallCategoryName,
     String mediumCategoryName,
@@ -24,7 +24,7 @@ public record ProductDetailReadResponse(
     List<ProductImageResponse> images // 이미지 순서를 고려해서 이미지 전부 보내기
 ) {
 
-    public static ProductDetailReadResponse from(
+    public static ProductDetailRetrieveResponse from(
         Product product,
         Category smallCategory,
         Category mediumCategory,
@@ -32,7 +32,7 @@ public record ProductDetailReadResponse(
         User seller,
         Brand brand, List<ProductImage>productImages
         ) {
-        return ProductDetailReadResponse.builder()
+        return ProductDetailRetrieveResponse.builder()
             .productId(product.getId())
             .smallCategoryName(smallCategory.getName())
             .mediumCategoryName(mediumCategory.getName())

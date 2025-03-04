@@ -25,4 +25,11 @@ public class BrandRepositoryImpl implements BrandRepository {
         ).toList();
     }
 
+    @Override
+    public List<Brand> findByNameContaining(String brandName) {
+        return brandJpaRepository.findByNameContainingAndDeleteAtIsNull(brandName).stream()
+            .map(BrandEntity::toModel)
+            .toList();
+    }
+
 }
