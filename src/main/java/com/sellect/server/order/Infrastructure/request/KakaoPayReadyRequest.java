@@ -15,10 +15,24 @@ public record KakaoPayReadyRequest(
     Integer quantity,
     Integer totalAmount,
     Integer taxFreeAmount,
-    Integer vatAmount,
     String approvalUrl,
     String cancelUrl,
     String failUrl
 ) {
-
+    public static KakaoPayReadyRequest of(String partnerOrderId, String partnerUserId,
+        String itemName, Integer quantity, Integer totalAmount, String approvalUrl,
+        String cancelUrl, String failUrl) {
+        return KakaoPayReadyRequest.builder()
+            .cid("TC0ONETIME")
+            .partnerOrderId(partnerOrderId)
+            .partnerUserId(partnerUserId)
+            .itemName(itemName)
+            .quantity(quantity)
+            .totalAmount(totalAmount)
+            .taxFreeAmount(0)
+            .approvalUrl(approvalUrl)
+            .cancelUrl(cancelUrl)
+            .failUrl(failUrl)
+            .build();
+    }
 }

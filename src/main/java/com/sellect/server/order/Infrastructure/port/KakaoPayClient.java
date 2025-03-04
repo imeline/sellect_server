@@ -1,6 +1,7 @@
 package com.sellect.server.order.Infrastructure.port;
 
 import com.sellect.server.order.Infrastructure.request.KakaoPayReadyRequest;
+import com.sellect.server.order.Infrastructure.response.KakaoPayApproveResponse;
 import com.sellect.server.order.Infrastructure.response.KakaoPayReadyResponse;
 import com.sellect.server.payment.controller.request.ApproveRequest;
 import java.util.Map;
@@ -18,12 +19,12 @@ import org.springframework.web.client.RestTemplate;
 @Component
 @RequiredArgsConstructor
 public class KakaoPayClient {
-
     @Value("${kakao.pay.secret-key}")
     private String PAY_SECRET_KEY;
+    @Value("${server.host}")
+    private String SERVER_HOST;
     private static final String KAKAO_PAY_API_URL = "https://open-api.kakaopay.com/online/v1/payment/ready";
     private static final String KAKAO_PAY_APPROVE_API_URL = "https://open-api.kakaopay.com/online/v1/payment/approve";
-
     private final RestTemplate restTemplate;
 
     // ready
@@ -42,16 +43,34 @@ public class KakaoPayClient {
     }
 
     // approve
-    public Map paymentApprove(ApproveRequest approveRequest) {
+    public KakaoPayApproveResponse paymentApprove(ApproveRequest approveRequest) {
         HttpHeaders headers = createHeaders();
         HttpEntity<ApproveRequest> request = new HttpEntity<>(approveRequest, headers);
-        ResponseEntity<Map> response = restTemplate.exchange(KAKAO_PAY_APPROVE_API_URL,
-            HttpMethod.POST, request, Map.class);
+        ResponseEntity<KakaoPayApproveResponse> response = restTemplate.exchange(KAKAO_PAY_APPROVE_API_URL,
+            HttpMethod.POST, request, KakaoPayApproveResponse.class);
+
+        if (response.getStatusCode() != HttpStatus.OK) {
+            throw new RuntimeException("카카오페이 결제 승인 실패");
+        }
 
         return response.getBody();
     }
 
 
+    public KakaoPayReadyRequest createKakaoPayReadyRequest(String partnerOrderId, String partnerUserId, String itemName, Integer quantity, Integer totalAmount, String pid) {
+        return KakaoPayReadyRequest.builder()
+            .cid("TC0ONETIME")
+            .partnerOrderId(partnerOrderId)
+            .partnerUserId(partnerUserId)
+            .itemName(itemName)                 // TODO: 아이템 이름 가져오기(클라이언트에서 가져오는거 고려) 2025-02-28, 16:58
+            .quantity(quantity)                 // TODO: 주문에서 아이템 개수  2025-02-28, 16:58
+            .totalAmount(totalAmount)
+            .taxFreeAmount(0)
+            .approvalUrl(String.format("%s/api/v1/kakao-pay/success/%s", SERVER_HOST, pid))
+            .cancelUrl(String.format("%s/api/v1/kakao-pay/cancel", SERVER_HOST))
+            .failUrl(String.format("%s/api/v1/kakao-pay/fail", SERVER_HOST))
+            .build();
+    }
 
     private HttpHeaders createHeaders() {
         HttpHeaders headers = new HttpHeaders();
