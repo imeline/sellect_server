@@ -1,5 +1,6 @@
 package com.sellect.server.coupon.application;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.BDDAssertions.then;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -103,7 +104,7 @@ class CouponServiceTest {
 
 
     @Nested
-    @DisplayName("registerCoupon() 메소드는")
+    @DisplayName("downloadCoupon() 메소드는")
     class RegisterCouponTest {
 
         @Test
@@ -552,6 +553,29 @@ class CouponServiceTest {
             then(couponList.size()).isEqualTo(2);
             then(couponList.get(0).userReceivedCouponId()).isEqualTo(2L);
             then(couponList.get(1).userReceivedCouponId()).isEqualTo(1L);
+        }
+        
+        @Test
+        @DisplayName("존재하지 않는 상품 ID가 포함된 경우 예외를 던진다.")
+        void willFailWithNonExistentProductId() {
+            // given
+            User user = User.builder().id(1L).nickname("test").role(Role.USER).build();
+            User seller1 = User.builder().id(2L).nickname("seller").role(Role.SELLER).build();
+
+            Product product1 = Product.builder()
+                .id(1L)
+                .seller(seller1)
+                .build();
+
+            // 존재하는 상품만 저장
+            productRepository.save(product1);
+
+            List<Long> productIds = List.of(1L, 999L); // 999L은 존재하지 않음
+
+            // when & then
+            assertThatThrownBy(() -> couponService.getCouponsByMatchingSeller(user, productIds))
+                .isInstanceOf(CommonException.class)
+                .hasMessageContaining("999");
         }
     }
 
