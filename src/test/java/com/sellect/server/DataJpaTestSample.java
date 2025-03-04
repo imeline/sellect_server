@@ -8,7 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @DataJpaTest
 @Transactional
-public class DataJpaTestSample {
+class DataJpaTestSample {
 
     @Autowired
     private TestEntityManager entityManager;
