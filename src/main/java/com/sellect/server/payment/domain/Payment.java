@@ -24,7 +24,7 @@ public class Payment {
 
     // API 결제 준비 단게
     // 카카오 페이로부터 받아오는 tid 저장 및 상태 저장
-    public static Payment readyPayment(String orderId, String pid, String uid, Integer price,
+    public static Payment ready(String orderId, String pid, String uid, Integer price,
         String tid) {
         return Payment.builder()
             .orderId(orderId)

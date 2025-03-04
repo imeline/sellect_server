@@ -1,6 +1,7 @@
 package com.sellect.server.payment.application;
 
 import com.sellect.server.auth.domain.User;
+import com.sellect.server.order.domain.Orders;
 import com.sellect.server.payment.controller.response.PaymentHistoryResponse;
 import com.sellect.server.payment.domain.Payment;
 import com.sellect.server.payment.repository.PaymentRepository;
@@ -39,6 +40,17 @@ public class PaymentService {
                     .price(String.valueOf(payment.getPrice()))
                     .createdAt(payment.getCreatedAt().toString())
                     .build()).toList();
+    }
+
+
+    public void readyPayment(User user, Long orderId, String pid, Orders order, String tid) {
+        Payment payment = Payment.ready(String.valueOf(orderId),
+            pid,
+            user.getUuid(),
+            order.getTotalPrice().intValue(),
+            tid);
+
+        paymentRepository.save(payment);
     }
 }
 

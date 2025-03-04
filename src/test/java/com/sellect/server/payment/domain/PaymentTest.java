@@ -12,7 +12,7 @@ class PaymentTest {
     @Test
     @DisplayName("결제 승인")
     void approvePayment() {
-        Payment payment = Payment.readyPayment("orderId", "pid", "uid", 1000, "tid");
+        Payment payment = Payment.ready("orderId", "pid", "uid", 1000, "tid");
         Payment approvePayment = payment.approvePayment();
         assertEquals(PaymentStatus.APPROVE, approvePayment.getStatus());
     }
@@ -24,7 +24,7 @@ class PaymentTest {
         @DisplayName("대기상태에서 결제 승인으로 변경한다.")
         void paymentApproveSuccess() {
             //given
-            Payment payment = Payment.readyPayment("orderId", "pid", "uid", 1000, "tid");
+            Payment payment = Payment.ready("orderId", "pid", "uid", 1000, "tid");
             //when
             Payment approvePayment = payment.approvePayment();
             //then
@@ -36,7 +36,7 @@ class PaymentTest {
         @DisplayName("대기상태에서 결제 취소로 변경한다.")
         void paymentFailSuccess() {
             //given
-            Payment payment = Payment.readyPayment("orderId", "pid", "uid", 1000, "tid");
+            Payment payment = Payment.ready("orderId", "pid", "uid", 1000, "tid");
             //when
             Payment failedPayment = payment.failPayment();
             //then
@@ -48,7 +48,7 @@ class PaymentTest {
         @DisplayName("대기 상태에서 결제 캔슬 상태로 변경한다.")
         void paymentCancelSuccess() {
             //given
-            Payment payment = Payment.readyPayment("orderId", "pid", "uid", 1000, "tid");
+            Payment payment = Payment.ready("orderId", "pid", "uid", 1000, "tid");
             //when
             Payment cancelledPayment = payment.cancelPayment();
             //then
@@ -59,7 +59,7 @@ class PaymentTest {
         @DisplayName("대기 상태가 아닌 경우 approve 호출 시 상태가 변경되지 않음")
         void approvePaymentDoesNotChangeNonPendingStatus() {
             // given
-            Payment payment = Payment.readyPayment("orderId", "pid", "uid", 1000, "tid");
+            Payment payment = Payment.ready("orderId", "pid", "uid", 1000, "tid");
             Payment approvePayment = payment.approvePayment();// 먼저 APPROVE로 상태 변경
             PaymentStatus initialStatus = approvePayment.getStatus();
 
@@ -75,7 +75,7 @@ class PaymentTest {
         @DisplayName("대기 상태가 아닌 경우 fail 호출 시 상태가 변경되지 않음")
         void failPaymentDoesNotChangeNonPendingStatus() {
             // given
-            Payment payment = Payment.readyPayment("orderId", "pid", "uid", 1000, "tid");
+            Payment payment = Payment.ready("orderId", "pid", "uid", 1000, "tid");
             Payment failedPayment = payment.failPayment();// 먼저 CANCEL로 상태 변경
             PaymentStatus initialStatus = failedPayment.getStatus();
 

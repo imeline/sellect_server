@@ -10,6 +10,7 @@ import com.sellect.server.coupon.domain.Coupon;
 import com.sellect.server.coupon.domain.UserReceivedCoupon;
 import com.sellect.server.coupon.repository.UserReceivedCouponRepository;
 import com.sellect.server.order.Infrastructure.port.KakaoPayClient;
+import com.sellect.server.order.Infrastructure.response.KakaoPayApproveResponse;
 import com.sellect.server.order.Infrastructure.response.KakaoPayReadyResponse;
 import com.sellect.server.order.controller.request.OrderAddRequest;
 import com.sellect.server.order.controller.response.OrderDetailGetResponse;
@@ -36,7 +37,6 @@ import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -47,8 +47,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @Transactional(readOnly = true)
 public class OrderService {
-    @Value("${server.host}")
-    private String SERVER_HOST;
 
     private final OrdersRepository ordersRepository;
     private final OrderItemRepository orderItemRepository;
@@ -59,7 +57,6 @@ public class OrderService {
     private final KakaoPayClient kakaoPayClient;
     private final PaymentRepository paymentRepository;
     private final UserRepository userRepository;
-
 
     public List<OrderItemGetResponse> readPending(User user, Long orderId) {
         // 주문이 실제로 존재하는지 체크
@@ -230,16 +227,8 @@ public class OrderService {
             throw new CommonException(BError.NOT_VALID, "이미 완료(확정)된 주문입니다.");
         }
         // 쿠폰 조회
-        UserReceivedCoupon coupon = userReceivedCouponRepository.findById(couponId)
-            .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "쿠폰"));
-        // 쿠폰 사용 여부 확인
-        if (coupon.getIsUsed()) {
-            throw new CommonException(BError.NOT_VALID, "이미 사용된 쿠폰입니다.");
-        }
-        // 쿠폰 소유자 확인
-        if (!coupon.getUser().getId().equals(user.getId())) {
-            throw new CommonException(BError.NOT_VALID, "쿠폰 소유자가 아닙니다.");
-        }
+        UserReceivedCoupon coupon = getUserValidateReceivedCoupon(user,
+            couponId);
         // 주문에 쿠폰 정보 저장
         ordersRepository.save(order.updateCoupon(coupon));
         // 쿠폰 사용 처리는 주문 확정 후 적용
@@ -284,47 +273,55 @@ public class OrderService {
         }
 
         if (userReceivedCouponId != null) {
-            UserReceivedCoupon coupon = userReceivedCouponRepository.findById(userReceivedCouponId)
-                .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "쿠폰"));
-            // 쿠폰 사용 여부 확인
-            if (coupon.getIsUsed()) {
-                throw new CommonException(BError.NOT_VALID, "이미 사용된 쿠폰입니다.");
-            }
-            // 쿠폰 소유자 확인
-            if (!coupon.getUser().getId().equals(user.getId())) {
-                throw new CommonException(BError.NOT_VALID, "쿠폰 소유자가 아닙니다.");
-            }
+            UserReceivedCoupon coupon = getUserValidateReceivedCoupon(user, userReceivedCouponId);
             // 주문에 쿠폰 정보 저장
             order = ordersRepository.save(order.updateCoupon(coupon));
         }
 
         String pid = generatePaymentId();
-
+        Integer quantity = 0;
         // 카카오 페이 API 호출
-        KakaoPayReadyRequest request = KakaoPayReadyRequest.builder()
-            .cid("TC0ONETIME")
-            .partnerOrderId(order.getId().toString())
-            .partnerUserId(user.getUuid())
-            .itemName("test")                 // TODO: 아이템 이름 가져오기(클라이언트에서 가져오는거 고려) 2025-02-28, 16:58
-            .quantity(3)                 // TODO: 주문에서 아이템 개수  2025-02-28, 16:58
-            .totalAmount(order.getTotalPrice().intValue())
-            .taxFreeAmount(0)
-            .approvalUrl(String.format("%s/api/v1/kakao-pay/success/%s", SERVER_HOST, pid))
-            .cancelUrl(String.format("%s/api/v1/kakao-pay/cancel", SERVER_HOST))
-            .failUrl(String.format("%s/api/v1/kakao-pay/fail", SERVER_HOST))
-            .build();
+        KakaoPayReadyRequest request = kakaoPayClient.createKakaoPayReadyRequest(
+            String.valueOf(orderId),
+            user.getUuid(),
+            "test",
+            quantity,
+            order.getTotalPrice().intValue(),
+            pid
+        );
 
         KakaoPayReadyResponse kakaoPayReadyResponse = kakaoPayClient.readyPayment(request);
-        Payment payment = Payment.readyPayment(String.valueOf(orderId), pid, user.getUuid(),  order.getTotalPrice().intValue(),
-            kakaoPayReadyResponse.tid());
-
-        paymentRepository.save(payment);
+        readyPayment(user, orderId, pid, order, kakaoPayReadyResponse.tid());
 
         return kakaoPayReadyResponse.next_redirect_pc_url();
     }
 
+    private UserReceivedCoupon getUserValidateReceivedCoupon(User user, Long userReceivedCouponId) {
+        UserReceivedCoupon coupon = userReceivedCouponRepository.findById(userReceivedCouponId)
+            .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "쿠폰"));
+        // 쿠폰 사용 여부 확인
+        if (coupon.getIsUsed()) {
+            throw new CommonException(BError.NOT_VALID, "이미 사용된 쿠폰입니다.");
+        }
+        // 쿠폰 소유자 확인
+        if (!coupon.getUser().getId().equals(user.getId())) {
+            throw new CommonException(BError.NOT_VALID, "쿠폰 소유자가 아닙니다.");
+        }
+        return coupon;
+    }
+
+    private void readyPayment(User user, Long orderId, String pid, Orders order, String tid) {
+        Payment payment = Payment.ready(String.valueOf(orderId),
+            pid,
+            user.getUuid(),
+            order.getTotalPrice().intValue(),
+            tid);
+
+        paymentRepository.save(payment);
+    }
+
     @Transactional
-    public void approvePayment(String pid, String token){
+    public void approvePayment(String pid, String token) {
         Payment payment = paymentRepository.findByPid(pid)
             .orElseThrow(
                 () -> new CommonException(BError.NOT_EXIST, String.format("Payment %s", pid)));
@@ -368,7 +365,7 @@ public class OrderService {
                 .pgToken(token)
                 .build();
 
-            Map map = kakaoPayClient.paymentApprove(approveRequest);
+            KakaoPayApproveResponse kakaoPayApproveResponse = kakaoPayClient.paymentApprove(approveRequest);
             log.info("Payment approved for pid: {}", pid);
         } catch (Exception e) {
             log.error("Failed to approve payment for pid: {}", pid, e);
