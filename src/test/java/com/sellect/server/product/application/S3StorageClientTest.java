@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockMultipartFile;
 
-class S3StorageServiceTest {
+class S3StorageClientTest {
 
     // TODO: Fake S3 서버를 사용하여 테스트를 진행해야 함
     private AmazonS3 s3Client;
