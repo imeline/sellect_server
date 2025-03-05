@@ -6,6 +6,7 @@ import static org.mockito.Mockito.doAnswer;
 import com.sellect.server.common.infrastructure.jwt.JwtFilter;
 import com.sellect.server.config.SecurityConfig;
 import com.sellect.server.config.TestRestTemplateConfig;
+import com.sellect.server.product.application.S3StorageClient;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
@@ -40,6 +41,9 @@ class SpringBootTestSample {
 
     @MockBean
     JwtFilter jwtFilter;
+
+    @MockBean
+    S3StorageClient s3StorageClient;
 
     @MockBean
     private SecurityFilterChain securityFilterChain;

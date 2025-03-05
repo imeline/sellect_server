@@ -12,6 +12,7 @@ import com.sellect.server.common.response.ApiResponse;
 import com.sellect.server.common.response.PagedResponse;
 import com.sellect.server.config.SecurityConfig;
 import com.sellect.server.config.TestRestTemplateConfig;
+import com.sellect.server.product.application.S3StorageClient;
 import com.sellect.server.search.controller.response.SearchResponse;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -46,7 +47,7 @@ import org.springframework.test.context.TestPropertySource;
         ManagementWebSecurityAutoConfiguration.class,
         SecurityConfig.class}) // Spring Security 비활성화
 @TestPropertySource(properties = {
-    "spring.jpa.hibernate.ddl-auto=update",  // 테이블 자동 생성
+    "spring.jpa.hibernate.ddl-auto=none",  // 테이블 자동 생성
     "spring.sql.init.mode=always", // SQL 초기화 항상 수행
     "spring.sql.init.schema-locations=classpath:schema.sql",
     "spring.sql.init.data-locations=classpath:data.sql"
@@ -63,6 +64,9 @@ public class SearchSpringBootTest {
 
     @MockBean
     private SecurityFilterChain securityFilterChain;
+
+    @MockBean
+    S3StorageClient s3StorageClient;
 
     @Autowired
     private TestRestTemplate restTemplate ;
