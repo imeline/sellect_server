@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.sellect.server.auth.domain.User;
@@ -28,6 +29,8 @@ import com.sellect.server.order.repository.fake.FakeOrderItemRepository;
 import com.sellect.server.order.repository.fake.FakeOrdersRepository;
 import com.sellect.server.payment.application.PaymentService;
 import com.sellect.server.payment.domain.Payment;
+import com.sellect.server.payment.domain.controller.repository.FakePaymentRepository;
+import com.sellect.server.payment.event.PaymentEventListener;
 import com.sellect.server.product.domain.Inventory;
 import com.sellect.server.product.domain.Product;
 import com.sellect.server.product.domain.ProductImage;
@@ -43,6 +46,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 @ExtendWith(MockitoExtension.class) // Mockito 환경 자동 초기화
 class OrderServiceTest {
@@ -59,6 +63,8 @@ class OrderServiceTest {
     private final FakeProductImageRepository productImageRepository = new FakeProductImageRepository();
     private final FakeBrandRepository brandRepository = new FakeBrandRepository();
     private final FakeUserRepository userRepository = new FakeUserRepository();
+    private final FakePaymentRepository paymentRepository = new FakePaymentRepository();
+    private final ApplicationEventPublisher eventListener = mock(ApplicationEventPublisher.class);
     private OrderService sut; // sut을 BeforeEach에서 초기화
     private User user;
 
@@ -86,7 +92,8 @@ class OrderServiceTest {
             userReceivedCouponRepository,
             productImageRepository,
             userRepository,
-            paymentService
+            paymentRepository,
+            eventListener
         );
     }
 
