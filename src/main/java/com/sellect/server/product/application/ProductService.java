@@ -211,14 +211,11 @@ public class ProductService {
             .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "product"));
 
         Category smallCategory = categoryRepository.findById(product.getCategory().getId())
-            .orElseThrow(() ->
-                new CommonException(BError.NOT_EXIST, "category"));
+            .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "small category"));
         Category mediumCategory = categoryRepository.findById(smallCategory.getParentId())
-            .orElseThrow(() ->
-                new CommonException(BError.NOT_EXIST, "category"));
+            .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "medium category"));
         Category largeCategory = categoryRepository.findById(mediumCategory.getParentId())
-            .orElseThrow(() ->
-                new CommonException(BError.NOT_EXIST, "category"));
+            .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "large category"));
 
         // 브랜드명 조회
         Brand brand = brandRepository.findById(product.getBrand().getId())

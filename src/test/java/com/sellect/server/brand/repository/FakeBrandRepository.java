@@ -8,10 +8,12 @@ import java.util.Optional;
 public class FakeBrandRepository implements BrandRepository {
 
     private final List<Brand> data = new ArrayList<>();
+    private long nextId = 1L; // ID 자동 증가를 위한 변수
 
+    @Override
     public Optional<Brand> findById(Long brandId) {
         return data.stream()
-            .filter(brand -> brand.getId().equals(brandId))
+            .filter(brand -> brand.getId() != null && brand.getId().equals(brandId))
             .filter(brand -> brand.getDeleteAt() == null)
             .findFirst();
     }
@@ -30,21 +32,32 @@ public class FakeBrandRepository implements BrandRepository {
     }
 
     public Brand save(Brand brand) {
-        findById(brand.getId()).ifPresentOrElse(
-            existingBrand -> {
-                // 기존 데이터 업데이트 (삭제 후 재등록)
-                data.remove(existingBrand);
-                data.add(brand);
-            },
-            () -> data.add(brand) // 새로운 데이터 추가
-        );
-
-        return brand;
+        if (brand.getId() == null) {
+            // 새로운 엔티티라면 ID 자동 할당 및 모든 필드 복사
+            Brand newBrand = Brand.builder()
+                .id(nextId++)
+                .name(brand.getName())
+                .createdAt(brand.getCreatedAt())
+                .updatedAt(brand.getUpdatedAt())
+                .deleteAt(brand.getDeleteAt())
+                .build();
+            data.add(newBrand);
+            return newBrand;
+        } else {
+            // 기존 엔티티라면 업데이트
+            findById(brand.getId()).ifPresentOrElse(
+                existingBrand -> {
+                    data.remove(existingBrand);
+                    data.add(brand);
+                },
+                () -> data.add(brand) // ID가 있지만 데이터에 없으면 추가
+            );
+            return brand;
+        }
     }
-
-
 
     public void clear() {
         data.clear();
+        nextId = 1L; // 데이터 초기화 시 ID도 리셋
     }
 }
