@@ -65,7 +65,7 @@ CREATE TABLE inventory
     delete_at  TIMESTAMP NULL,
     product_id BIGINT    NOT NULL UNIQUE, -- OneToOne 관계
     stock      INT       NOT NULL,
-    version BIGINT DEFAULT 0 -- 낙관적 락을 위한 버전 관리
+    version    BIGINT    DEFAULT 0        -- 낙관적 락을 위한 버전 관리
 );
 
 -- 상품 이미지 테이블
@@ -79,4 +79,16 @@ CREATE TABLE product_image
     representative BOOLEAN      NOT NULL,
     sequence       INT          NOT NULL,
     product_id     BIGINT       NOT NULL
+);
+
+CREATE TABLE search_log
+(
+    id              BIGINT PRIMARY KEY AUTO_INCREMENT,
+    brand_id        BIGINT,
+    category_id     BIGINT,
+    filter_applied  BOOLEAN,
+    keyword         VARCHAR(255) NOT NULL,
+    result_count    INT          NOT NULL,
+    timestamp       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    user_identifier VARCHAR(255) NOT NULL
 );
