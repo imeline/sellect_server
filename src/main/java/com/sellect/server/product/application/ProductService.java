@@ -10,20 +10,22 @@ import com.sellect.server.common.exception.enums.BError;
 import com.sellect.server.order.repository.OrderItemRepository;
 import com.sellect.server.product.controller.request.ProductModifyRequest;
 import com.sellect.server.product.controller.request.ProductRegisterRequest;
-import com.sellect.server.product.controller.response.ProductDetailRetrieveResponse;
 import com.sellect.server.product.controller.response.ProductDetailRetrieveBySellerResponse;
+import com.sellect.server.product.controller.response.ProductDetailRetrieveResponse;
 import com.sellect.server.product.controller.response.ProductModifyResponse;
 import com.sellect.server.product.controller.response.ProductRegisterResponse;
 import com.sellect.server.product.controller.response.SellerStatsRetrieveResponse;
+import com.sellect.server.product.domain.Inventory;
 import com.sellect.server.product.domain.Product;
 import com.sellect.server.product.domain.ProductImage;
+import com.sellect.server.product.repository.InventoryRepository;
 import com.sellect.server.product.repository.ProductImageRepository;
 import com.sellect.server.product.repository.ProductRepository;
+import com.sellect.server.product.util.StorageUtil;
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -36,13 +38,13 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 public class ProductService {
 
-    private final ProductImageService productImageService;
     private final ProductRepository productRepository;
     private final BrandRepository brandRepository;
     private final CategoryRepository categoryRepository;
     private final ProductImageRepository productImageRepository;
     private final OrderItemRepository orderItemRepository;
-    private final StorageService storageService;
+    private final InventoryRepository inventoryRepository;
+    private final StorageClient storageClient;
 
     /**
      * 상품 단건 등록
@@ -72,23 +74,34 @@ public class ProductService {
             brand,
             request.getPriceAsBigDecimal(),
             request.name(),
-            request.description(),
-            request.stock()
+            request.description()
         ));
 
-        // todo: service 에서 service??? 추후 체크
+        inventoryRepository.save(Inventory.register(product, request.stock()));
+
         // 이미지 저장 (이미지 이름에는 식별자(uuid)가 포함되어 있고, 이를 통해 image context 와 매핑)
-        Map<String, MultipartFile> imageMap = new HashMap<>();
+        Map<String, MultipartFile> uuidToImageFile = new HashMap<>();
         images.forEach(image -> {
-            String filename = Objects.requireNonNull(image.getOriginalFilename());
-            imageMap.put(filename.substring(0, filename.lastIndexOf(".")), image);
+            String filename = image.getOriginalFilename();
+            if (filename == null) {
+                throw new CommonException(BError.NOT_EXIST, "file name");
+            }
+            uuidToImageFile.put(filename.substring(0, filename.lastIndexOf(".")), image);
         });
         request.imageContexts().forEach(imageContext -> {
-            MultipartFile imageFile = imageMap.get(imageContext.uuid());
+            // 이미지 컨텍스트 정보에 있는 uuid 에 매핑되는 이미지 파일을 찾아서 저장
+            MultipartFile imageFile = uuidToImageFile.get(imageContext.uuid());
             if (imageFile == null) {
-                throw new CommonException(BError.NOT_MATCHES, "uuid in image context", "uuid in image file name");
+                throw new CommonException(BError.NOT_MATCHES, "uuid in image context",
+                    "uuid in image file name");
             }
-            productImageService.registerProductImage(product, imageContext, imageFile);
+
+            // 이미지 저장 (이미지 저장소 저장 -> 이미지 URL 가져오기 -> ProductImage 생성)
+            String newFilename = StorageUtil.generateFileName(imageFile.getOriginalFilename());
+            storageClient.store(imageFile, newFilename);
+            ProductImage productImage = ProductImage.register(product,
+                storageClient.loadAsPath(newFilename), imageContext);
+            productImageRepository.save(productImage, product);
         });
 
         return ProductRegisterResponse.from(product);
@@ -121,89 +134,22 @@ public class ProductService {
             brand,
             request.getPriceAsBigDecimal(),
             request.name(),
-            request.description(),
-            request.stock()
+            request.description()
         ));
+
+        inventoryRepository.save(Inventory.register(product, request.stock()));
 
         if (request.imageContexts().isEmpty()) {
             throw new CommonException(BError.REQUIRED, "image context");
         }
         request.imageContexts().forEach(imageContext -> {
-            String imageUrl = storageService.loadAsPath(imageContext.filename());
+            String imageUrl = storageClient.loadAsPath(imageContext.filename());
             ProductImage productImage = ProductImage.register(product, imageUrl, imageContext);
             productImageRepository.save(productImage, product);
         });
 
         return ProductRegisterResponse.from(product);
     }
-
-    /**
-     * 상품 다건 등록
-     * (보류)
-     */
-//    @Transactional
-//    public ProductMultipleRegisterResponse registerMultiple(
-//        User seller,
-//        List<ProductRegisterRequest> requests,
-//        List<MultipartFile> images) {
-//
-//        List<Product> successProducts = new ArrayList<>();
-//        List<ProductRegisterFailureResponse> failedProducts = new ArrayList<>();
-//
-//        // 요청 내 상품명 중복 검증을 위한 Set
-//        Set<String> requestProductNames = new HashSet<>();
-//
-//        for (ProductRegisterRequest request : requests) {
-//            // 요청 내 상품 기준 중복 검사
-//            if (!requestProductNames.add(request.name())) {
-//                failedProducts.add(
-//                    ProductRegisterFailureResponse.from(request.name(), "요청 내 중복된 상품명")
-//                );
-//                continue;
-//            }
-//
-//            Optional<Category> optionalCategory = categoryRepository.findById(request.categoryId());
-//            // 존재하지 않는 카테고리 체크
-//            if (optionalCategory.isEmpty()) {
-//                failedProducts.add(
-//                    ProductRegisterFailureResponse.from(request.name(), "존재하지 않는 카테고리"));
-//                continue;
-//            }
-//
-//            // 존재하지 않는 브랜드 체크
-//            Optional<Brand> optionalBrand = brandRepository.findById(request.brandId());
-//            if (optionalBrand.isEmpty()) {
-//                failedProducts.add(
-//                    ProductRegisterFailureResponse.from(request.name(), "존재하지 않는 브랜드"));
-//                continue;
-//            }
-//
-//            // 등록된 상품 기준 중복 검사 (sellerId, productName 기준)
-//            if (productRepository.isDuplicateProduct(seller.getId(), request.name())) {
-//                failedProducts.add(
-//                    ProductRegisterFailureResponse.from(request.name(), "중복 상품"));
-//                continue;
-//            }
-//
-//            successProducts.add(Product.register(
-//                seller,
-//                optionalCategory.get(),
-//                optionalBrand.get(),
-//                request.getPriceAsBigDecimal(), // String -> BigDecimal 변환
-//                request.name(),
-//                request.description(),
-//                request.stock()
-//            ));
-//        }
-//
-//        // 기획 : 실패한 게 하나도 없을 때에만 등록이 가능
-//        if (failedProducts.isEmpty()) {
-//            List<Product> products = productRepository.saveAll(successProducts);
-//        }
-//
-//        // 성공 및 실패 리스트 반환
-//        return ProductMultipleRegisterResponse.from(successProducts, failedProducts);
-//    }
 
     /**
      * 상품 수정
@@ -217,21 +163,22 @@ public class ProductService {
             .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "product"));
 
         // 유저의 상품이 맞는지 확인
-        if (!product.getSeller().getId().equals(sellerId)) {
-            throw new CommonException(BError.ACCESS_DENIED, "modify product");
-        }
+        product.validateSeller(sellerId);
 
         // 수정할 값이 존재할 경우만 수정
         Product modifiedProduct = product.modify(
             Optional.ofNullable(request.getPriceAsBigDecimal()).orElse(product.getPrice()),
             Optional.ofNullable(request.name()).orElse(product.getName()),
-            Optional.ofNullable(request.description()).orElse(product.getDescription()),
-            Optional.ofNullable(request.stock()).orElse(product.getStock())
+            Optional.ofNullable(request.description()).orElse(product.getDescription())
         );
-
         productRepository.save(modifiedProduct);
 
-        return ProductModifyResponse.from(modifiedProduct);
+        Inventory inventory = getInventoryByProductId(productId);
+        Inventory modifyInventory = inventory.modifyStock(
+            Optional.ofNullable(request.stock()).orElse(inventory.getStock()));
+        inventoryRepository.save(modifyInventory);
+
+        return ProductModifyResponse.from(modifiedProduct, modifyInventory.getStock());
     }
 
     /**
@@ -245,11 +192,13 @@ public class ProductService {
             .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "product"));
 
         // 유저의 상품이 맞는지 확인
-        if (!product.getSeller().getId().equals(sellerId)) {
-            throw new CommonException(BError.ACCESS_DENIED, "remove product");
-        }
+        product.validateSeller(sellerId);
 
         productRepository.save(product.remove());
+
+        // 재고 삭제
+        Inventory inventory = getInventoryByProductId(productId);
+        inventoryRepository.save(inventory.deleteStock());
     }
 
     /**
@@ -278,6 +227,9 @@ public class ProductService {
         // 이미지들 조회
         List<ProductImage> productImages = productImageRepository.findByProductId(productId);
 
+        // 재고 조회
+        Inventory inventory = getInventoryByProductId(productId);
+
         // todo: JPA가 알아서 조회
         return ProductDetailRetrieveResponse.from(
             product,
@@ -286,7 +238,9 @@ public class ProductService {
             largeCategory,
             product.getSeller(),
             brand,
-            productImages);
+            inventory.getStock(),
+            productImages
+        );
     }
 
     //========================= Seller 전용 =========================//
@@ -295,11 +249,13 @@ public class ProductService {
      * 판매자의 상품 목록 조회
      */
     @Transactional(readOnly = true)
-    public Page<ProductDetailRetrieveResponse> retrieveAllBySeller(User seller, int page, int size) {
+    public Page<ProductDetailRetrieveResponse> retrieveAllBySeller(User seller, int page,
+        int size) {
 
         Page<Product> products = productRepository.findBySellerId(seller.getId(),
             PageRequest.of(page, size));
 
+        // TODO: 쿼리 최적화
         return products.map(product -> {
             Category smallCategory = categoryRepository.findById(product.getCategory().getId())
                 .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "category"));
@@ -310,11 +266,14 @@ public class ProductService {
             Brand brand = brandRepository.findById(product.getBrand().getId())
                 .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "brand"));
 
-            List<ProductImage> productImages = productImageRepository.findByProductId(product.getId());
+            Inventory inventory = getInventoryByProductId(product.getId());
+
+            List<ProductImage> productImages = productImageRepository.findByProductId(
+                product.getId());
             return ProductDetailRetrieveResponse.from(
                 product,
                 smallCategory, mediumCategory, largeCategory,
-                product.getSeller(), brand,
+                product.getSeller(), brand, inventory.getStock(),
                 productImages);
         });
     }
@@ -330,9 +289,7 @@ public class ProductService {
             .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "product"));
 
         // 유저의 상품이 맞는지 확인
-        if (!product.getSeller().getId().equals(seller.getId())) {
-            throw new CommonException(BError.ACCESS_DENIED, "product");
-        }
+        product.validateSeller(seller.getId());
 
         Category smallCategory = categoryRepository.findById(product.getCategory().getId())
             .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "category"));
@@ -341,12 +298,15 @@ public class ProductService {
         Category largeCategory = categoryRepository.findById(mediumCategory.getParentId())
             .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "category"));
 
+        Inventory inventory = getInventoryByProductId(productId);
         List<ProductImage> productImages = productImageRepository.findByProductId(productId);
-        Integer totalOrders = orderItemRepository.countCompleteOrdersByProductId(productId).orElse(0);
-        BigDecimal totalSales = orderItemRepository.calculateSalesByProductId(productId).orElse(BigDecimal.ZERO);
+        Integer totalOrders = orderItemRepository.countCompleteOrdersByProductId(productId)
+            .orElse(0);
+        BigDecimal totalSales = orderItemRepository.calculateSalesByProductId(productId)
+            .orElse(BigDecimal.ZERO);
 
         return ProductDetailRetrieveBySellerResponse.from(
-            product, productImages,
+            product, productImages, inventory.getStock(),
             smallCategory, mediumCategory, largeCategory,
             totalOrders, totalSales);
     }
@@ -356,15 +316,17 @@ public class ProductService {
      */
     @Transactional(readOnly = true)
     public SellerStatsRetrieveResponse retrieveStats(User seller) {
-        // 판매 중인 상품 체크
-        List<Product> products = productRepository.findAllBySellerId(seller.getId());
+        List<Long> productIds = productRepository.findProductIdsBySellerId(seller.getId());
 
-        BigDecimal totalSales = orderItemRepository.calculateTotalSalesByProductIds(
-            products.stream()
-                .map(Product::getId)
-                .toList())
+        BigDecimal totalSales = orderItemRepository.calculateTotalSalesByProductIds(productIds)
             .orElse(BigDecimal.ZERO);
 
-        return SellerStatsRetrieveResponse.from(totalSales, products.size());
+        return SellerStatsRetrieveResponse.from(totalSales, productIds.size());
+    }
+
+    @Transactional(readOnly = true)
+    protected Inventory getInventoryByProductId(Long productId) {
+        return inventoryRepository.findByProductId(productId)
+            .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "inventory"));
     }
 }

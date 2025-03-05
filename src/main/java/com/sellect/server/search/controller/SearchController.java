@@ -3,6 +3,7 @@ package com.sellect.server.search.controller;
 import com.sellect.server.auth.domain.User;
 import com.sellect.server.common.infrastructure.annotation.AuthUser;
 import com.sellect.server.common.response.ApiResponse;
+import com.sellect.server.common.response.PagedResponse;
 import com.sellect.server.search.application.AutoCompleteService;
 import com.sellect.server.search.application.SearchService;
 import com.sellect.server.search.controller.response.AutoCompleteResponse;
@@ -37,7 +38,7 @@ public class SearchController {
      * condition 을 통해 확인
      * */
     @GetMapping("/products")
-    public ApiResponse<Page<SearchResponse>> searchTotal(
+    public ApiResponse<PagedResponse<SearchResponse>> searchTotal(
         @AuthUser User user,
         @RequestParam String keyword,
         @RequestParam(required = false) Long categoryId,
@@ -58,17 +59,11 @@ public class SearchController {
 
         // 3. USER / GUEST 식별자 생성
         SearchCondition condition = SearchCondition
-            .builder()
-            .keyword(keyword)
-            .categoryId(categoryId)
-            .brandId(brandId)
-            .minPrice(minPrice)
-            .maxPrice(maxPrice)
-            .build();
+            .create(keyword, categoryId, brandId, minPrice, maxPrice);
 
         Page<SearchResponse> results = searchService.searchTotal(userIdentifier, condition,
             page, size, sortType);
 
-        return ApiResponse.ok(results);
+        return ApiResponse.ok(PagedResponse.of(results));
     }
 }

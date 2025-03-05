@@ -28,6 +28,7 @@ public record ProductDetailRetrieveBySellerResponse(
     public static ProductDetailRetrieveBySellerResponse from(
         Product product,
         List<ProductImage> productImages,
+        int stock,
         Category smallCategory,
         Category mediumCategory,
         Category largeCategory,
@@ -37,7 +38,7 @@ public record ProductDetailRetrieveBySellerResponse(
             .productId(product.getId())
             .name(product.getName())
             .price(product.getPrice())
-            .stock(product.getStock())
+            .stock(stock)
             .description(product.getDescription())
             .smallCategoryName(smallCategory.getName())
             .mediumCategoryName(mediumCategory.getName())

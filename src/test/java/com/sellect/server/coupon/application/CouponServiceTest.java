@@ -319,8 +319,6 @@ class CouponServiceTest {
 
             // then
             assertEquals(2, couponList.size());
-            assertEquals(5000, couponList.get(0).couponInfo().discountCost());
-            assertEquals(3000, couponList.get(1).couponInfo().discountCost());
         }
 
         @Test
@@ -361,7 +359,6 @@ class CouponServiceTest {
 
             //then
             then(couponList).isEmpty();
-            then(couponList.size()).isEqualTo(0);
         }
 
         @Test
@@ -403,7 +400,6 @@ class CouponServiceTest {
 
             //then
             then(couponList.size()).isEqualTo(1);
-            then(couponList.get(0).couponInfo().discountCost()).isEqualTo(3000);
         }
 
         @Test

@@ -7,7 +7,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.PATCH;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
 import com.sellect.server.image.config.properties.TusProperties;
-import com.sellect.server.product.application.StorageService;
+import com.sellect.server.product.application.StorageClient;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -31,7 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class ImageUploadController {
 
     private final TusFileUploadService fileUploadService;
-    private final StorageService storageService;
+    private final StorageClient storageClient;
     private final TusProperties tusProperties;
 
     // TODO: 서비스 로직으로 분리
@@ -57,7 +57,7 @@ public class ImageUploadController {
         // 마지막 청크가 업로드된 이후 이미지 저장소에 이미지 저장
         if (uploadInfo != null && !uploadInfo.isUploadInProgress()) {
             try (InputStream inputStream = fileUploadService.getUploadedBytes(uploadURI)) {
-                storageService.store(inputStream, uploadInfo.getFileName());
+                storageClient.store(inputStream, uploadInfo.getFileName());
             } catch (IOException | TusException e) {
                 log.error("get uploaded bytes", e);
                 // TODO: 예외 처리

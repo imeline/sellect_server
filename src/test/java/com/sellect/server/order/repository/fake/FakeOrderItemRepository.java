@@ -1,6 +1,7 @@
-package com.sellect.server.order.repository;
+package com.sellect.server.order.repository.fake;
 
 import com.sellect.server.order.domain.OrderItem;
+import com.sellect.server.order.repository.OrderItemRepository;
 import com.sellect.server.order.repository.entity.OrderStatus;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -43,8 +44,10 @@ public class FakeOrderItemRepository implements OrderItemRepository {
     public Optional<BigDecimal> calculateSalesByProductId(Long productId) {
         BigDecimal totalSales = data.stream()
             .filter(item -> item.getProduct().getId().equals(productId))
-            .filter(item -> item.getOrders().getStatus().equals(OrderStatus.COMPLETED)) // 주문 상태가 COMPLETED인 경우만
-            .map(item -> item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity()))) // price * quantity
+            .filter(item -> item.getOrders().getStatus()
+                .equals(OrderStatus.COMPLETED)) // 주문 상태가 COMPLETED인 경우만
+            .map(item -> item.getPrice()
+                .multiply(BigDecimal.valueOf(item.getQuantity()))) // price * quantity
             .reduce(BigDecimal.ZERO, BigDecimal::add);
         return Optional.of(totalSales);
     }
@@ -53,7 +56,8 @@ public class FakeOrderItemRepository implements OrderItemRepository {
     public Optional<Integer> countCompleteOrdersByProductId(Long productId) {
         long uniqueOrderCount = data.stream()
             .filter(item -> item.getProduct().getId().equals(productId))
-            .filter(item -> item.getOrders().getStatus().equals(OrderStatus.COMPLETED)) // 주문 상태가 COMPLETED인 경우만
+            .filter(item -> item.getOrders().getStatus()
+                .equals(OrderStatus.COMPLETED)) // 주문 상태가 COMPLETED인 경우만
             .map(item -> item.getOrders().getId())
             .distinct() // 중복 주문 제거
             .count();
@@ -64,8 +68,10 @@ public class FakeOrderItemRepository implements OrderItemRepository {
     public Optional<BigDecimal> calculateTotalSalesByProductIds(List<Long> productIds) {
         BigDecimal totalSales = data.stream()
             .filter(item -> productIds.contains(item.getProduct().getId()))
-            .filter(item -> item.getOrders().getStatus().equals(OrderStatus.COMPLETED)) // 주문 상태가 COMPLETED인 경우만
-            .map(item -> item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity()))) // price * quantity
+            .filter(item -> item.getOrders().getStatus()
+                .equals(OrderStatus.COMPLETED)) // 주문 상태가 COMPLETED인 경우만
+            .map(item -> item.getPrice()
+                .multiply(BigDecimal.valueOf(item.getQuantity()))) // price * quantity
             .reduce(BigDecimal.ZERO, BigDecimal::add);
         return Optional.of(totalSales);
     }

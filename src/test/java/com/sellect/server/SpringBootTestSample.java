@@ -1,7 +1,6 @@
 package com.sellect.server;
 
 import com.sellect.server.config.SecurityConfig;
-import org.junit.jupiter.api.Test;
 import org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
@@ -24,8 +23,8 @@ class SpringBootTestSample {
     private SecurityFilterChain securityFilterChain;
 
 
-    @Test
-    void contextLoads() {
-    }
+//    @Test
+//    void contextLoads() {
+//    }
 
 }

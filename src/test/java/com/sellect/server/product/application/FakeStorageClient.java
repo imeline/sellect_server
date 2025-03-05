@@ -6,7 +6,7 @@ import java.util.Map;
 import org.springframework.core.io.Resource;
 import org.springframework.web.multipart.MultipartFile;
 
-public class FakeStorageService implements StorageService {
+public class FakeStorageClient implements StorageClient {
 
     public static final String FAKE_IMAGE_STORAGE_URL = "http://fake-url.com/";
 
