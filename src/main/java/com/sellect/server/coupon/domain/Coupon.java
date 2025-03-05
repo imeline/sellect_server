@@ -1,6 +1,8 @@
 package com.sellect.server.coupon.domain;
 
 import com.sellect.server.auth.domain.User;
+import com.sellect.server.common.exception.CommonException;
+import com.sellect.server.common.exception.enums.BError;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
@@ -22,6 +24,16 @@ public class Coupon {
     private final LocalDateTime createdAt;
     private final LocalDateTime updatedAt;
     private final LocalDateTime deleteAt;
+
+
+    public void isUsable(){
+        if (this.quantity <= 0) {
+            throw new CommonException(BError.COUPON_QUANTITY_ZERO, String.valueOf(this.id));
+        }
+        if (this.expirationDate.isBefore(LocalDate.now())) {
+            throw new CommonException(BError.COUPON_EXPIRED, String.valueOf(this.id));
+        }
+    }
 
     public Coupon decreaseQuantity() {
         return Coupon.builder()

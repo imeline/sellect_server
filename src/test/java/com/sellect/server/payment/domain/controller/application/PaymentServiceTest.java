@@ -19,6 +19,9 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort.Direction;
 
 @ExtendWith(MockitoExtension.class)
 class PaymentServiceTest {
@@ -52,8 +55,8 @@ class PaymentServiceTest {
             paymentRepository.save(payment); // 테스트용 결제 데이터 저장
 
             // when
-            List<PaymentHistoryResponse> paymentHistory = paymentService.getPaymentHistory(user, 0,
-                5);
+            Pageable pageable = PageRequest.of(0, 5, Direction.DESC, "createdAt");
+            List<PaymentHistoryResponse> paymentHistory = paymentService.getPaymentHistory(user, pageable);
 
             // then
             assertNotNull(paymentHistory);
@@ -64,8 +67,8 @@ class PaymentServiceTest {
         @DisplayName("결제 내역 조회 실패 - 결제 데이터 없음")
         void getPaymentHistory_Failure_NoPaymentData() {
             // when & then
-            List<PaymentHistoryResponse> paymentHistory = paymentService.getPaymentHistory(user, 0,
-                5);
+            Pageable pageable = PageRequest.of(0, 5, Direction.DESC, "createdAt");
+            List<PaymentHistoryResponse> paymentHistory = paymentService.getPaymentHistory(user, pageable);
             assertEquals(0, paymentHistory.size());
         }
     }

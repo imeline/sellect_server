@@ -1,6 +1,7 @@
 package com.sellect.server.coupon.domain;
 
 import com.sellect.server.auth.domain.User;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -40,5 +41,9 @@ public class UserReceivedCoupon {
                 .updatedAt(LocalDateTime.now())
                 .deleteAt(this.deleteAt)
                 .build();
+    }
+
+    public Boolean isActive(){
+        return this.coupon.getExpirationDate().isAfter(LocalDate.now().minusDays(1));
     }
 }
