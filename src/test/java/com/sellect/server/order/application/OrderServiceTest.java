@@ -4,9 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import com.sellect.server.auth.domain.User;
 import com.sellect.server.auth.repository.FakeUserRepository;
@@ -27,10 +26,9 @@ import com.sellect.server.order.domain.Orders;
 import com.sellect.server.order.repository.entity.OrderStatus;
 import com.sellect.server.order.repository.fake.FakeOrderItemRepository;
 import com.sellect.server.order.repository.fake.FakeOrdersRepository;
-import com.sellect.server.payment.application.PaymentService;
 import com.sellect.server.payment.domain.Payment;
 import com.sellect.server.payment.domain.controller.repository.FakePaymentRepository;
-import com.sellect.server.payment.event.PaymentEventListener;
+import com.sellect.server.payment.event.KakaoPayReadyEvent;
 import com.sellect.server.product.domain.Inventory;
 import com.sellect.server.product.domain.Product;
 import com.sellect.server.product.domain.ProductImage;
@@ -44,15 +42,11 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
 @ExtendWith(MockitoExtension.class) // Mockito 환경 자동 초기화
 class OrderServiceTest {
-
-    @Mock
-    private PaymentService paymentService; // PaymentService를 모킹
 
     private final FakeOrdersRepository ordersRepository = new FakeOrdersRepository();
     private final FakeOrderItemRepository orderItemRepository = new FakeOrderItemRepository();
@@ -64,7 +58,7 @@ class OrderServiceTest {
     private final FakeBrandRepository brandRepository = new FakeBrandRepository();
     private final FakeUserRepository userRepository = new FakeUserRepository();
     private final FakePaymentRepository paymentRepository = new FakePaymentRepository();
-    private final ApplicationEventPublisher eventListener = mock(ApplicationEventPublisher.class);
+    private final ApplicationEventPublisher eventPublisher = mock(ApplicationEventPublisher.class);
     private OrderService sut; // sut을 BeforeEach에서 초기화
     private User user;
 
@@ -93,7 +87,7 @@ class OrderServiceTest {
             productImageRepository,
             userRepository,
             paymentRepository,
-            eventListener
+            eventPublisher
         );
     }
 
@@ -185,8 +179,13 @@ class OrderServiceTest {
                 .status(OrderStatus.PENDING)
                 .totalPrice(new BigDecimal("50000"))
                 .build());
-            when(paymentService.getKakaoPayReadyResponse(eq(user), eq(order.getId()), eq(order)))
-                .thenReturn("mocked-url"); // 모든 인자를 matcher로 제공
+
+            String expectedUrl = "mocked-url";
+            doAnswer(invocation -> {
+                KakaoPayReadyEvent event = invocation.getArgument(0);
+                event.getFuture().complete(expectedUrl);
+                return null;
+            }).when(eventPublisher).publishEvent(any(KakaoPayReadyEvent.class));
 
             // When
             sut.payOrder(user, order.getId(), null);
@@ -220,9 +219,13 @@ class OrderServiceTest {
                 .isUsed(false)
                 .build());
 
-            // 모든 인자를 matcher로 제공
-            when(paymentService.getKakaoPayReadyResponse(eq(user), eq(order.getId()), any()))
-                .thenReturn("mocked-url");
+            String expectedUrl = "mocked-url";
+            doAnswer(invocation -> {
+                KakaoPayReadyEvent event = invocation.getArgument(0);
+                event.getFuture().complete(expectedUrl);
+                return null;
+            }).when(eventPublisher).publishEvent(any(KakaoPayReadyEvent.class));
+
 
             // When
             sut.payOrder(user, order.getId(), 1L);
@@ -309,7 +312,8 @@ class OrderServiceTest {
                 .orderId(order.getId().toString())
                 .uid(user.getUuid())
                 .build();
-            when(paymentService.findReadyPaymentByPid("pid123")).thenReturn(payment);
+
+            paymentRepository.save(payment);
 
             // When
             sut.approvePayment("pid123", "token123");
@@ -358,7 +362,7 @@ class OrderServiceTest {
                 .orderId(order.getId().toString())
                 .uid(user.getUuid())
                 .build();
-            when(paymentService.findReadyPaymentByPid("pid123")).thenReturn(payment);
+            paymentRepository.save(payment);
 
             // When & Then
             CommonException exception = assertThrows(CommonException.class,
@@ -381,7 +385,8 @@ class OrderServiceTest {
                 .orderId(order.getId().toString())
                 .uid("invalid-uuid")
                 .build();
-            when(paymentService.findReadyPaymentByPid("pid123")).thenReturn(payment);
+
+            paymentRepository.save(payment);
 
             // When & Then
             CommonException exception = assertThrows(CommonException.class,
