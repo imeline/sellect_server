@@ -24,13 +24,12 @@ public class Product {
     private final BigDecimal price;
     private final String name;
     private final String description;
-    private final Integer stock;
     private final LocalDateTime createdAt;
     private final LocalDateTime updatedAt;
     private final LocalDateTime deleteAt;
 
     public static Product register(User seller, Category category, Brand brand, BigDecimal price,
-        String name, String description, Integer stock) {
+        String name, String description) {
         return Product.builder()
             .seller(seller)
             .category(category)
@@ -38,7 +37,6 @@ public class Product {
             .price(price)
             .name(name)
             .description(description)
-            .stock(stock)
             .createdAt(LocalDateTime.now())
             .updatedAt(LocalDateTime.now())
             .deleteAt(null)
@@ -51,7 +49,7 @@ public class Product {
     /**
      * 상품 정보 업데이트 메서드
      */
-    public Product modify(BigDecimal price, String name, String description, Integer stock) {
+    public Product modify(BigDecimal price, String name, String description) {
         return Product.builder()
             .id(this.id)
             .seller(this.seller)
@@ -60,31 +58,8 @@ public class Product {
             .price(price)
             .name(name)
             .description(description)
-            .stock(stock)
             .createdAt(this.createdAt)
             .updatedAt(LocalDateTime.now()) // 수정 시간 업데이트
-            .build();
-    }
-
-    /**
-     * 재고 감소 후 새로운 Product 인스턴스를 반환 (불변성 유지)
-     */
-    public Product updateStock(int quantity) {
-        if (this.stock < quantity) {
-            throw new IllegalArgumentException("재고 부족");
-        }
-        return Product.builder()
-            .id(this.id)
-            .seller(this.seller)
-            .category(this.category)
-            .brand(this.brand)
-            .price(this.price)
-            .name(this.name)
-            .description(this.description)
-            .stock(this.stock - quantity) // 변경된 값 적용
-            .createdAt(this.createdAt)
-            .updatedAt(LocalDateTime.now()) // 변경 시간 업데이트
-            .deleteAt(this.deleteAt)
             .build();
     }
 
@@ -100,7 +75,6 @@ public class Product {
             .price(this.price)
             .name(this.name)
             .description(this.description)
-            .stock(this.stock)
             .createdAt(this.createdAt)
             .updatedAt(this.updatedAt)
             .deleteAt(LocalDateTime.now()) // 삭제 시간 업데이트

@@ -18,6 +18,8 @@ spring:
     init:
       mode: never
       schema-locations: classpath:db/init/schema-h2.sql
+#      schema-locations: classpath:schema.sql # 현재는 검색 관련
+#      data-locations: classpath:data.sql # 현재는 검색 관련
       platform: h2
   batch:
     jdbc:

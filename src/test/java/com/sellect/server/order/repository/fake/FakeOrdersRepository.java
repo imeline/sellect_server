@@ -1,7 +1,8 @@
-package com.sellect.server.order.repository;
+package com.sellect.server.order.repository.fake;
 
 import com.sellect.server.auth.domain.User;
 import com.sellect.server.order.domain.Orders;
+import com.sellect.server.order.repository.OrdersRepository;
 import com.sellect.server.order.repository.entity.OrderStatus;
 import java.time.LocalDateTime;
 import java.util.ArrayList;

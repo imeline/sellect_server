@@ -30,8 +30,10 @@ public record ProductDetailRetrieveResponse(
         Category mediumCategory,
         Category largeCategory,
         User seller,
-        Brand brand, List<ProductImage>productImages
-        ) {
+        Brand brand,
+        int stock,
+        List<ProductImage> productImages
+    ) {
         return ProductDetailRetrieveResponse.builder()
             .productId(product.getId())
             .smallCategoryName(smallCategory.getName())
@@ -42,7 +44,7 @@ public record ProductDetailRetrieveResponse(
             .name(product.getName())
             .price(product.getPrice())
             .description(product.getDescription())
-            .stock(product.getStock())
+            .stock(stock)
             .images(productImages.stream()
                 .map(ProductImageResponse::from)
                 .toList())
