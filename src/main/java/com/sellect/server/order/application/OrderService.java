@@ -71,16 +71,12 @@ public class OrderService {
         }
 
         CompletableFuture<String> future = new CompletableFuture<>();
-
         KakaoPayReadyEvent kakaoPayReadyEvent = new KakaoPayReadyEvent(this, user, orderId, order, future);
-
         eventPublisher.publishEvent(kakaoPayReadyEvent);
         String nextRedirectPcUrl = null;
         try {
             nextRedirectPcUrl = future.get();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        } catch (ExecutionException e) {
+        } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
         }
 
@@ -88,6 +84,7 @@ public class OrderService {
         return nextRedirectPcUrl;
     }
 
+    //tx1
     @Transactional
     public void approvePayment(String pid, String token) {
         Payment payment = paymentRepository.findByPid(pid)
