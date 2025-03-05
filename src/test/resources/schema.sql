@@ -5,6 +5,7 @@ DROP TABLE IF EXISTS "user" CASCADE;
 DROP TABLE IF EXISTS product CASCADE;
 DROP TABLE IF EXISTS product_image CASCADE;
 DROP TABLE IF EXISTS inventory CASCADE;
+DROP TABLE IF EXISTS search_log CASCADE;
 -- 새롭게 추가된 테이블
 
 -- 카테고리 테이블
