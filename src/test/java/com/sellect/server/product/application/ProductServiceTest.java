@@ -1,9 +1,5 @@
 package com.sellect.server.product.application;
 
-import static com.sellect.server.product.application.FakeStorageClient.FAKE_IMAGE_STORAGE_URL;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
 import com.sellect.server.auth.domain.User;
 import com.sellect.server.auth.repository.entity.Role;
 import com.sellect.server.brand.domain.Brand;
@@ -16,6 +12,7 @@ import com.sellect.server.order.domain.OrderItem;
 import com.sellect.server.order.domain.Orders;
 import com.sellect.server.order.repository.entity.OrderStatus;
 import com.sellect.server.order.repository.fake.FakeOrderItemRepository;
+import static com.sellect.server.product.application.FakeStorageClient.FAKE_IMAGE_STORAGE_URL;
 import com.sellect.server.product.controller.request.ImageContextCreateRequest;
 import com.sellect.server.product.controller.request.ProductModifyRequest;
 import com.sellect.server.product.controller.request.ProductRegisterRequest;
@@ -35,6 +32,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -81,34 +80,29 @@ class ProductServiceTest {
 
         // 대분류 (Electronics)
         largeCategory = Category.builder()
-            .id(1L)
             .name("Electronics")
             .parentId(null) // 최상위 카테고리
             .build();
+        largeCategory = categoryRepository.save(largeCategory);
 
         // 중분류 (Home Appliances)
         mediumCategory = Category.builder()
-            .id(2L)
             .name("Home Appliances")
-            .parentId(1L) // 대분류를 부모로 참조
+            .parentId(largeCategory.getId()) // 대분류를 부모로 참조
             .build();
+        mediumCategory = categoryRepository.save(mediumCategory);
 
         // 소분류 (TV)
         smallCategory = Category.builder()
-            .id(3L)
             .name("TV")
-            .parentId(2L) // 중분류를 부모로 참조
+            .parentId(mediumCategory.getId()) // 중분류를 부모로 참조
             .build();
+        smallCategory = categoryRepository.save(smallCategory);
 
         brand = Brand.builder()
-            .id(1L)
             .name("Samsung")
             .build();
-
-        categoryRepository.save(largeCategory);
-        categoryRepository.save(mediumCategory);
-        categoryRepository.save(smallCategory);
-        brandRepository.save(brand);
+        brand = brandRepository.save(brand);
     }
 
     @AfterEach
@@ -217,7 +211,7 @@ class ProductServiceTest {
             // When & Then
             assertThatThrownBy(() -> sut.register(seller, request, List.of(nullFileNameImage)))
                 .isInstanceOf(CommonException.class)
-                .hasMessageContaining(BError.NOT_EXIST.getMessage("file name"));
+                .hasMessage(BError.NOT_EXIST.getMessage("file name"));
         }
 
         @Test
@@ -225,8 +219,8 @@ class ProductServiceTest {
         void register_UnmatchedImageUuid_ThrowsException() {
             // Given
             ProductRegisterRequest request = ProductRegisterRequest.builder()
-                .categoryId(3L)
-                .brandId(1L)
+                .categoryId(smallCategory.getId())
+                .brandId(brand.getId())
                 .price("100.00")
                 .name("TV")
                 .description("Smart TV")
@@ -245,7 +239,7 @@ class ProductServiceTest {
             // When & Then
             assertThatThrownBy(() -> sut.register(seller, request, List.of(image)))
                 .isInstanceOf(CommonException.class)
-                .hasMessageContaining(
+                .hasMessage(
                     BError.NOT_MATCHES.getMessage("uuid in image context",
                         "uuid in image file name"));
         }
@@ -255,8 +249,8 @@ class ProductServiceTest {
         void register_WithUuidButNoImage_ThrowsException() {
             // Given
             ProductRegisterRequest request = ProductRegisterRequest.builder()
-                .categoryId(3L)
-                .brandId(1L)
+                .categoryId(smallCategory.getId())
+                .brandId(brand.getId())
                 .price("100.00")
                 .name("TV")
                 .description("Smart TV")
@@ -274,8 +268,40 @@ class ProductServiceTest {
             // When & Then
             assertThatThrownBy(() -> sut.register(seller, request, Collections.emptyList()))
                 .isInstanceOf(CommonException.class)
-                .hasMessageContaining(BError.NOT_MATCHES.getMessage("uuid in image context",
+                .hasMessage(BError.NOT_MATCHES.getMessage("uuid in image context",
                     "uuid in image file name"));
+        }
+
+        @Test
+        @DisplayName("중복된 상품명으로 등록 시 예외 발생")
+        void register_DuplicateProductName_ThrowsException() {
+            // Given
+            Product existingProduct = Product.register(
+                seller, smallCategory, brand, new BigDecimal("100.00"), "TV", "Old TV"
+            );
+            productRepository.save(existingProduct);
+
+            ProductRegisterRequest request = ProductRegisterRequest.builder()
+                .categoryId(smallCategory.getId())
+                .brandId(brand.getId())
+                .price("200.00")
+                .name("TV")
+                .description("New TV")
+                .stock(10)
+                .imageContexts(List.of(
+                    ImageContextCreateRequest.builder()
+                        .sequence(1)
+                        .isRepresentative(true)
+                        .filename("default-image.jpg")
+                        .build()
+                ))
+                .build();
+            MultipartFile multipartFile = new FakeMultipartFile("image-uuid.jpg");
+
+            // When & Then
+            assertThatThrownBy(() -> sut.register(seller, request, List.of(multipartFile)))
+                .isInstanceOf(CommonException.class)
+                .hasMessage(BError.EXIST.getMessage("product name"));
         }
     }
 
@@ -288,8 +314,8 @@ class ProductServiceTest {
         void register_AfterSavingImages_Success() {
             // Given
             ProductRegisterRequest request = ProductRegisterRequest.builder()
-                .categoryId(3L)
-                .brandId(1L)
+                .categoryId(smallCategory.getId())
+                .brandId(brand.getId())
                 .price("100.00")
                 .name("TV")
                 .description("Smart TV")
@@ -332,8 +358,8 @@ class ProductServiceTest {
         void register_NoImageContext_ThrowsException() {
             // Given
             ProductRegisterRequest request = ProductRegisterRequest.builder()
-                .categoryId(3L)
-                .brandId(1L)
+                .categoryId(smallCategory.getId())
+                .brandId(brand.getId())
                 .price("100.00")
                 .name("TV")
                 .description("Smart TV")
@@ -344,7 +370,7 @@ class ProductServiceTest {
             // When & Then
             assertThatThrownBy(() -> sut.register(seller, request))
                 .isInstanceOf(CommonException.class)
-                .hasMessageContaining(BError.REQUIRED.getMessage("image context"));
+                .hasMessage(BError.REQUIRED.getMessage("image context"));
         }
 
         @Test
@@ -353,7 +379,7 @@ class ProductServiceTest {
             // Given
             ProductRegisterRequest request = ProductRegisterRequest.builder()
                 .categoryId(999L)
-                .brandId(1L)
+                .brandId(brand.getId())
                 .price("100.00")
                 .name("TV")
                 .description("Smart TV")
@@ -370,7 +396,7 @@ class ProductServiceTest {
             // When & Then
             assertThatThrownBy(() -> sut.register(seller, request))
                 .isInstanceOf(CommonException.class)
-                .hasMessageContaining(BError.NOT_EXIST.getMessage("category"));
+                .hasMessage(BError.NOT_EXIST.getMessage("category"));
         }
 
         @Test
@@ -378,7 +404,7 @@ class ProductServiceTest {
         void register_NonExistentBrand_ThrowsException() {
             // Given
             ProductRegisterRequest request = ProductRegisterRequest.builder()
-                .categoryId(3L)
+                .categoryId(smallCategory.getId())
                 .brandId(999L)
                 .price("100.00")
                 .name("TV")
@@ -396,7 +422,7 @@ class ProductServiceTest {
             // When & Then
             assertThatThrownBy(() -> sut.register(seller, request))
                 .isInstanceOf(CommonException.class)
-                .hasMessageContaining(BError.NOT_EXIST.getMessage("brand"));
+                .hasMessage(BError.NOT_EXIST.getMessage("brand"));
         }
 
         @Test
@@ -409,8 +435,8 @@ class ProductServiceTest {
             productRepository.save(existingProduct);
 
             ProductRegisterRequest request = ProductRegisterRequest.builder()
-                .categoryId(3L)
-                .brandId(1L)
+                .categoryId(smallCategory.getId())
+                .brandId(brand.getId())
                 .price("200.00")
                 .name("TV")
                 .description("New TV")
@@ -427,7 +453,7 @@ class ProductServiceTest {
             // When & Then
             assertThatThrownBy(() -> sut.register(seller, request))
                 .isInstanceOf(CommonException.class)
-                .hasMessageContaining(BError.EXIST.getMessage("product name"));
+                .hasMessage(BError.EXIST.getMessage("product name"));
         }
     }
 
@@ -508,7 +534,7 @@ class ProductServiceTest {
             // When & Then
             assertThatThrownBy(() -> sut.modify(seller.getId(), 999L, request))
                 .isInstanceOf(CommonException.class)
-                .hasMessageContaining(BError.NOT_EXIST.getMessage("product"));
+                .hasMessage(BError.NOT_EXIST.getMessage("product"));
         }
 
         @Test
@@ -525,7 +551,7 @@ class ProductServiceTest {
             // When & Then
             assertThatThrownBy(() -> sut.modify(otherSeller.getId(), product.getId(), request))
                 .isInstanceOf(CommonException.class)
-                .hasMessageContaining(BError.ACCESS_DENIED.getMessage("product"));
+                .hasMessage(BError.ACCESS_DENIED.getMessage("product"));
         }
     }
 
@@ -563,7 +589,7 @@ class ProductServiceTest {
             // When & Then
             assertThatThrownBy(() -> sut.remove(seller.getId(), 999L))
                 .isInstanceOf(CommonException.class)
-                .hasMessageContaining(BError.NOT_EXIST.getMessage("product"));
+                .hasMessage(BError.NOT_EXIST.getMessage("product"));
         }
 
         @Test
@@ -576,7 +602,7 @@ class ProductServiceTest {
             // When & Then
             assertThatThrownBy(() -> sut.remove(otherSeller.getId(), product.getId()))
                 .isInstanceOf(CommonException.class)
-                .hasMessageContaining(BError.ACCESS_DENIED.getMessage("product"));
+                .hasMessage(BError.ACCESS_DENIED.getMessage("product"));
         }
     }
 
@@ -626,22 +652,86 @@ class ProductServiceTest {
             // When & Then
             assertThatThrownBy(() -> sut.retrieveDetail(999L))
                 .isInstanceOf(CommonException.class)
-                .hasMessageContaining("product does not exist");
+                .hasMessage(BError.NOT_EXIST.getMessage("product"));
         }
+
+        @Test
+        @DisplayName("상품의 소분류가 존재하지 않을 때 예외 발생 (DB 문제)")
+        void retrieveDetail_NonExistentSmallCategory_ThrowsException() {
+            // Given
+            Category nonExistentSmallCategory = Category.builder().id(999L).build();
+            product = productRepository.save(Product.builder()
+                .id(product.getId())
+                .category(nonExistentSmallCategory)
+                .build());
+
+            // When & Then
+            assertThatThrownBy(() -> sut.retrieveDetail(product.getId()))
+                .isInstanceOf(CommonException.class)
+                .hasMessage(BError.NOT_EXIST.getMessage("small category"));
+        }
+
+        @Test
+        @DisplayName("상품의 중분류가 존재하지 않을 때 예외 발생 (DB 문제)")
+        void retrieveDetail_NonExistentMediumCategory_ThrowsException() {
+            // Given
+            Category nonExistentMediumCategory = Category.builder().id(999L).build();
+            smallCategory = categoryRepository.save(Category.builder()
+                .id(smallCategory.getId())
+                .parentId(nonExistentMediumCategory.getId())
+                .build());
+            product = productRepository.save(Product.builder()
+                .id(product.getId())
+                .category(smallCategory)
+                .build());
+
+            // When & Then
+            assertThatThrownBy(() -> sut.retrieveDetail(product.getId()))
+                .isInstanceOf(CommonException.class)
+                .hasMessage(BError.NOT_EXIST.getMessage("medium category"));
+        }
+
+        @Test
+        @DisplayName("상품의 대분류가 존재하지 않을 때 예외 발생 (DB 문제)")
+        void retrieveDetail_NonExistentLargeCategory_ThrowsException() {
+            // Given
+            Category nonExistentLargeCategory = Category.builder().id(999L).build();
+            mediumCategory = categoryRepository.save(Category.builder()
+                .id(mediumCategory.getId())
+                .parentId(nonExistentLargeCategory.getId())
+                .build());
+            smallCategory = categoryRepository.save(Category.builder()
+                .id(smallCategory.getId())
+                .parentId(mediumCategory.getId())
+                .build());
+            product = productRepository.save(Product.builder()
+                .id(product.getId())
+                .category(smallCategory)
+                .build());
+
+            // When & Then
+            assertThatThrownBy(() -> sut.retrieveDetail(product.getId()))
+                .isInstanceOf(CommonException.class)
+                .hasMessage(BError.NOT_EXIST.getMessage("large category"));
+        }
+
     }
 
     @Nested
     @DisplayName("판매자의 상품 목록 조회 테스트")
     class RetrieveAllBySellerTests {
 
+        Product product1;
+        Product product2;
+
         @BeforeEach
         void setUp() {
             // 테스트 데이터 추가
-            Product product1 = Product.register(
+            product1 = Product.register(
                 seller, smallCategory, brand,
                 new BigDecimal("100.00"), "TV1", "TV 1 Description"
             );
-            Product product2 = Product.register(
+            product2 = Product.register(
                 seller, smallCategory, brand,
                 new BigDecimal("200.00"), "TV2", "TV 2 Description"
             );
@@ -681,7 +771,7 @@ class ProductServiceTest {
             assertThat(result).hasSize(2);
             assertThat(result.getContent()).satisfiesExactlyInAnyOrder(
                 response -> {
-                    assertThat(response.productId()).isEqualTo(1L);
+                    assertThat(response.productId()).isEqualTo(product1.getId());
                     assertThat(response.smallCategoryName()).isEqualTo("TV");
                     assertThat(response.mediumCategoryName()).isEqualTo("Home Appliances");
                     assertThat(response.largeCategoryName()).isEqualTo("Electronics");
@@ -700,7 +790,7 @@ class ProductServiceTest {
                         });
                 },
                 response -> {
-                    assertThat(response.productId()).isEqualTo(2L);
+                    assertThat(response.productId()).isEqualTo(product2.getId());
                     assertThat(response.smallCategoryName()).isEqualTo("TV");
                     assertThat(response.mediumCategoryName()).isEqualTo("Home Appliances");
                     assertThat(response.largeCategoryName()).isEqualTo("Electronics");
@@ -831,7 +921,7 @@ class ProductServiceTest {
             // When & Then
             assertThatThrownBy(() -> sut.retrieveDetailBySeller(seller, 999L))
                 .isInstanceOf(CommonException.class)
-                .hasMessageContaining(BError.NOT_EXIST.getMessage("product"));
+                .hasMessage(BError.NOT_EXIST.getMessage("product"));
         }
 
         @Test
@@ -847,7 +937,7 @@ class ProductServiceTest {
             // When & Then
             assertThatThrownBy(() -> sut.retrieveDetailBySeller(otherSeller, product.getId()))
                 .isInstanceOf(CommonException.class)
-                .hasMessageContaining(BError.ACCESS_DENIED.getMessage("product"));
+                .hasMessage(BError.ACCESS_DENIED.getMessage("product"));
         }
 
         @Test
@@ -859,7 +949,7 @@ class ProductServiceTest {
             // When & Then
             assertThatThrownBy(() -> sut.retrieveDetailBySeller(seller, product.getId()))
                 .isInstanceOf(CommonException.class)
-                .hasMessageContaining(BError.NOT_EXIST.getMessage("product"));
+                .hasMessage(BError.NOT_EXIST.getMessage("product"));
         }
     }
 

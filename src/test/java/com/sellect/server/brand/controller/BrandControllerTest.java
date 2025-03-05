@@ -89,8 +89,9 @@ class BrandControllerTest {
             FilterChain chain = invocation.getArgument(2);
             chain.doFilter(request, response);
             return null;
-        }).when(jwtFilter).doFilter(any(ServletRequest.class), any(ServletResponse.class),
-            any(FilterChain.class));
+        })
+            .when(jwtFilter)
+            .doFilter(any(ServletRequest.class), any(ServletResponse.class), any(FilterChain.class));
     }
 
     @AfterEach

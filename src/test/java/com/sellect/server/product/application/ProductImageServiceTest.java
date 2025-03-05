@@ -3,79 +3,88 @@ package com.sellect.server.product.application;
 import com.sellect.server.auth.domain.User;
 import com.sellect.server.common.exception.CommonException;
 import com.sellect.server.common.exception.enums.BError;
-import static com.sellect.server.product.application.FakeStorageClient.FAKE_IMAGE_STORAGE_URL;
 import com.sellect.server.product.controller.request.ImageContextUpdateRequest;
 import com.sellect.server.product.controller.request.ProductImageModifyRequest;
 import com.sellect.server.product.domain.Product;
 import com.sellect.server.product.domain.ProductImage;
 import com.sellect.server.product.repository.FakeProductImageRepository;
 import com.sellect.server.product.repository.FakeProductRepository;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.web.multipart.MultipartFile;
 import java.util.Collections;
 import java.util.List;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+
+import static com.sellect.server.product.application.FakeStorageClient.FAKE_IMAGE_STORAGE_URL;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
-import org.springframework.web.multipart.MultipartFile;
 
 class ProductImageServiceTest {
 
     private final FakeProductRepository productRepository = new FakeProductRepository();
     private final FakeProductImageRepository productImageRepository = new FakeProductImageRepository();
-    private final FakeStorageClient storageClient = new FakeStorageClient();
+    private final StorageClient storageClient = new FakeStorageClient();
     private final ProductImageService sut = new ProductImageService(
         storageClient,
         productRepository,
         productImageRepository);
 
     private final Long sellerId = 1L;
-    private final Long productId = 100L;
+
+    private Product product;
+    private ProductImage productImage1;
+    private ProductImage productImage2;
+    private ProductImage productImage3;
 
     @BeforeEach
     void setUp() {
-        Product product = Product.builder()
-            .id(productId)
+        product = Product.builder()
             .name("Test Product")
             .seller(User.builder()
                 .id(sellerId)
                 .build())
             .build();
+        product = productRepository.save(product);
 
         // productImage1 -> productImage2 -> productImage3 (순서 보장)
-        ProductImage productImage1 = ProductImage.builder()
+        productImage1 = ProductImage.builder()
             .sequence(1)
             .imageUrl(FAKE_IMAGE_STORAGE_URL + "image1-uuid.jpg")
             .product(product)
             .build();
-        ProductImage productImage2 = ProductImage.builder()
+        productImage2 = ProductImage.builder()
             .sequence(2)
             .imageUrl(FAKE_IMAGE_STORAGE_URL + "image2-uuid.jpg")
             .product(product)
             .build();
-        ProductImage productImage3 = ProductImage.builder()
+        productImage3 = ProductImage.builder()
             .sequence(3)
             .imageUrl(FAKE_IMAGE_STORAGE_URL + "image3-uuid.jpg")
             .product(product)
             .build();
 
-        productRepository.save(product);
-        productImageRepository.save(productImage1, product);
-        productImageRepository.save(productImage2, product);
-        productImageRepository.save(productImage3, product);
-        storageClient.store(mock(MultipartFile.class), "image1-uuid.jpg");
-        storageClient.store(mock(MultipartFile.class), "image2-uuid.jpg");
-        storageClient.store(mock(MultipartFile.class), "image3-uuid.jpg");
+        productImage1 = productImageRepository.save(productImage1, product);
+        productImage2 = productImageRepository.save(productImage2, product);
+        productImage3 = productImageRepository.save(productImage3, product);
+        storageClient.store(new FakeMultipartFile("image1-uuid.jpg"), "image1-uuid.jpg");
+        storageClient.store(new FakeMultipartFile("image2-uuid.jpg"), "image2-uuid.jpg");
+        storageClient.store(new FakeMultipartFile("image3-uuid.jpg"), "image3-uuid.jpg");
     }
 
     @AfterEach
     void tearDown() {
         productRepository.clear();
         productImageRepository.clear();
+        storageClient.deleteAll();
     }
 
     @Nested
@@ -87,17 +96,17 @@ class ProductImageServiceTest {
         void modifyProductImages_Success() {
             // Given
             ProductImageModifyRequest request = ProductImageModifyRequest.builder()
-                .productId(productId)
-                .productImageIdsToDelete(List.of(1L))
+                .productId(product.getId())
+                .productImageIdsToDelete(List.of(productImage1.getId()))
                 .productImagesToUpdate(List.of(
                     ImageContextUpdateRequest.builder()
-                        .productImageId(2L)
+                        .productImageId(productImage2.getId())
                         .sequence(1)
                         .isNewImage(false)
                         .isRepresentative(true)
                         .build(),
                     ImageContextUpdateRequest.builder()
-                        .productImageId(3L)
+                        .productImageId(productImage3.getId())
                         .sequence(2)
                         .isNewImage(false)
                         .isRepresentative(false)
@@ -108,13 +117,14 @@ class ProductImageServiceTest {
             sut.modifyProductImages(sellerId, request, Collections.emptyList());
 
             // Then
-            assertThat(productImageRepository.findByProductImageId(1L)).isEmpty();
-            assertThat(productImageRepository.findByProductImageId(2L))
+            assertThat(
+                productImageRepository.findByProductImageId(productImage1.getId())).isEmpty();
+            assertThat(productImageRepository.findByProductImageId(productImage2.getId()))
                 .hasValueSatisfying(image -> {
                     assertThat(image.getSequence()).isEqualTo(1);
                     assertThat(image.isRepresentative()).isTrue();
                 });
-            assertThat(productImageRepository.findByProductImageId(3L))
+            assertThat(productImageRepository.findByProductImageId(productImage3.getId()))
                 .hasValueSatisfying(image -> {
                     assertThat(image.getSequence()).isEqualTo(2);
                     assertThat(image.isRepresentative()).isFalse();
@@ -130,11 +140,11 @@ class ProductImageServiceTest {
             given(newImage.getOriginalFilename()).willReturn("new-image-uuid.jpg");
 
             ProductImageModifyRequest request = ProductImageModifyRequest.builder()
-                .productId(productId)
-                .productImageIdsToDelete(List.of(2L))
+                .productId(product.getId())
+                .productImageIdsToDelete(List.of(productImage2.getId()))
                 .productImagesToUpdate(List.of(
                     ImageContextUpdateRequest.builder()
-                        .productImageId(1L)
+                        .productImageId(productImage1.getId())
                         .sequence(1)
                         .isNewImage(false)
                         .isRepresentative(true)
@@ -146,7 +156,7 @@ class ProductImageServiceTest {
                         .isRepresentative(false)
                         .build(),
                     ImageContextUpdateRequest.builder()
-                        .productImageId(3L)
+                        .productImageId(productImage3.getId())
                         .sequence(3)
                         .isNewImage(false)
                         .isRepresentative(false)
@@ -157,18 +167,19 @@ class ProductImageServiceTest {
             sut.modifyProductImages(sellerId, request, List.of(newImage));
 
             // Then
-            assertThat(productImageRepository.findByProductImageId(2L)).isEmpty();
-            assertThat(productImageRepository.findByProductImageId(1L))
+            assertThat(
+                productImageRepository.findByProductImageId(productImage2.getId())).isEmpty();
+            assertThat(productImageRepository.findByProductImageId(productImage1.getId()))
                 .hasValueSatisfying(image -> {
                     assertThat(image.getSequence()).isEqualTo(1);
                     assertThat(image.isRepresentative()).isTrue();
                 });
-            assertThat(productImageRepository.findByProductImageId(3L))
+            assertThat(productImageRepository.findByProductImageId(productImage3.getId()))
                 .hasValueSatisfying(image -> {
                     assertThat(image.getSequence()).isEqualTo(3);
                     assertThat(image.isRepresentative()).isFalse();
                 });
-            productImageRepository.findByProductId(productId)
+            productImageRepository.findByProductId(product.getId())
                 .forEach(image -> {
                     if (image.getSequence() == 2) {
                         assertThat(image.getImageUrl()).contains(newImageUuid);
@@ -185,11 +196,11 @@ class ProductImageServiceTest {
             given(newImage.getOriginalFilename()).willReturn("new-image-uuid.jpg");
 
             ProductImageModifyRequest request = ProductImageModifyRequest.builder()
-                .productId(productId)
+                .productId(product.getId())
                 .productImageIdsToDelete(Collections.emptyList())
                 .productImagesToUpdate(List.of(
                     ImageContextUpdateRequest.builder()
-                        .productImageId(1L)
+                        .productImageId(productImage1.getId())
                         .sequence(1)
                         .isNewImage(false)
                         .isRepresentative(true)
@@ -201,13 +212,13 @@ class ProductImageServiceTest {
                         .isRepresentative(false)
                         .build(),
                     ImageContextUpdateRequest.builder()
-                        .productImageId(2L)
+                        .productImageId(productImage2.getId())
                         .sequence(3)
                         .isNewImage(false)
                         .isRepresentative(false)
                         .build(),
                     ImageContextUpdateRequest.builder()
-                        .productImageId(3L)
+                        .productImageId(productImage3.getId())
                         .sequence(4)
                         .isNewImage(false)
                         .isRepresentative(false)
@@ -218,26 +229,80 @@ class ProductImageServiceTest {
             sut.modifyProductImages(sellerId, request, List.of(newImage));
 
             // Then
-            assertThat(productImageRepository.findByProductImageId(1L))
+            assertThat(productImageRepository.findByProductImageId(productImage1.getId()))
                 .hasValueSatisfying(image -> {
-                    assertThat(image.getSequence()).isEqualTo(1); // 1 -> 2?
+                    assertThat(image.getSequence()).isEqualTo(1);
                     assertThat(image.isRepresentative()).isTrue();
                 });
-            assertThat(productImageRepository.findByProductImageId(2L))
+            assertThat(productImageRepository.findByProductImageId(productImage2.getId()))
                 .hasValueSatisfying(image -> {
                     assertThat(image.getSequence()).isEqualTo(3);
                     assertThat(image.isRepresentative()).isFalse();
                 });
-            assertThat(productImageRepository.findByProductImageId(3L))
+            assertThat(productImageRepository.findByProductImageId(productImage3.getId()))
                 .hasValueSatisfying(image -> {
                     assertThat(image.getSequence()).isEqualTo(4);
                     assertThat(image.isRepresentative()).isFalse();
                 });
-            productImageRepository.findByProductId(productId).forEach(image -> {
+            productImageRepository.findByProductId(product.getId()).forEach(image -> {
                 if (image.getSequence() == 2) {
                     assertThat(image.getImageUrl()).contains(newImageUuid);
                 }
             });
+        }
+
+        @Test
+        @DisplayName("새로운 이미지를 추가하고 4번째 위치에 삽입. 단, 이미지 파일은 별도로 저장")
+        void modifyProductImages_UpdateImageContextsAfterStoringImageFiles() {
+            // Given
+            String newImageFilename = "new-image-uuid.jpg";
+            FakeMultipartFile multipartFile = new FakeMultipartFile(newImageFilename);
+            storageClient.store(multipartFile, newImageFilename);
+            ProductImageModifyRequest request = ProductImageModifyRequest.builder()
+                .productId(product.getId())
+                .productImageIdsToDelete(Collections.emptyList())
+                .productImagesToUpdate(List.of(
+                        ImageContextUpdateRequest.builder()
+                            .sequence(4)
+                            .isNewImage(true)
+                            .filename(newImageFilename)
+                            .build()
+                    )
+                )
+                .build();
+
+            // When
+            sut.modifyProductImages(sellerId, request, Collections.emptyList());
+
+            // Then
+            List<ProductImage> updatedImages = productImageRepository.findByProductId(
+                product.getId());
+            assertThat(updatedImages).hasSize(4); // 기존 3개 + 새로운 이미지 1개
+            assertThat(updatedImages)
+                .filteredOn(image -> image.getSequence() == 4)
+                .hasSize(1)
+                .first()
+                .satisfies(image -> {
+                    assertThat(image.getImageUrl()).isEqualTo(
+                        FAKE_IMAGE_STORAGE_URL + newImageFilename);
+                    assertThat(image.isRepresentative()).isFalse();
+                });
+            // 기존 이미지들의 순서가 유지되는지 확인
+            assertThat(updatedImages)
+                .filteredOn(image -> image.getId().equals(productImage1.getId()))
+                .hasSize(1)
+                .first()
+                .satisfies(image -> assertThat(image.getSequence()).isEqualTo(1));
+            assertThat(updatedImages)
+                .filteredOn(image -> image.getId().equals(productImage2.getId()))
+                .hasSize(1)
+                .first()
+                .satisfies(image -> assertThat(image.getSequence()).isEqualTo(2));
+            assertThat(updatedImages)
+                .filteredOn(image -> image.getId().equals(productImage3.getId()))
+                .hasSize(1)
+                .first()
+                .satisfies(image -> assertThat(image.getSequence()).isEqualTo(3));
         }
 
         @Test
@@ -262,7 +327,7 @@ class ProductImageServiceTest {
             // Given
             Long anotherSellerId = 999L;
             Product anotherSellerProduct = Product.builder()
-                .id(productId)
+                .id(product.getId())
                 .name("Test Product")
                 .seller(User.builder()
                     .id(anotherSellerId)
@@ -271,7 +336,7 @@ class ProductImageServiceTest {
             productRepository.save(anotherSellerProduct);
 
             ProductImageModifyRequest request = ProductImageModifyRequest.builder()
-                .productId(productId)
+                .productId(product.getId())
                 .build();
 
             // When & Then
@@ -282,13 +347,13 @@ class ProductImageServiceTest {
         }
 
         @Test
-        @DisplayName("삭제할 이미지가 존재하지 않으면 예외 발생")
+        @DisplayName("삭제 시 존재하지 않는 이미지로 접근하면 예외 발생")
         void modifyProductImages_ImageToDeleteNotFound() {
             // Given
-            Long nonExistentUuid = 999L;
+            Long nonExistentId = 999L;
             ProductImageModifyRequest request = ProductImageModifyRequest.builder()
-                .productId(productId)
-                .productImageIdsToDelete(List.of(nonExistentUuid))
+                .productId(product.getId())
+                .productImageIdsToDelete(List.of(nonExistentId))
                 .build();
 
             // When & Then
@@ -296,6 +361,53 @@ class ProductImageServiceTest {
                 () -> sut.modifyProductImages(sellerId, request, Collections.emptyList()))
                 .isInstanceOf(CommonException.class)
                 .hasMessageContaining(BError.NOT_EXIST.getMessage("product image"));
+        }
+
+        @Test
+        @DisplayName("수정 시 존재하지 않는 이미지로 접근하면 예외 발생")
+        void modifyProductImages_ImageToUpdateNotFound() {
+            // Given
+            Long nonExistentId = 999L;
+            ProductImageModifyRequest request = ProductImageModifyRequest.builder()
+                .productId(product.getId())
+                .productImageIdsToDelete(Collections.emptyList())
+                .productImagesToUpdate(List.of(
+                    ImageContextUpdateRequest.builder()
+                        .productImageId(nonExistentId)
+                        .build()))
+                .build();
+
+            // When & Then
+            assertThatThrownBy(
+                () -> sut.modifyProductImages(sellerId, request, Collections.emptyList()))
+                .isInstanceOf(CommonException.class)
+                .hasMessageContaining(BError.NOT_EXIST.getMessage("product image"));
+        }
+
+        @ParameterizedTest
+        @NullAndEmptySource
+        @ValueSource(strings = {" ", ".jpg", "no-file-extension.", "invalid-file-extension.csv", "invalid-filename"})
+        @DisplayName("이미지 파일에 이름이 유효하지 않으면 예외 발생")
+        void modifyProductImages_InvalidFileName(String invalidFileName) {
+            // Given
+            ProductImageModifyRequest request = ProductImageModifyRequest.builder()
+                .productId(product.getId())
+                .productImageIdsToDelete(Collections.emptyList())
+                .productImagesToUpdate(List.of(
+                    ImageContextUpdateRequest.builder()
+                        .sequence(4)
+                        .filename(invalidFileName)
+                        .isNewImage(true)
+                        .isRepresentative(false)
+                        .build()))
+                .build();
+            MultipartFile imageFile = new FakeMultipartFile(invalidFileName);
+
+            // When & Then
+            assertThatThrownBy(
+                () -> sut.modifyProductImages(sellerId, request, List.of(imageFile)))
+                .isInstanceOf(CommonException.class)
+                .hasMessageContaining(BError.NOT_VALID.getMessage("file name or file extension"));
         }
     }
 }

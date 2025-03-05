@@ -1,8 +1,7 @@
 package com.sellect.server.product.application;
 
-import com.sellect.server.common.exception.StorageException;
+import com.sellect.server.common.exception.CommonException;
 import com.sellect.server.common.exception.enums.BError;
-import com.sellect.server.common.exception.enums.IError;
 import com.sellect.server.product.config.properties.FileSystemStorageProperties;
 import jakarta.annotation.PostConstruct;
 import java.io.IOException;
@@ -28,12 +27,10 @@ public class FileSystemStorageClient implements StorageClient {
     private final Path rootLocation;
 
     @Autowired
-    public FileSystemStorageClient(FileSystemStorageProperties properties) {
+    public FileSystemStorageClient(FileSystemStorageProperties properties) throws Exception {
 
-        if(properties.getLocation().trim().isEmpty()){
-            throw new StorageException(BError.FAIL_FOR_REASON,
-                "FileSystemStorageClient initialization",
-                "upload location is empty");
+        if (properties.getLocation() == null || properties.getLocation().trim().isEmpty()) {
+            throw new Exception("file system storage location is null or empty");
         }
         this.rootLocation = Paths.get(properties.getLocation());
     }
@@ -44,25 +41,18 @@ public class FileSystemStorageClient implements StorageClient {
         try {
             Files.createDirectories(rootLocation);
         } catch (IOException e) {
-            throw new Exception("Could not initialize storage location", e);
+            throw new Exception("Could not initialize file system storage", e);
         }
     }
 
     @Override
     public void store(MultipartFile file, String filename) {
         try {
-            if (file.isEmpty()) {
-                throw new StorageException(BError.NOT_EXIST, "file");
-            }
-
-            if (Objects.isNull(filename) || filename.isBlank()) {
-                throw new StorageException(BError.NOT_EXIST, "file name");
-            }
-            Path destinationFile = this.rootLocation.resolve(
-                    Paths.get(filename))
+            validateFilename(filename);
+            Path destinationFile = this.rootLocation.resolve(Paths.get(filename))
                 .normalize().toAbsolutePath();
             if (!destinationFile.getParent().equals(this.rootLocation.toAbsolutePath())) {
-                throw new StorageException(BError.FAIL_FOR_REASON,
+                throw new CommonException(BError.FAIL_FOR_REASON,
                     "store file",
                     "cannot store file outside current directory.");
             }
@@ -72,7 +62,7 @@ public class FileSystemStorageClient implements StorageClient {
                 Files.copy(inputStream, destinationFile, StandardCopyOption.REPLACE_EXISTING);
             }
         } catch (IOException e) {
-            throw new StorageException(BError.FAIL_FOR_REASON,
+            throw new CommonException(BError.FAIL_FOR_REASON,
                 "store file",
                 e.getMessage());
         }
@@ -81,14 +71,11 @@ public class FileSystemStorageClient implements StorageClient {
     @Override
     public void store(InputStream inputStream, String filename) {
         try {
-            if (Objects.isNull(filename) || filename.isBlank()) {
-                throw new StorageException(BError.NOT_EXIST, "file name");
-            }
-            Path destinationFile = this.rootLocation.resolve(
-                    Paths.get(filename))
+            validateFilename(filename);
+            Path destinationFile = this.rootLocation.resolve(Paths.get(filename))
                 .normalize().toAbsolutePath();
             if (!destinationFile.getParent().equals(this.rootLocation.toAbsolutePath())) {
-                throw new StorageException(BError.FAIL_FOR_REASON,
+                throw new CommonException(BError.FAIL_FOR_REASON,
                     "store file",
                     "cannot store file outside current directory.");
             }
@@ -97,16 +84,20 @@ public class FileSystemStorageClient implements StorageClient {
                 Files.copy(inputStream, destinationFile, StandardCopyOption.REPLACE_EXISTING);
             }
         } catch (IOException e) {
-            throw new StorageException(BError.FAIL_FOR_REASON,
+            throw new CommonException(BError.FAIL_FOR_REASON,
                 "store file",
                 e.getMessage());
         }
     }
 
+
     @Override
     public String loadAsPath(String filename) {
-        // TODO: 해당 파일명의 파일이 존재하는지 검증
-        return rootLocation.resolve(filename).toString();
+        Path filePath = rootLocation.resolve(filename);
+        if (!Files.exists(filePath)) {
+            throw new CommonException(BError.NOT_EXIST, "file");
+        }
+        return filePath.toString();
     }
 
     @Override
@@ -115,15 +106,14 @@ public class FileSystemStorageClient implements StorageClient {
             Path file = rootLocation.resolve(filename).normalize().toAbsolutePath();
             Resource resource = new UrlResource(file.toUri());
             if (resource.getFile().isDirectory()) {
-                throw new StorageException(IError.RESOURCE_NOT_ALIVE);
+                throw new CommonException(BError.FAIL_FOR_REASON, "load file", "file is directory");
             }
-            if (resource.exists() || resource.isReadable()) {
-                return resource;
-            } else {
-                throw new StorageException(IError.RESOURCE_NOT_ALIVE);
+            if (!resource.exists()) {
+                throw new CommonException(BError.NOT_EXIST, "file");
             }
+            return resource;
         } catch (IOException e) {
-            throw new StorageException(IError.RESOURCE_NOT_ALIVE);
+            throw new CommonException(BError.FAIL_FOR_REASON, "load file", e.getMessage());
         }
     }
 
@@ -132,8 +122,13 @@ public class FileSystemStorageClient implements StorageClient {
         try (Stream<Path> files = Files.list(rootLocation)) {
             files.forEach(path -> FileSystemUtils.deleteRecursively(path.toFile()));
         } catch (IOException e) {
-            throw new StorageException(BError.FAIL_FOR_REASON, "delete files", e.getMessage());
+            throw new CommonException(BError.FAIL_FOR_REASON, "delete files", e.getMessage());
         }
     }
 
+    private static void validateFilename(String filename) {
+        if (Objects.isNull(filename) || filename.isBlank()) {
+            throw new CommonException(BError.NOT_EXIST, "file name");
+        }
+    }
 }

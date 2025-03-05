@@ -3,9 +3,10 @@ package com.sellect.server.product.application;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
-import com.sellect.server.common.exception.StorageException;
+import com.sellect.server.common.exception.CommonException;
 import com.sellect.server.common.exception.enums.BError;
 import com.sellect.server.product.config.properties.S3StorageProperties;
+import jakarta.annotation.PostConstruct;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -31,16 +32,17 @@ public class S3StorageClient implements StorageClient {
     }
 
     @Override
-    public void init() {
-        // S3는 별도의 초기화가 필요 없음
+    @PostConstruct
+    public void init() throws Exception {
+        if (!s3Client.doesBucketExistV2(bucketName)) {
+            throw new Exception("bucket does not exist");
+        }
     }
 
     @Override
     public void store(MultipartFile file, String filename) {
         try (InputStream inputStream = file.getInputStream()) {
-            if (Objects.isNull(filename) || filename.isBlank()) {
-                throw new StorageException(BError.NOT_EXIST, "file name");
-            }
+            validateFilename(filename);
 
             ObjectMetadata metadata = new ObjectMetadata();
             metadata.setContentLength(file.getSize());
@@ -48,29 +50,29 @@ public class S3StorageClient implements StorageClient {
 
             s3Client.putObject(new PutObjectRequest(bucketName, filename, inputStream, metadata));
         } catch (IOException e) {
-            throw new StorageException(BError.FAIL_FOR_REASON, "store file", e.getMessage());
+            throw new CommonException(BError.FAIL_FOR_REASON, "store file", e.getMessage());
         }
     }
 
     @Override
     public void store(InputStream inputStream, String filename) {
         try {
-            if (Objects.isNull(filename) || filename.isBlank()) {
-                throw new StorageException(BError.NOT_EXIST, "file name");
-            }
+            validateFilename(filename);
 
             ObjectMetadata metadata = new ObjectMetadata();
             metadata.setContentLength(inputStream.available());
 
             s3Client.putObject(new PutObjectRequest(bucketName, filename, inputStream, metadata));
         } catch (IOException e) {
-            throw new StorageException(BError.FAIL_FOR_REASON, "store file", e.getMessage());
+            throw new CommonException(BError.FAIL_FOR_REASON, "store file", e.getMessage());
         }
     }
 
     @Override
     public String loadAsPath(String filename) {
-        // TODO: 해당 파일명의 파일이 존재하는지 검증
+        if (!s3Client.doesObjectExist(bucketName, filename)) {
+            throw new CommonException(BError.NOT_EXIST, "file");
+        }
         return s3Client.getUrl(bucketName, filename).toString();
     }
 
@@ -79,18 +81,23 @@ public class S3StorageClient implements StorageClient {
         try {
             URI fileUri = URI.create(loadAsPath(filename));
             Resource resource = new UrlResource(fileUri);
-            if (resource.exists() && resource.isReadable()) {
-                return resource;
-            } else {
-                throw new StorageException(BError.NOT_EXIST, "file");
+            if (!resource.exists() || !resource.isReadable()) {
+                throw new CommonException(BError.NOT_EXIST, "file");
             }
+            return resource;
         } catch (Exception e) {
-            throw new StorageException(BError.FAIL_FOR_REASON, "load file", e.getMessage());
+            throw new CommonException(BError.FAIL_FOR_REASON, "load file", e.getMessage());
         }
     }
 
     @Override
     public void deleteAll() {
         throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    private static void validateFilename(String filename) {
+        if (Objects.isNull(filename) || filename.isBlank()) {
+            throw new CommonException(BError.NOT_EXIST, "file name");
+        }
     }
 }
