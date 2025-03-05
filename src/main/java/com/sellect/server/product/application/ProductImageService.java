@@ -51,8 +51,8 @@ public class ProductImageService {
         Map<String, String> newFileNames = new HashMap<>();
         images.forEach(image -> {
             String originalFilename = image.getOriginalFilename();
-            if (originalFilename == null || originalFilename.isBlank()) {
-                throw new CommonException(BError.NOT_VALID, "file name");
+            if (!StorageUtil.isImageFile(originalFilename)) {
+                throw new CommonException(BError.NOT_VALID, "file name or file extension");
             }
 
             String newFileName = StorageUtil.generateFileName(originalFilename);

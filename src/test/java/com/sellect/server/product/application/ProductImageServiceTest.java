@@ -3,25 +3,30 @@ package com.sellect.server.product.application;
 import com.sellect.server.auth.domain.User;
 import com.sellect.server.common.exception.CommonException;
 import com.sellect.server.common.exception.enums.BError;
-import static com.sellect.server.product.application.FakeStorageClient.FAKE_IMAGE_STORAGE_URL;
 import com.sellect.server.product.controller.request.ImageContextUpdateRequest;
 import com.sellect.server.product.controller.request.ProductImageModifyRequest;
 import com.sellect.server.product.domain.Product;
 import com.sellect.server.product.domain.ProductImage;
 import com.sellect.server.product.repository.FakeProductImageRepository;
 import com.sellect.server.product.repository.FakeProductRepository;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.web.multipart.MultipartFile;
 import java.util.Collections;
 import java.util.List;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+
+import static com.sellect.server.product.application.FakeStorageClient.FAKE_IMAGE_STORAGE_URL;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
-import org.springframework.web.multipart.MultipartFile;
 
 class ProductImageServiceTest {
 
@@ -379,9 +384,11 @@ class ProductImageServiceTest {
                 .hasMessageContaining(BError.NOT_EXIST.getMessage("product image"));
         }
 
-        @Test
+        @ParameterizedTest
+        @NullAndEmptySource
+        @ValueSource(strings = {" ", ".jpg", "no-file-extension.", "invalid-file-extension.csv", "invalid-filename"})
         @DisplayName("이미지 파일에 이름이 유효하지 않으면 예외 발생")
-        void modifyProductImages_NoFileName() {
+        void modifyProductImages_InvalidFileName(String invalidFileName) {
             // Given
             ProductImageModifyRequest request = ProductImageModifyRequest.builder()
                 .productId(product.getId())
@@ -389,18 +396,18 @@ class ProductImageServiceTest {
                 .productImagesToUpdate(List.of(
                     ImageContextUpdateRequest.builder()
                         .sequence(4)
-                        .filename("new-image-uuid.jpg")
+                        .filename(invalidFileName)
                         .isNewImage(true)
                         .isRepresentative(false)
                         .build()))
                 .build();
-            MultipartFile imageFile = new FakeMultipartFile("");
+            MultipartFile imageFile = new FakeMultipartFile(invalidFileName);
 
             // When & Then
             assertThatThrownBy(
                 () -> sut.modifyProductImages(sellerId, request, List.of(imageFile)))
                 .isInstanceOf(CommonException.class)
-                .hasMessageContaining(BError.NOT_VALID.getMessage("file name"));
+                .hasMessageContaining(BError.NOT_VALID.getMessage("file name or file extension"));
         }
     }
 }
