@@ -3,6 +3,7 @@ package com.sellect.server.search;
 import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 
@@ -130,7 +131,7 @@ public class SearchSpringBootTest {
         assertEquals(20, pagedResponse.pageSize());
         assertEquals(1, pagedResponse.totalElements());
         assertEquals(1, pagedResponse.totalPages());
-        assertEquals(true, pagedResponse.isLast());
+        assertTrue(pagedResponse.isLast());
     }
 
     @Test
@@ -173,6 +174,6 @@ public class SearchSpringBootTest {
         assertEquals(20, pagedResponse.pageSize());
         assertEquals(1, pagedResponse.totalElements());
         assertEquals(1, pagedResponse.totalPages());
-        assertEquals(true, pagedResponse.isLast());
+        assertTrue(pagedResponse.isLast());
     }
 }
