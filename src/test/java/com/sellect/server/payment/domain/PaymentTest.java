@@ -4,6 +4,7 @@ import static org.assertj.core.api.BDDAssertions.then;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.sellect.server.common.exception.CommonException;
+import com.sellect.server.common.exception.enums.BError;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -11,10 +12,10 @@ import org.junit.jupiter.api.Test;
 class PaymentTest {
 
     @Nested
-    @DisplayName("결제 생성 테스트")
+    @DisplayName("readyPayment()")
     class PaymentCreateTest{
         @Test
-        @DisplayName("유효한 입력으로 결제 준비 상태 생성 성공")
+        @DisplayName("[성공] 유효한 입력으로 결제 준비 상태 생성 성공")
         void testReadySuccess() {
             // Given
             String orderId = "order123";
@@ -136,7 +137,7 @@ class PaymentTest {
     @DisplayName("결제 상태 변경 테스트")
     class PaymentStatusChangeTest{
         @Test
-        @DisplayName("대기상태에서 결제 승인으로 변경한다.")
+        @DisplayName("[성공] Status.READY -> Status.APPROVE")
         void paymentApproveSuccess() {
             //given
             Payment payment = Payment.ready("orderId", "pid", "uid", 1000, "tid");
@@ -148,7 +149,7 @@ class PaymentTest {
         }
 
         @Test
-        @DisplayName("대기상태에서 결제 취소로 변경한다.")
+        @DisplayName("[성공] Status.READY -> Status.FAIL")
         void paymentFailSuccess() {
             //given
             Payment payment = Payment.ready("orderId", "pid", "uid", 1000, "tid");
@@ -160,7 +161,7 @@ class PaymentTest {
         }
 
         @Test
-        @DisplayName("대기 상태에서 결제 캔슬 상태로 변경한다.")
+        @DisplayName("[성공] Status.READY -> Status.CANCEL")
         void paymentCancelSuccess() {
             //given
             Payment payment = Payment.ready("orderId", "pid", "uid", 1000, "tid");
@@ -199,6 +200,42 @@ class PaymentTest {
             // then
             then(failedPayment.getStatus()).isEqualTo(initialStatus);
             then(failedPayment.getStatus()).isNotEqualTo(PaymentStatus.READY);
+        }
+
+        @Test
+        @DisplayName("[실패] Staus.Ready가 아닐떄, failPayment() 호출")
+        void throwExceptionWhenStatusReadyCallFailPayment() {
+            //given
+            Payment payment = Payment.ready("orderId", "pid", "uid", 1000, "tid");
+            Payment failedPayment = payment.failPayment();// 먼저 CANCEL로 상태 변경
+
+            //when
+            CommonException exception = assertThrows(CommonException.class, () -> {
+                Payment twoFailPayment = failedPayment.failPayment();
+            });
+
+            //then
+            then(exception.getErrorType()).isEqualTo(BError.class);
+            then(exception.getMessage()).isEqualTo(
+                "failPayment() failed for reason (PaymentStatus is not Ready)");
+        }
+
+        @Test
+        @DisplayName("[실패] Staus.Ready가 아닐떄, cancelPayment() 호출")
+        void throwExceptionWhenStatusReadyCallCancelPayment() {
+            //given
+            Payment payment = Payment.ready("orderId", "pid", "uid", 1000, "tid");
+            Payment failedPayment = payment.failPayment();// 먼저 CANCEL로 상태 변경
+
+            //when
+            CommonException exception = assertThrows(CommonException.class, () -> {
+                Payment twoFailPayment = failedPayment.cancelPayment();
+            });
+
+            //then
+            then(exception.getErrorType()).isEqualTo(BError.class);
+            then(exception.getMessage()).isEqualTo(
+                "cancelPayment() failed for reason (PaymentStatus is not Ready)");
         }
     }
 }

@@ -66,37 +66,40 @@ public class Payment {
     }
 
     public Payment failPayment() {
-        if (status.equals(PaymentStatus.READY)) {
-            return Payment.builder()
-                .id(this.id)
-                .orderId(this.orderId)
-                .price(this.price)
-                .pid(this.pid)
-                .uid(this.uid)
-                .status(PaymentStatus.FAIL)
-                .tid(this.tid)
-                .createdAt(this.createdAt)
-                .updatedAt(LocalDateTime.now())
-                .build();
+        if (!status.equals(PaymentStatus.READY)) {
+            throw new CommonException(BError.FAIL_FOR_REASON, "failPayment()",
+                "PaymentStatus is not Ready");
         }
-        return this;
+
+        return Payment.builder()
+            .id(this.id)
+            .orderId(this.orderId)
+            .price(this.price)
+            .pid(this.pid)
+            .uid(this.uid)
+            .status(PaymentStatus.FAIL)
+            .tid(this.tid)
+            .createdAt(this.createdAt)
+            .updatedAt(LocalDateTime.now())
+            .build();
     }
 
     public Payment cancelPayment() {
-        if (status.equals(PaymentStatus.READY)) {
-            return Payment.builder()
-                .id(this.id)
-                .orderId(this.orderId)
-                .price(this.price)
-                .pid(this.pid)
-                .uid(this.uid)
-                .status(PaymentStatus.CANCEL)
-                .tid(this.tid)
-                .createdAt(this.createdAt)
-                .updatedAt(LocalDateTime.now())
-                .build();
+        if (!status.equals(PaymentStatus.READY)) {
+            throw new CommonException(BError.FAIL_FOR_REASON, "cancelPayment()",
+                "PaymentStatus is not Ready");
         }
-        return this;
+        return Payment.builder()
+            .id(this.id)
+            .orderId(this.orderId)
+            .price(this.price)
+            .pid(this.pid)
+            .uid(this.uid)
+            .status(PaymentStatus.CANCEL)
+            .tid(this.tid)
+            .createdAt(this.createdAt)
+            .updatedAt(LocalDateTime.now())
+            .build();
     }
 }
 

@@ -24,7 +24,10 @@ public enum BError implements Error {
     ALREADY_RECEIVED("COUPON_ALREADY_REGISTERED", "The coupon%1 has already been registered"),
     PAYMENT_FAILED("PAYMENT_FAIL", "%1"),
     ACCESS_DENIED("NOT_ACCESSIBLE", "access denied to %1"),
-    COUPON_EXPIRED("COUPON_EXPIRED", "The coupon%1 has expired"),;
+    COUPON_EXPIRED("COUPON_EXPIRED", "The coupon%1 has expired"),
+    KAKKO_APPROVE_FAIL("APPROVE_FAIL", "kakao pay approve fail"),
+    ;
+
 
     private final String errCode;
     private final String msg;
