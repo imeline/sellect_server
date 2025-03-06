@@ -1,7 +1,6 @@
-package com.sellect.server.payment.domain.controller.repository;
+package com.sellect.server.payment.repository;
 
 import com.sellect.server.payment.domain.Payment;
-import com.sellect.server.payment.repository.PaymentRepository;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;

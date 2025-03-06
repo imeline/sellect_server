@@ -27,7 +27,7 @@ import com.sellect.server.order.repository.entity.OrderStatus;
 import com.sellect.server.order.repository.fake.FakeOrderItemRepository;
 import com.sellect.server.order.repository.fake.FakeOrdersRepository;
 import com.sellect.server.payment.domain.Payment;
-import com.sellect.server.payment.domain.controller.repository.FakePaymentRepository;
+import com.sellect.server.payment.repository.FakePaymentRepository;
 import com.sellect.server.payment.event.KakaoPayReadyEvent;
 import com.sellect.server.product.domain.Inventory;
 import com.sellect.server.product.domain.Product;
