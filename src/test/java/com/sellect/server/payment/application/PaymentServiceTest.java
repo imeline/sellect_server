@@ -1,4 +1,4 @@
-package com.sellect.server.payment.domain.controller.application;
+package com.sellect.server.payment.application;
 
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -7,10 +7,9 @@ import static org.mockito.Mockito.mock;
 
 import com.sellect.server.auth.domain.User;
 import com.sellect.server.order.Infrastructure.port.KakaoPayClient;
-import com.sellect.server.payment.application.PaymentService;
 import com.sellect.server.payment.controller.response.PaymentHistoryResponse;
 import com.sellect.server.payment.domain.Payment;
-import com.sellect.server.payment.domain.controller.repository.FakePaymentRepository;
+import com.sellect.server.payment.repository.FakePaymentRepository;
 import com.sellect.server.payment.repository.PaymentRepository;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
