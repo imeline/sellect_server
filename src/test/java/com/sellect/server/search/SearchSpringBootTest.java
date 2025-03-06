@@ -75,7 +75,7 @@ public class SearchSpringBootTest {
     void setup() throws ServletException, IOException {
         baseUrl = "http://localhost:" + port;
 
-        // 🔹 doFilter() 실행되도록 설정하여 FilterChain 정상 작동
+        // doFilter() 실행되도록 설정하여 FilterChain 정상 작동
         doAnswer(invocation -> {
             ServletRequest request = invocation.getArgument(0);
             ServletResponse response = invocation.getArgument(1);
@@ -103,22 +103,22 @@ public class SearchSpringBootTest {
             url,
             org.springframework.http.HttpMethod.GET,
             null,
-            new ParameterizedTypeReference<ApiResponse<PagedResponse<SearchResponse>>>() {} // ✅ 명시적 타입 지정
+            new ParameterizedTypeReference<ApiResponse<PagedResponse<SearchResponse>>>() {} // 명시적 타입 지정
         );
 
-        // 🔥 API 응답 직접 출력 (디버깅)
+        //  API 응답 직접 출력 (디버깅)
         System.out.println("Response Status: " + response.getStatusCode());
         System.out.println("Response Body: " + response.getBody());
 
-        // ✅ API 응답이 NULL이면 테스트 실패
+        // API 응답이 NULL이면 테스트 실패
         assertNotNull(response.getBody(), "API 응답이 null입니다. API가 정상적으로 동작하는지 확인하세요.");
 
-        // ✅ 응답 상태 코드 검증
+        //  응답 상태 코드 검증
         assertEquals(HttpStatus.OK, response.getStatusCode(), "API 응답 코드가 200이 아닙니다.");
         assertEquals(true, response.getBody().isSuccess(), "API 응답 isSuccess 값이 null 또는 false 입니다.");
         assertEquals(200, response.getBody().status(), "API 응답 status 값이 200이 아닙니다.");
 
-        // ✅ 응답 내용 검증
+        // 응답 내용 검증
         PagedResponse<SearchResponse> pagedResponse = response.getBody().result();
         assertNotNull(pagedResponse, "PagedResponse가 null입니다.");
         assertFalse(pagedResponse.content().isEmpty(), "조회된 상품이 없습니다.");
@@ -130,7 +130,7 @@ public class SearchSpringBootTest {
         assertEquals("Product1", product.name(), "상품명이 다릅니다.");
         assertEquals(new BigDecimal("55000.00"), product.price(), "가격이 다릅니다.");
 
-        // ✅ 페이징 정보 검증
+        // 페이징 정보 검증
         assertEquals(0, pagedResponse.pageNumber());
         assertEquals(20, pagedResponse.pageSize());
         assertEquals(1, pagedResponse.totalElements());
@@ -156,10 +156,10 @@ public class SearchSpringBootTest {
             new ParameterizedTypeReference<>() {}
         );
 
-        // 🔥 API 응답 확인
+        // API 응답 확인
         System.out.println("Response: " + response.getBody());
 
-        // ✅ 응답 상태 코드 검증
+        // 응답 상태 코드 검증
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(true, response.getBody().isSuccess(), "API 응답 isSuccess 값이 null 또는 false 입니다.");
         assertEquals(200, response.getBody().status());
