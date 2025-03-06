@@ -1,5 +1,7 @@
 package com.sellect.server.order.Infrastructure.port;
 
+import com.sellect.server.common.exception.CommonException;
+import com.sellect.server.common.exception.enums.BError;
 import com.sellect.server.order.Infrastructure.request.KakaoPayReadyRequest;
 import com.sellect.server.order.Infrastructure.response.KakaoPayApproveResponse;
 import com.sellect.server.order.Infrastructure.response.KakaoPayReadyResponse;
@@ -49,7 +51,7 @@ public class KakaoPayClient {
             HttpMethod.POST, request, KakaoPayApproveResponse.class);
 
         if (response.getStatusCode() != HttpStatus.OK) {
-            throw new RuntimeException("카카오페이 결제 승인 실패");
+            throw new CommonException(BError.KAKKO_APPROVE_FAIL);
         }
 
         return response.getBody();
