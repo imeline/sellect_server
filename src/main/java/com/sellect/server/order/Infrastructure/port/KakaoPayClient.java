@@ -37,7 +37,7 @@ public class KakaoPayClient {
             KakaoPayReadyResponse.class);
 
         if (response.getStatusCode() != HttpStatus.OK) {
-            throw new RuntimeException("카카오페이 결제 준비 실패");
+            throw new CommonException(BError.KAKKO_READY_FAIL);
         }
 
         return response.getBody();
