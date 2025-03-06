@@ -1,6 +1,7 @@
 package com.sellect.server.payment.event;
 
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.BDDAssertions.then;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -71,6 +72,35 @@ public class PaymentEventListenerTest {
             String redirectUrl = future.get();
             then(redirectUrl).isEqualTo("redirect_pc_url_success");
         }
+
+        @Test
+        @DisplayName("카카오 결제 준비 이벤트 생성 - 실패 (Exception 발생)")
+        void willFailWithException() {
+            // given
+            User user = User.builder()
+                .id(1L)
+                .uuid("test-uuid")
+                .build();
+
+            Orders order = mock(Orders.class);
+            CompletableFuture<String> future = new CompletableFuture<>();
+            KakaoPayReadyEvent kakaoPayReadyEvent = new KakaoPayReadyEvent(this, user, 1L, order, future);
+
+            when(order.getTotalPrice()).thenReturn(BigDecimal.valueOf(1000L));
+            when(kakaoPayClient.readyPayment(any())).thenThrow(new CommonException(BError.KAKKO_READY_FAIL));
+
+            // when
+            paymentEventListener.kakaoPayReadyEvent(kakaoPayReadyEvent);
+
+            // then
+            verify(kakaoPayClient, times(1)).readyPayment(any());
+
+            // future가 예외로 완료되었는지 확인
+            ExecutionException exception = assertThrows(ExecutionException.class, future::get);
+            assertThat(exception.getCause()).isInstanceOf(RuntimeException.class);
+            assertThat(exception.getCause().getMessage()).isEqualTo("kakao pay ready fail");
+        }
+
     }
 
     @Nested
