@@ -58,9 +58,7 @@ public class CouponController {
     public ApiResponse<Page<ActiveCouponResponse>> getActiveCouponList(
         @AuthUser User user,
         @PageableDefault(page = 0, size = 5) Pageable pageable
-//        @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "5") int size
     ) {
-//        Page<ActiveCouponResponse> activeCouponList = couponService.getActiveCouponList(user, page, size);
         Page<ActiveCouponResponse> activeCouponList = couponService.getActiveCouponList(user, pageable);
         return ApiResponse.ok(activeCouponList);
     }

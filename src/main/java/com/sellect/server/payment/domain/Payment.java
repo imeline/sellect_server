@@ -1,6 +1,8 @@
 package com.sellect.server.payment.domain;
 
 
+import com.sellect.server.common.exception.CommonException;
+import com.sellect.server.common.exception.enums.BError;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -26,6 +28,14 @@ public class Payment {
     // 카카오 페이로부터 받아오는 tid 저장 및 상태 저장
     public static Payment ready(String orderId, String pid, String uid, Integer price,
         String tid) {
+        if (price < 0) {
+            throw new CommonException(BError.PAYMENT_FAILED, "결제 금액은 0원 보다 높어야 합니다.");
+        }
+
+        if (orderId == null || pid == null || uid == null || tid == null) {
+            throw new CommonException(BError.PAYMENT_FAILED, "결제 정보가 올바르지 않습니다.");
+        }
+
         return Payment.builder()
             .orderId(orderId)
             .price(price)

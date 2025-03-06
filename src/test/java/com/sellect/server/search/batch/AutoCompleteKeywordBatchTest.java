@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 
 import com.sellect.server.config.SecurityConfig;
+import com.sellect.server.product.application.S3StorageClient;
 import com.sellect.server.search.repository.SearchLogEntity;
 import com.sellect.server.search.repository.SearchLogJpaRepository;
 import com.sellect.server.search.repository.jpa.AutoCompleteKeywordEntity;
@@ -47,6 +48,9 @@ import org.springframework.transaction.annotation.Transactional;
         ManagementWebSecurityAutoConfiguration.class,
         SecurityConfig.class})
 class AutoCompleteKeywordBatchTest {
+
+    @MockBean
+    S3StorageClient s3StorageClient;
 
     @MockBean
     private SecurityFilterChain securityFilterChain;

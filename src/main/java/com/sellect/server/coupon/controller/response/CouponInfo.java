@@ -9,4 +9,8 @@ public record CouponInfo(
     SellerInfo sellerInfo
 ) {
 
+    public static CouponInfo from(Long couponId, Integer discountCost, LocalDate expirationDate,
+        SellerInfo sellerInfo) {
+        return new CouponInfo(couponId, discountCost, expirationDate, sellerInfo);
+    }
 }

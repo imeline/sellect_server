@@ -18,8 +18,10 @@ import com.sellect.server.order.domain.Orders;
 import com.sellect.server.order.repository.OrderItemRepository;
 import com.sellect.server.order.repository.OrdersRepository;
 import com.sellect.server.order.repository.entity.OrderStatus;
-import com.sellect.server.payment.application.PaymentService;
 import com.sellect.server.payment.domain.Payment;
+import com.sellect.server.payment.event.KakaoPayApproveEvent;
+import com.sellect.server.payment.event.KakaoPayReadyEvent;
+import com.sellect.server.payment.repository.PaymentRepository;
 import com.sellect.server.product.domain.Inventory;
 import com.sellect.server.product.domain.Product;
 import com.sellect.server.product.repository.InventoryRepository;
@@ -30,8 +32,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,7 +55,8 @@ public class OrderService {
     private final UserReceivedCouponRepository userReceivedCouponRepository;
     private final ProductImageRepository productImageRepository;
     private final UserRepository userRepository;
-    private final PaymentService paymentService;
+    private final PaymentRepository paymentRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public String payOrder(User user, Long orderId, Long userReceivedCouponId) {
@@ -63,13 +69,26 @@ public class OrderService {
                 .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "쿠폰"));
             order = ordersRepository.save(order.applyCoupon(coupon));
         }
+
+        CompletableFuture<String> future = new CompletableFuture<>();
+        KakaoPayReadyEvent kakaoPayReadyEvent = new KakaoPayReadyEvent(this, user, orderId, order, future);
+        eventPublisher.publishEvent(kakaoPayReadyEvent);
+        String nextRedirectPcUrl = null;
+        try {
+            nextRedirectPcUrl = future.get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
+
         // 결제 요청
-        return paymentService.getKakaoPayReadyResponse(user, orderId, order);
+        return nextRedirectPcUrl;
     }
 
+    //tx1
     @Transactional
     public void approvePayment(String pid, String token) {
-        Payment payment = paymentService.findReadyPaymentByPid(pid);
+        Payment payment = paymentRepository.findByPid(pid)
+            .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "payment"));
 
         Long orderId = Long.valueOf(payment.getOrderId());
         User user = userRepository.findByUuid(payment.getUid())
@@ -93,12 +112,10 @@ public class OrderService {
         Orders savedOrder = ordersRepository.save(order.changeStatus(OrderStatus.COMPLETED));
         // 장바구니 비우기 및 쿠폰 삭제
         clearCartAndDeleteCouponAsync(user, savedOrder);
-        try {
-            // 결제 승인
-            paymentService.paymentApprove(pid, token, payment);
-        } catch (Exception e) {
-            log.error("Failed to approve payment for pid: {}", pid, e);
-        }
+
+
+        KakaoPayApproveEvent event = KakaoPayApproveEvent.publish(payment, token, pid);
+        eventPublisher.publishEvent(event);
     }
 
     @Async

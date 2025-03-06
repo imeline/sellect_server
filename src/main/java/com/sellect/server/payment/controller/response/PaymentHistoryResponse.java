@@ -1,5 +1,6 @@
 package com.sellect.server.payment.controller.response;
 
+import com.sellect.server.payment.domain.Payment;
 import lombok.Builder;
 
 @Builder
@@ -11,5 +12,14 @@ public record PaymentHistoryResponse(
     String status,
     String createdAt
 ) {
-
+    public static PaymentHistoryResponse of(Payment payment) {
+        return PaymentHistoryResponse.builder()
+            .id(payment.getId())
+            .orderId(payment.getOrderId())
+            .pid(payment.getPid())
+            .status(String.valueOf(payment.getStatus()))
+            .price(String.valueOf(payment.getPrice()))
+            .createdAt(payment.getCreatedAt().toString())
+            .build();
+    }
 }
