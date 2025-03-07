@@ -19,7 +19,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class PaymentService {
 
     private final PaymentRepository paymentRepository;
-    private final KakaoPayClient kakaoPayClient;
 
     @Transactional(readOnly = true)
     public List<PaymentHistoryResponse> getPaymentHistory(User user, Pageable pageable) {
