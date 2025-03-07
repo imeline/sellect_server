@@ -12,7 +12,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface UserReceivedCouponJpaRepository extends
     JpaRepository<UserReceivedCouponEntity, Long> {
 
-    List<UserReceivedCouponEntity> findByUser(UserEntity user, Pageable pageable);
+    List<UserReceivedCouponEntity> findAllByUser(UserEntity user, Pageable pageable);
 
     List<UserReceivedCouponEntity> findByUserAndIsUsed(UserEntity from, PageRequest pageRequest,
         Boolean isUsed);

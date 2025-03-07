@@ -3,6 +3,7 @@ package com.sellect.server.coupon.repository;
 import com.sellect.server.auth.domain.User;
 import com.sellect.server.coupon.domain.Coupon;
 import com.sellect.server.coupon.domain.UserReceivedCoupon;
+import com.sellect.server.coupon.repository.entity.UserReceivedCouponEntity;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -18,7 +19,7 @@ public class FakeuserReceivedCouponRepository implements UserReceivedCouponRepos
     Long id = 1L;
 
     @Override
-    public void save(UserReceivedCoupon userReceivedCoupon) {
+    public UserReceivedCouponEntity save(UserReceivedCoupon userReceivedCoupon) {
         if (userReceivedCoupon.getId() == null) {
             userReceivedCoupon = userReceivedCoupon.builder()
                 .id(id++)
@@ -31,6 +32,7 @@ public class FakeuserReceivedCouponRepository implements UserReceivedCouponRepos
                 .build();
         }
         table.put(userReceivedCoupon.getId(), userReceivedCoupon);
+        return null;
     }
 
     @Override
