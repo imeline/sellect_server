@@ -116,7 +116,7 @@ class CouponServiceTest {
                 .id(1L)
                 .nickname("test")
                 .uuid("uuid")
-                .role(Role.USER)
+                .role(Role.SELLER)
                 .build();
 
             Coupon coupon = Coupon.builder()
