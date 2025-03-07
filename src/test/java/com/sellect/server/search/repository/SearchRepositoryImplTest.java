@@ -2,7 +2,10 @@ package com.sellect.server.search.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.querydsl.jpa.impl.JPAQueryFactory;
+import com.blazebit.persistence.CriteriaBuilderFactory;
+import com.blazebit.persistence.querydsl.BlazeJPAQueryFactory;
+import com.sellect.server.config.BlazePersistenceConfig;
+import com.sellect.server.config.BlazeQueryDslConfig;
 import com.sellect.server.config.JpaConfig;
 import com.sellect.server.config.JsonConfig;
 import com.sellect.server.config.QueryDslConfig;
@@ -24,6 +27,8 @@ import org.springframework.test.context.TestPropertySource;
 
 @DataJpaTest
 @Import({
+    BlazePersistenceConfig.class,
+    BlazeQueryDslConfig.class,
     JpaConfig.class,
     JsonConfig.class,
     QueryDslConfig.class,
@@ -44,11 +49,14 @@ public class SearchRepositoryImplTest {
     @TestConfiguration
     static class TestConfig {
         @Autowired
-        private JPAQueryFactory queryFactory;
+        private BlazeJPAQueryFactory queryFactory;
+
+        @Autowired
+        private CriteriaBuilderFactory criteriaBuilderFactory;
 
         @Bean
         public SearchRepositoryImpl searchRepositoryImpl() {
-            return new SearchRepositoryImpl(queryFactory);
+            return new SearchRepositoryImpl(queryFactory, criteriaBuilderFactory);
         }
     }
 

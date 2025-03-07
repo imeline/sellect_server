@@ -10,6 +10,8 @@ import static org.mockito.Mockito.doAnswer;
 import com.sellect.server.common.infrastructure.jwt.JwtFilter;
 import com.sellect.server.common.response.ApiResponse;
 import com.sellect.server.common.response.PagedResponse;
+import com.sellect.server.config.BlazePersistenceConfig;
+import com.sellect.server.config.BlazeQueryDslConfig;
 import com.sellect.server.config.SecurityConfig;
 import com.sellect.server.config.TestRestTemplateConfig;
 import com.sellect.server.product.application.S3StorageClient;
@@ -40,7 +42,10 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.test.context.TestPropertySource;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import({TestRestTemplateConfig.class})
+@Import({
+    TestRestTemplateConfig.class,
+    BlazePersistenceConfig.class,
+    BlazeQueryDslConfig.class})
 @ImportAutoConfiguration(
     exclude = {
         SecurityAutoConfiguration.class,
