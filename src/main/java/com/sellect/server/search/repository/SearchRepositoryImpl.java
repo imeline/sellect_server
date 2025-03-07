@@ -93,18 +93,14 @@ public class SearchRepositoryImpl implements SearchRepository {
         SetExpression<Long> matchedProducts = unionQuery.union(
             queryFactory.select(productEntity.id)
                 .from(productEntity)
-                .leftJoin(productEntity.brandEntity, brandEntity)
                 .where(commonFilter.and(filterBuilder).and(contains(productEntity.name, keyword))),
 
             queryFactory.select(productEntity.id)
                 .from(productEntity)
-                .join(productEntity.brandEntity, brandEntity)
                 .where(commonFilter.and(filterBuilder).and(contains(brandEntity.name, keyword))),
 
             queryFactory.select(productEntity.id)
                 .from(productEntity)
-                .join(productEntity.categoryEntity, categoryEntity)
-                .leftJoin(productEntity.brandEntity, brandEntity)
                 .where(commonFilter.and(filterBuilder).and(contains(categoryEntity.name, keyword)))
         );
 
@@ -142,13 +138,15 @@ public class SearchRepositoryImpl implements SearchRepository {
             .limit(size)
             .fetch();
 
+
         // 전체 개수 계산
-        Long total = queryFactory.select(productEntity.count())
-            .from(productEntity)
-            .leftJoin(productEntity.brandEntity, brandEntity)
-            .leftJoin(productEntity.categoryEntity, categoryEntity)
-            .where(commonFilter.and(filterBuilder).and(keywordBuilder))
-            .fetchOne();
+//        Long total = queryFactory.select(productEntity.count())
+//            .from(productEntity)
+//            .leftJoin(productEntity.brandEntity, brandEntity)
+//            .leftJoin(productEntity.categoryEntity, categoryEntity)
+//            .where(commonFilter.and(filterBuilder).and(keywordBuilder))
+//            .fetchOne();
+        Long total = (long) productIds.size();
 
         return new PageImpl<>(results, PageRequest.of(page, size), Objects.requireNonNullElse(total, 0L));
     }
