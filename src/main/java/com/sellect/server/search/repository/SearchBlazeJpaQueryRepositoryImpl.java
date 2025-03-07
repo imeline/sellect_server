@@ -53,7 +53,8 @@ public class SearchBlazeJpaQueryRepositoryImpl implements SearchRepository {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<SearchResponse> searchTotal(SearchCondition condition, int page, int size, SearchSortType sortType) {
+    public Page<SearchResponse> searchTotal(SearchCondition condition, int page, int size,
+        SearchSortType sortType) {
         BooleanBuilder filterBuilder = new BooleanBuilder();
 
         if (condition.getBrandId() != null) {
@@ -109,7 +110,8 @@ public class SearchBlazeJpaQueryRepositoryImpl implements SearchRepository {
             .collect(Collectors.toList());
 
         // 대표 이미지 서브쿼리 (고유 alias 사용)
-        QProductImageEntity subProductImageEntity = new QProductImageEntity("subProductImageEntity");
+        QProductImageEntity subProductImageEntity = new QProductImageEntity(
+            "subProductImageEntity");
         JPQLQuery<String> imageUrlSubQuery = queryFactory
             .select(subProductImageEntity.imageUrl)
             .from(subProductImageEntity)
@@ -129,7 +131,8 @@ public class SearchBlazeJpaQueryRepositoryImpl implements SearchRepository {
                 productEntity.price))
             .from(productEntity)
             .leftJoin(productEntity.brandEntity, brandEntity)
-            .leftJoin(productImageEntity).on(productImageEntity.productEntity.id.eq(productEntity.id)
+            .leftJoin(productImageEntity)
+            .on(productImageEntity.productEntity.id.eq(productEntity.id)
                 .and(productImageEntity.representative.isTrue())
                 .and(productImageEntity.deleteAt.isNull()))
             .where(productEntity.id.in(productIds))
@@ -138,21 +141,14 @@ public class SearchBlazeJpaQueryRepositoryImpl implements SearchRepository {
             .limit(size)
             .fetch();
 
-
-        // 전체 개수 계산
-//        Long total = queryFactory.select(productEntity.count())
-//            .from(productEntity)
-//            .leftJoin(productEntity.brandEntity, brandEntity)
-//            .leftJoin(productEntity.categoryEntity, categoryEntity)
-//            .where(commonFilter.and(filterBuilder).and(keywordBuilder))
-//            .fetchOne();
         Long total = (long) productIds.size();
 
-        return new PageImpl<>(results, PageRequest.of(page, size), Objects.requireNonNullElse(total, 0L));
+        return new PageImpl<>(results, PageRequest.of(page, size),
+            Objects.requireNonNullElse(total, 0L));
     }
 
-
-    private OrderSpecifier<?>[] getOrderSpecifiers(SearchSortType sortType, SearchCondition condition) {
+    private OrderSpecifier<?>[] getOrderSpecifiers(SearchSortType sortType,
+        SearchCondition condition) {
         String keyword = condition.getKeyword();
         OrderSpecifier<Integer> priorityOrder = new OrderSpecifier<>(
             com.querydsl.core.types.Order.ASC,
@@ -163,9 +159,9 @@ public class SearchBlazeJpaQueryRepositoryImpl implements SearchRepository {
                 .otherwise(4)
         );
         return switch (sortType) {
-            case PRICE_ASC -> new OrderSpecifier<?>[] { priorityOrder, productEntity.price.asc() };
-            case PRICE_DESC -> new OrderSpecifier<?>[] { priorityOrder, productEntity.price.desc() };
-            default -> new OrderSpecifier<?>[] { priorityOrder, productEntity.createdAt.desc() };
+            case PRICE_ASC -> new OrderSpecifier<?>[]{priorityOrder, productEntity.price.asc()};
+            case PRICE_DESC -> new OrderSpecifier<?>[]{priorityOrder, productEntity.price.desc()};
+            default -> new OrderSpecifier<?>[]{priorityOrder, productEntity.createdAt.desc()};
         };
     }
 }
