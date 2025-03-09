@@ -26,7 +26,7 @@ public class Orders {
     private final OrderStatus status;
     private final LocalDateTime createdAt;
     private final LocalDateTime updatedAt;
-    private final LocalDateTime deletedAt;
+    private final LocalDateTime deleteAt;
 
     public static Orders register(User user, BigDecimal totalPrice, OrderStatus status) {
         return Orders.builder()
@@ -52,7 +52,7 @@ public class Orders {
             .status(status)
             .createdAt(this.createdAt)
             .updatedAt(LocalDateTime.now())
-            .deletedAt(this.deletedAt)
+            .deleteAt(this.deleteAt)
             .build();
     }
 
@@ -70,7 +70,7 @@ public class Orders {
             .status(this.status)
             .createdAt(this.createdAt)
             .updatedAt(LocalDateTime.now())
-            .deletedAt(this.deletedAt)
+            .deleteAt(this.deleteAt)
             .build();
     }
 

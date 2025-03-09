@@ -5,6 +5,7 @@ import static org.assertj.core.api.BDDAssertions.then;
 import com.sellect.server.auth.domain.User;
 import com.sellect.server.auth.repository.entity.Role;
 import com.sellect.server.auth.repository.entity.UserEntity;
+import com.sellect.server.auth.repository.user.UserJpaRepository;
 import com.sellect.server.config.JpaConfig;
 import com.sellect.server.config.JsonConfig;
 import com.sellect.server.order.domain.Orders;
@@ -15,22 +16,33 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.context.annotation.Import;
+import org.testcontainers.containers.MySQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
+// JPA 관련 Bean만 로드
 @DataJpaTest
-@Import({
-    JpaConfig.class,
-    JsonConfig.class,
-})
+// @Container와 @ServiceConnection을 사용해 MySQLContainer를 클래스 단위에서 실행
+@Testcontainers
+// Prevent auto-configuration of H2
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@Import({JpaConfig.class, JsonConfig.class})
 class OrdersRepositoryImplTest {
 
-    @Autowired
-    private TestEntityManager em;
+    @Container
+    private static final MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0")
+        .withDatabaseName("test-db")
+        .withUsername("test")
+        .withPassword("test");
 
     @Autowired
     private OrdersJpaRepository ordersJpaRepository;
+
+    @Autowired
+    private UserJpaRepository userJpaRepository;
 
     private OrdersRepositoryImpl ordersRepository;
     private UserEntity userEntity;
@@ -40,17 +52,15 @@ class OrdersRepositoryImplTest {
     void setUp() {
         ordersRepository = new OrdersRepositoryImpl(ordersJpaRepository);
 
+        // UserEntity 저장
         userEntity = UserEntity.builder()
             .uuid("test-uuid")
             .nickname("Test User")
             .role(Role.USER)
             .build();
-        em.persist(userEntity);
-        em.flush();
+        userJpaRepository.save(userEntity);
 
         user = userEntity.toModel();
-
-        em.clear();
     }
 
     @Nested
@@ -77,7 +87,7 @@ class OrdersRepositoryImplTest {
             then(savedOrders.getCreatedAt()).isNotNull();
             then(savedOrders.getUpdatedAt()).isNotNull();
             then(savedOrders.getCreatedAt()).isEqualTo(savedOrders.getUpdatedAt());
-            then(savedOrders.getDeletedAt()).isNull();
+            then(savedOrders.getDeleteAt()).isNull();
         }
     }
 }
