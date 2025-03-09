@@ -99,13 +99,13 @@ public class OrderService {
         Orders order = getOrderById(orderId);
         List<OrderItem> orderItems = getOrderItemsByOrderId(orderId);
 
-        // 재고 확인 및 차감
         List<Inventory> deductedInventories = orderItems.stream()
             .map(orderItem -> {
                 Product product = orderItem.getProduct();
-                Inventory inventory = inventoryRepository.findByProductId(product.getId())
-                    .orElseThrow(
-                        () -> new CommonException(BError.NOT_EXIST, "inventory"));
+                // DB 락
+                Inventory inventory = inventoryRepository.findWithLockByProductId(product.getId())
+                    .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "inventory"));
+                // 재고 확인 및 차감
                 return orderItem.deductStock(inventory);
             })
             .toList();

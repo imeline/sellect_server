@@ -53,6 +53,15 @@ public class FakeInventoryRepository implements InventoryRepository {
             .findFirst();
     }
 
+    @Override
+    public Optional<Inventory> findWithLockByProductId(Long productId) {
+        return data.stream()
+            .filter(inventory -> inventory.getId() != null &&
+                inventory.getProduct().getId().equals(productId))
+            .filter(inventory -> inventory.getDeleteAt() == null)
+            .findFirst();
+    }
+
     public void clear() {
         data.clear();
         nextId = 1L;

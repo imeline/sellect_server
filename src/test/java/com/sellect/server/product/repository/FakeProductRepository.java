@@ -81,11 +81,6 @@ public class FakeProductRepository implements ProductRepository {
     }
 
     @Override
-    public Optional<Product> findByIdWithLock(Long productId) {
-        return findById(productId); // 락은 가짜로 구현 불가, 일반 조회로 대체
-    }
-
-    @Override
     public Page<Product> findBySellerId(Long sellerId, Pageable pageable) {
         List<Product> sellerProducts = data.stream()
             .filter(product -> product.getSeller().getId().equals(sellerId))
