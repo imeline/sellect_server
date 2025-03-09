@@ -18,13 +18,14 @@ public class UserReceivedCouponRepositoryImpl implements UserReceivedCouponRepos
 
     private final UserReceivedCouponJpaRepository userReceivedCouponJpaRepository;
 
-    public void save(UserReceivedCoupon userReceivedCoupon) {
-        userReceivedCouponJpaRepository.save(UserReceivedCouponEntity.from(userReceivedCoupon));
+    public UserReceivedCouponEntity save(UserReceivedCoupon userReceivedCoupon) {
+        return userReceivedCouponJpaRepository.save(
+            UserReceivedCouponEntity.from(userReceivedCoupon));
     }
 
     @Override
     public List<UserReceivedCoupon> findByUser(User user, PageRequest pageRequest) {
-        List<UserReceivedCouponEntity> receivedCouponEntityList = userReceivedCouponJpaRepository.findByUser(
+        List<UserReceivedCouponEntity> receivedCouponEntityList = userReceivedCouponJpaRepository.findAllByUser(
             UserEntity.from(user), pageRequest);
 
         return receivedCouponEntityList.stream()

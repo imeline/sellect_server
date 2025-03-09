@@ -40,7 +40,7 @@ class PaymentServiceTest {
             .uuid(USER_UUID)
             .build();
         payment = Payment.ready("1032", "test-pid", USER_UUID, 1000, "test-tid");
-        paymentService = new PaymentService(paymentRepository, mock(KakaoPayClient.class));
+        paymentService = new PaymentService(paymentRepository);
     }
 
     @Nested

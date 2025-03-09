@@ -45,7 +45,8 @@ public class CouponController {
         return ApiResponse.ok();
     }
 
-    // reponse 데이터에 seller id, 이름 나오게 추가
+
+    // 사용자가 등록한 쿠폰 내역 조회
     @GetMapping
     public ApiResponse<List<CouponResponse>> getCoupon(@AuthUser User user,
         @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "5") int size,
@@ -54,6 +55,8 @@ public class CouponController {
         return ApiResponse.ok(couponList);
     }
 
+
+    // 사용자가 등록 가능한 쿠폰 리스트 조회
     @GetMapping("/actives")
     public ApiResponse<Page<ActiveCouponResponse>> getActiveCouponList(
         @AuthUser User user,
