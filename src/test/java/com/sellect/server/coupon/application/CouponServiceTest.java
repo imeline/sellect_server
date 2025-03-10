@@ -34,7 +34,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.redisson.api.RedissonClient;
+//import org.redisson.api.RedissonClient;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -45,16 +45,16 @@ class CouponServiceTest {
     CouponRepository couponRepository;
     UserReceivedCouponRepository userReceivedCouponRepository;
     ProductRepository productRepository;
-    RedissonClient redissonClient;
+//    RedissonClient redissonClient;
 
     @BeforeEach
     void setUp() {
-        redissonClient = mock(RedissonClient.class);
+//        redissonClient = mock(RedissonClient.class);
         couponRepository = new FakeCouponRepository();
         userReceivedCouponRepository = new FakeuserReceivedCouponRepository();
         productRepository = new FakeProductRepository();
-        couponService = new CouponService(couponRepository, userReceivedCouponRepository,
-            productRepository, redissonClient);
+//        couponService = new CouponService(couponRepository, userReceivedCouponRepository, productRepository, redissonClient);
+        couponService = new CouponService(couponRepository, userReceivedCouponRepository, productRepository);
     }
 
 
