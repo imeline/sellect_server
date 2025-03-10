@@ -18,8 +18,11 @@ import com.sellect.server.product.domain.Product;
 import com.sellect.server.product.repository.ProductRepository;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import lombok.RequiredArgsConstructor;
+//import org.redisson.api.RLock;
+//import org.redisson.api.RedissonClient;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -38,6 +41,7 @@ public class CouponService {
     private final CouponRepository couponRepository;
     private final UserReceivedCouponRepository userReceivedCouponRepository;
     private final ProductRepository productRepository;
+//    private final RedissonClient redissonClient;
 
     // 판매자 쿠폰 등록
     public void uploadCoupon(User user, IssueCouponRequest issueCouponRequest) {
@@ -53,6 +57,7 @@ public class CouponService {
         couponRepository.save(coupon);
     }
 
+    // TODO: 애플리케이션 락 vs DB 락 vs 큐 성능측정 필요 2025-02-18, 17:7
     /*
      * 유저 쿠폰 등록기능
      * 쿠폰 수량 삭감 - 동시성 이슈 발생
@@ -60,7 +65,6 @@ public class CouponService {
      * 단일 인스턴스인 경우 가능한 부분
      * 스케일 아웃을 하면?? -> DB 락????
      * */
-    // TODO: 애플리케이션 락 vs DB 락 vs 큐 성능측정 필요 2025-02-18, 17:7
     @Transactional
     public void downloadCoupon(User user, Long couponId) {
         lock.lock();
@@ -83,6 +87,56 @@ public class CouponService {
             lock.unlock();
         }
     }
+
+
+    // 2. DB락
+    @Transactional
+    public void downloadCouponWithPessimisticLock(User user, Long couponId){
+        Coupon coupon = couponRepository.findByIdWithPessimisticLock(couponId).orElseThrow();
+        coupon.isUsable();
+        if (userReceivedCouponRepository.existsByUserAndCoupon(user, coupon)) {
+            throw new CommonException(BError.ALREADY_RECEIVED, couponId.toString());
+        }
+        Coupon decreasedCoupon = coupon.decreaseQuantity();
+        UserReceivedCoupon userReceivedCoupon = UserReceivedCoupon.create(user,
+            decreasedCoupon);
+        userReceivedCouponRepository.save(userReceivedCoupon);
+        couponRepository.save(decreasedCoupon);
+    }
+
+    // 3. 분산락
+//    @Transactional
+//    public void downloadCouponWithDistributeLock(User user, Long couponId){
+//        String lockKey = "couponLock:" + couponId;
+//        RLock lock = redissonClient.getLock(lockKey);
+//
+//        // 락 획득 시도: 최대 5초 대기, 락 유지 시간 2초
+//        try {
+//            boolean isLock = lock.tryLock(5, 2, TimeUnit.SECONDS);
+//            if (!isLock) {
+//                throw new CommonException(BError.LOCK_ACQUISITION_FAILED, couponId.toString());
+//            }
+//            Coupon coupon = couponRepository.findByIdWithPessimisticLock(couponId).orElseThrow();
+//            coupon.isUsable();
+//            if (userReceivedCouponRepository.existsByUserAndCoupon(user, coupon)) {
+//                throw new CommonException(BError.ALREADY_RECEIVED, couponId.toString());
+//            }
+//            Coupon decreasedCoupon = coupon.decreaseQuantity();
+//            UserReceivedCoupon userReceivedCoupon = UserReceivedCoupon.create(user,
+//                decreasedCoupon);
+//            userReceivedCouponRepository.save(userReceivedCoupon);
+//            couponRepository.save(decreasedCoupon);
+//
+//        } catch (InterruptedException e) {
+//            throw new RuntimeException(e);
+//        } finally {
+//            if (lock.isHeldByCurrentThread()) {
+//                lock.unlock();
+//            }
+//        }
+//
+//    }
+
 
     // [사용자] 쿠폰 확인
     @Transactional(readOnly = true)
