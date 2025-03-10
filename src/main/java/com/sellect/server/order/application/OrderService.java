@@ -13,6 +13,7 @@ import com.sellect.server.order.controller.request.OrderAddRequest;
 import com.sellect.server.order.controller.response.OrderDetailGetResponse;
 import com.sellect.server.order.controller.response.OrderGetResponse;
 import com.sellect.server.order.controller.response.OrderItemGetResponse;
+import com.sellect.server.order.controller.response.PendingOrderRegisterResponse;
 import com.sellect.server.order.domain.OrderItem;
 import com.sellect.server.order.domain.Orders;
 import com.sellect.server.order.repository.OrderItemRepository;
@@ -71,7 +72,8 @@ public class OrderService {
         }
 
         CompletableFuture<String> future = new CompletableFuture<>();
-        KakaoPayReadyEvent kakaoPayReadyEvent = new KakaoPayReadyEvent(this, user, orderId, order, future);
+        KakaoPayReadyEvent kakaoPayReadyEvent = new KakaoPayReadyEvent(this, user, orderId, order,
+            future);
         eventPublisher.publishEvent(kakaoPayReadyEvent);
         String nextRedirectPcUrl = null;
         try {
@@ -97,13 +99,13 @@ public class OrderService {
         Orders order = getOrderById(orderId);
         List<OrderItem> orderItems = getOrderItemsByOrderId(orderId);
 
-        // 재고 확인 및 차감
         List<Inventory> deductedInventories = orderItems.stream()
             .map(orderItem -> {
                 Product product = orderItem.getProduct();
-                Inventory inventory = inventoryRepository.findByProductId(product.getId())
-                    .orElseThrow(
-                        () -> new CommonException(BError.NOT_EXIST, "inventory"));
+                // DB 락
+                Inventory inventory = inventoryRepository.findWithLockByProductId(product.getId())
+                    .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "inventory"));
+                // 재고 확인 및 차감
                 return orderItem.deductStock(inventory);
             })
             .toList();
@@ -112,7 +114,6 @@ public class OrderService {
         Orders savedOrder = ordersRepository.save(order.changeStatus(OrderStatus.COMPLETED));
         // 장바구니 비우기 및 쿠폰 삭제
         clearCartAndDeleteCouponAsync(user, savedOrder);
-
 
         KakaoPayApproveEvent event = KakaoPayApproveEvent.publish(payment, token, pid);
         eventPublisher.publishEvent(event);
@@ -150,7 +151,7 @@ public class OrderService {
     }
 
     @Transactional
-    public Orders registerPendingOrder(User user, OrderAddRequest request) {
+    public PendingOrderRegisterResponse registerPendingOrder(User user, OrderAddRequest request) {
 
         Orders order = Orders.register(user, request.convertPriceAsBigDecimal(),
             OrderStatus.PENDING);
@@ -180,7 +181,10 @@ public class OrderService {
             .toList();
 
         orderItemRepository.saveAll(orderItems);
-        return savedOrder;
+
+        return PendingOrderRegisterResponse.builder()
+            .orderId(savedOrder.getId())
+            .build();
     }
 
     public List<OrderGetResponse> getOrdersByUser(User user) {

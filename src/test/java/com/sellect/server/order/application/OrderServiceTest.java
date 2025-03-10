@@ -21,14 +21,15 @@ import com.sellect.server.order.controller.request.OrderAddRequest;
 import com.sellect.server.order.controller.request.OrderItemAddRequest;
 import com.sellect.server.order.controller.response.OrderDetailGetResponse;
 import com.sellect.server.order.controller.response.OrderGetResponse;
+import com.sellect.server.order.controller.response.PendingOrderRegisterResponse;
 import com.sellect.server.order.domain.OrderItem;
 import com.sellect.server.order.domain.Orders;
 import com.sellect.server.order.repository.entity.OrderStatus;
 import com.sellect.server.order.repository.fake.FakeOrderItemRepository;
 import com.sellect.server.order.repository.fake.FakeOrdersRepository;
 import com.sellect.server.payment.domain.Payment;
-import com.sellect.server.payment.repository.FakePaymentRepository;
 import com.sellect.server.payment.event.KakaoPayReadyEvent;
+import com.sellect.server.payment.repository.FakePaymentRepository;
 import com.sellect.server.product.domain.Inventory;
 import com.sellect.server.product.domain.Product;
 import com.sellect.server.product.domain.ProductImage;
@@ -128,9 +129,10 @@ class OrderServiceTest {
             );
 
             // When
-            Orders savedOrder = sut.registerPendingOrder(user, request);
+            PendingOrderRegisterResponse response = sut.registerPendingOrder(user, request);
 
             // Then
+            Orders savedOrder = ordersRepository.findById(response.orderId()).orElseThrow();
             assertThat(savedOrder.getStatus()).isEqualTo(OrderStatus.PENDING);
             List<OrderItem> orderItems = orderItemRepository.findAllByOrdersId(savedOrder.getId());
             assertThat(orderItems).hasSize(2);
@@ -225,7 +227,6 @@ class OrderServiceTest {
                 event.getFuture().complete(expectedUrl);
                 return null;
             }).when(eventPublisher).publishEvent(any(KakaoPayReadyEvent.class));
-
 
             // When
             sut.payOrder(user, order.getId(), 1L);
@@ -454,17 +455,17 @@ class OrderServiceTest {
         @DisplayName("사용자의 모든 주문을 조회 성공")
         void testGetOrdersByUser() {
             // Given
-            Orders savedOrder1 = ordersRepository.save(Orders.builder()
+            ordersRepository.save(Orders.builder()
                 .id(1L)
                 .user(user)
                 .status(OrderStatus.COMPLETED)
                 .build());
-            Orders savedOrder2 = ordersRepository.save(Orders.builder()
+            ordersRepository.save(Orders.builder()
                 .id(2L)
                 .user(user)
                 .status(OrderStatus.COMPLETED)
                 .build());
-            Orders pendingOrder = ordersRepository.save(Orders.builder()
+            ordersRepository.save(Orders.builder()
                 .id(3L)
                 .user(user)
                 .status(OrderStatus.PENDING)

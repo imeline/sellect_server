@@ -38,6 +38,17 @@ public class OrderController {
     }
 
     /**
+     * 주문 생성(pending)
+     */
+    @PostMapping("/order/pending")
+    public ApiResponse<PendingOrderRegisterResponse> registerPendingOrder(@AuthUser User user,
+        @Valid @RequestBody OrderAddRequest requests) {
+
+        PendingOrderRegisterResponse response = orderService.registerPendingOrder(user, requests);
+        return ApiResponse.ok(response);
+    }
+
+    /**
      * 주문 페이지 조회용 (결제 전)
      */
     @GetMapping("/orders/{orderId}/pending")
@@ -52,23 +63,10 @@ public class OrderController {
     }
 
     /**
-     * 주문 생성(pending)
-     */
-    @PostMapping("/order/pending")
-    public ApiResponse<PendingOrderRegisterResponse> registerPendingOrder(@AuthUser User user,
-        @Valid @RequestBody OrderAddRequest requests) {
-
-        Long orderId = orderService.registerPendingOrder(user, requests).getId();
-        return ApiResponse.ok(PendingOrderRegisterResponse.builder()
-            .orderId(orderId)
-            .build());
-    }
-
-    /**
      * 주문 내역 확인
      */
     @GetMapping("/orders")
-    public ApiResponse<List<OrderGetResponse>> getOrdersByUser(@AuthUser User user) {
+    public ApiResponse<List<OrderGetResponse>> getOrderDetail(@AuthUser User user) {
         return ApiResponse.ok(orderService.getOrdersByUser(user));
     }
 
@@ -76,17 +74,7 @@ public class OrderController {
      * 주문 내역 상세 확인
      */
     @GetMapping("/orders/{orderId}")
-    public ApiResponse<OrderDetailGetResponse> getOrdersByUser(@PathVariable Long orderId) {
+    public ApiResponse<OrderDetailGetResponse> getOrderDetail(@PathVariable Long orderId) {
         return ApiResponse.ok(orderService.getOrderDetail(orderId));
     }
-
-//    /**
-//     * 주문에 쿠폰 정보 적용
-//     */
-//    @PatchMapping("/order/{orderId}/appied-coupon/{userReceivedCouponId}")
-//    public ApiResponse<Void> applyCoupon(@AuthUser User user, @PathVariable Long orderId,
-//        @PathVariable Long userReceivedCouponId) {
-//        orderService.applyCouponToOrder(user, orderId, userReceivedCouponId);
-//        return ApiResponse.ok(null);
-//    }
 }
