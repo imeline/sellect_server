@@ -63,7 +63,7 @@ public class OrdersTest {
         assertEquals(OrderStatus.PENDING, order.getStatus());
         assertNotNull(order.getCreatedAt());
         assertNull(order.getUpdatedAt());
-        assertNull(order.getDeletedAt());
+        assertNull(order.getDeleteAt());
     }
 
     @Nested
@@ -99,7 +99,7 @@ public class OrdersTest {
             assertEquals(newStatus, updatedOrder.getStatus());
             assertEquals(order.getCreatedAt(), updatedOrder.getCreatedAt());
             assertNotEquals(order.getUpdatedAt(), updatedOrder.getUpdatedAt());
-            assertEquals(order.getDeletedAt(), updatedOrder.getDeletedAt());
+            assertEquals(order.getDeleteAt(), updatedOrder.getDeleteAt());
         }
 
         @Test
@@ -155,7 +155,7 @@ public class OrdersTest {
             assertEquals(order.getStatus(), updatedOrder.getStatus());
             assertEquals(order.getCreatedAt(), updatedOrder.getCreatedAt());
             assertNotEquals(order.getUpdatedAt(), updatedOrder.getUpdatedAt());
-            assertEquals(order.getDeletedAt(), updatedOrder.getDeletedAt());
+            assertEquals(order.getDeleteAt(), updatedOrder.getDeleteAt());
         }
 
         @Test

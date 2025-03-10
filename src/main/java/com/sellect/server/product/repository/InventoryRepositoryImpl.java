@@ -29,4 +29,10 @@ public class InventoryRepositoryImpl implements InventoryRepository {
         return inventoryJpaRepository.findById(id)
             .map(InventoryEntity::toModel);
     }
+
+    @Override
+    public Optional<Inventory> findWithLockByProductId(Long productId) {
+        return inventoryJpaRepository.findWithLockByProductEntityId(productId)
+            .map(InventoryEntity::toModel);
+    }
 }
