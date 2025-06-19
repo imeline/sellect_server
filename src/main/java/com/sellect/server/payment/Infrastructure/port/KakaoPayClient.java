@@ -1,10 +1,10 @@
-package com.sellect.server.order.Infrastructure.port;
+package com.sellect.server.payment.Infrastructure.port;
 
 import com.sellect.server.common.exception.CommonException;
 import com.sellect.server.common.exception.enums.BError;
-import com.sellect.server.order.Infrastructure.request.KakaoPayReadyRequest;
-import com.sellect.server.order.Infrastructure.response.KakaoPayApproveResponse;
-import com.sellect.server.order.Infrastructure.response.KakaoPayReadyResponse;
+import com.sellect.server.payment.Infrastructure.request.KakaoPayReadyRequest;
+import com.sellect.server.payment.Infrastructure.response.KakaoPayApproveResponse;
+import com.sellect.server.payment.Infrastructure.response.KakaoPayReadyResponse;
 import com.sellect.server.payment.controller.request.ApproveRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;

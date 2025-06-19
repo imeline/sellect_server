@@ -1,9 +1,9 @@
 package com.sellect.server.payment.event;
 
-import com.sellect.server.order.Infrastructure.port.KakaoPayClient;
-import com.sellect.server.order.Infrastructure.request.KakaoPayReadyRequest;
-import com.sellect.server.order.Infrastructure.response.KakaoPayApproveResponse;
-import com.sellect.server.order.Infrastructure.response.KakaoPayReadyResponse;
+import com.sellect.server.payment.Infrastructure.port.KakaoPayClient;
+import com.sellect.server.payment.Infrastructure.request.KakaoPayReadyRequest;
+import com.sellect.server.payment.Infrastructure.response.KakaoPayApproveResponse;
+import com.sellect.server.payment.Infrastructure.response.KakaoPayReadyResponse;
 import com.sellect.server.payment.controller.request.ApproveRequest;
 import com.sellect.server.payment.domain.Payment;
 import com.sellect.server.payment.repository.PaymentRepository;

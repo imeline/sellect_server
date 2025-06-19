@@ -1,7 +1,7 @@
 package com.sellect.server.payment.event.listener.proxy;
 
-import com.sellect.server.order.Infrastructure.port.KakaoPayClient;
-import com.sellect.server.order.Infrastructure.response.KakaoPayReadyResponse;
+import com.sellect.server.payment.Infrastructure.port.KakaoPayClient;
+import com.sellect.server.payment.Infrastructure.response.KakaoPayReadyResponse;
 import com.sellect.server.payment.domain.Payment;
 import com.sellect.server.payment.event.KakaoPayApproveEvent;
 import com.sellect.server.payment.event.KakaoPayReadyEvent;

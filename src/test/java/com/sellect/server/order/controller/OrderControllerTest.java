@@ -107,32 +107,6 @@ class OrderControllerTest {
                 .andExpect(jsonPath("$.result").value(redirectUrl));
         }
 
-//        @Test
-//        @WithMockUser(username = "testUser", roles = {"USER"})
-//        @DisplayName("주문 생성")
-//        void testRegisterPendingOrder() throws Exception {
-//            // Given
-//            OrderItemAddRequest itemRequest = new OrderItemAddRequest(1L, "1000",
-//                5);
-//            List<OrderItemAddRequest> orderItems = List.of(
-//                itemRequest);
-//
-//            OrderAddRequest request = new OrderAddRequest("5000", orderItems);
-//
-//            PendingOrderRegisterResponse response = new PendingOrderRegisterResponse(100L);
-//            when(orderService.registerPendingOrder(any(User.class), any(OrderAddRequest.class)))
-//                .thenReturn(response);
-//
-//            // When & Then
-//            mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/order/pending")
-//                    .contentType(MediaType.APPLICATION_JSON)
-//                    .content(new ObjectMapper().writeValueAsString(request)))
-//                .andExpect(status().isOk())
-//                .andExpect(jsonPath("$.is_success").value(true))
-//                .andExpect(jsonPath("$.status").value(200))
-//                .andExpect(jsonPath("$.result.order_id").value(100));
-//        }
-
         @Test
         @WithMockUser(username = "testUser", roles = {"USER"})
         @DisplayName("주문 페이지 조회 (결제 전)")

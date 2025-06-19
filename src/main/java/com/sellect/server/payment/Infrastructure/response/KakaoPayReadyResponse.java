@@ -1,4 +1,4 @@
-package com.sellect.server.order.Infrastructure.response;
+package com.sellect.server.payment.Infrastructure.response;
 
 import lombok.Builder;
 

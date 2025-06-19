@@ -1,4 +1,4 @@
-package com.sellect.server.order.Infrastructure.request;
+package com.sellect.server.payment.Infrastructure.request;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;

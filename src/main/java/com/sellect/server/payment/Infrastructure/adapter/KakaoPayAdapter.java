@@ -1,4 +1,4 @@
-package com.sellect.server.order.Infrastructure.adapter;
+package com.sellect.server.payment.Infrastructure.adapter;
 
 import com.sellect.server.common.response.ApiResponse;
 import com.sellect.server.order.application.OrderService;
