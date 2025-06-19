@@ -3,6 +3,9 @@ package com.sellect.server.order.application;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
 
 import com.sellect.server.auth.domain.User;
 import com.sellect.server.auth.repository.FakeUserRepository;
@@ -14,20 +17,23 @@ import com.sellect.server.common.exception.CommonException;
 import com.sellect.server.coupon.domain.Coupon;
 import com.sellect.server.coupon.domain.UserReceivedCoupon;
 import com.sellect.server.coupon.repository.FakeuserReceivedCouponRepository;
-import com.sellect.server.order.Infrastructure.port.KakaoPayClient;
 import com.sellect.server.order.controller.request.OrderAddRequest;
 import com.sellect.server.order.controller.request.OrderItemAddRequest;
 import com.sellect.server.order.controller.response.OrderDetailGetResponse;
 import com.sellect.server.order.controller.response.OrderGetResponse;
+import com.sellect.server.order.controller.response.PendingOrderRegisterResponse;
 import com.sellect.server.order.domain.OrderItem;
 import com.sellect.server.order.domain.Orders;
-import com.sellect.server.order.repository.FakeOrderItemRepository;
-import com.sellect.server.order.repository.FakeOrdersRepository;
 import com.sellect.server.order.repository.entity.OrderStatus;
-import com.sellect.server.payment.application.PaymentService;
-import com.sellect.server.payment.domain.controller.repository.FakePaymentRepository;
+import com.sellect.server.order.repository.fake.FakeOrderItemRepository;
+import com.sellect.server.order.repository.fake.FakeOrdersRepository;
+import com.sellect.server.payment.domain.Payment;
+import com.sellect.server.payment.event.KakaoPayReadyEvent;
+import com.sellect.server.payment.repository.FakePaymentRepository;
+import com.sellect.server.product.domain.Inventory;
 import com.sellect.server.product.domain.Product;
 import com.sellect.server.product.domain.ProductImage;
+import com.sellect.server.product.repository.FakeInventoryRepository;
 import com.sellect.server.product.repository.FakeProductImageRepository;
 import com.sellect.server.product.repository.FakeProductRepository;
 import java.math.BigDecimal;
@@ -36,32 +42,25 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
+@ExtendWith(MockitoExtension.class) // Mockito 환경 자동 초기화
 class OrderServiceTest {
-
-    @Mock
-    KakaoPayClient kakaoPayClient;
 
     private final FakeOrdersRepository ordersRepository = new FakeOrdersRepository();
     private final FakeOrderItemRepository orderItemRepository = new FakeOrderItemRepository();
     private final FakeProductRepository productRepository = new FakeProductRepository();
+    private final FakeInventoryRepository inventoryRepository = new FakeInventoryRepository();
     private final FakeCartItemRepository cartRepository = new FakeCartItemRepository();
     private final FakeuserReceivedCouponRepository userReceivedCouponRepository = new FakeuserReceivedCouponRepository();
     private final FakeProductImageRepository productImageRepository = new FakeProductImageRepository();
     private final FakeBrandRepository brandRepository = new FakeBrandRepository();
     private final FakeUserRepository userRepository = new FakeUserRepository();
-    private final PaymentService paymentService = new PaymentService(new FakePaymentRepository(), kakaoPayClient);
-    private final OrderService sut = new OrderService(
-        ordersRepository,
-        orderItemRepository,
-        productRepository,
-        cartRepository,
-        userReceivedCouponRepository,
-        productImageRepository,
-        userRepository,
-        paymentService
-    );
+    private final FakePaymentRepository paymentRepository = new FakePaymentRepository();
+    private final ApplicationEventPublisher eventPublisher = mock(ApplicationEventPublisher.class);
+    private OrderService sut; // sut을 BeforeEach에서 초기화
     private User user;
 
     @BeforeEach
@@ -69,12 +68,28 @@ class OrderServiceTest {
         ordersRepository.clear();
         orderItemRepository.clear();
         productRepository.clear();
+        inventoryRepository.clear();
         cartRepository.clear();
         userReceivedCouponRepository.clear();
         brandRepository.clear();
+        productImageRepository.clear();
+        userRepository.clear();
         user = User.builder()
             .id(1L)
+            .uuid("userUuid")
             .build();
+        sut = new OrderService(
+            ordersRepository,
+            orderItemRepository,
+            productRepository,
+            inventoryRepository,
+            cartRepository,
+            userReceivedCouponRepository,
+            productImageRepository,
+            userRepository,
+            paymentRepository,
+            eventPublisher
+        );
     }
 
     @Nested
@@ -85,14 +100,24 @@ class OrderServiceTest {
         @DisplayName("주문, 주문 아이템 생성 성공")
         void testRegisterPendingOrder() {
             // Given
-            productRepository.save(Product.builder()
+            Product product1 = productRepository.save(Product.builder()
                 .id(1L)
-                .stock(50)
                 .build());
 
-            productRepository.save(Product.builder()
+            Product product2 = productRepository.save(Product.builder()
                 .id(2L)
-                .stock(50)
+                .build());
+
+            inventoryRepository.save(Inventory.builder()
+                .id(1L)
+                .product(product1)
+                .stock(10)
+                .build());
+
+            inventoryRepository.save(Inventory.builder()
+                .id(2L)
+                .product(product2)
+                .stock(10)
                 .build());
 
             OrderAddRequest request = new OrderAddRequest(
@@ -104,9 +129,10 @@ class OrderServiceTest {
             );
 
             // When
-            Orders savedOrder = sut.registerPendingOrder(user, request);
+            PendingOrderRegisterResponse response = sut.registerPendingOrder(user, request);
 
             // Then
+            Orders savedOrder = ordersRepository.findById(response.orderId()).orElseThrow();
             assertThat(savedOrder.getStatus()).isEqualTo(OrderStatus.PENDING);
             List<OrderItem> orderItems = orderItemRepository.findAllByOrdersId(savedOrder.getId());
             assertThat(orderItems).hasSize(2);
@@ -116,8 +142,13 @@ class OrderServiceTest {
         @DisplayName("재고 부족 시, 에러 발생")
         void testStockError() {
             // Given
-            productRepository.save(Product.builder()
+            Product product = productRepository.save(Product.builder()
                 .id(1L)
+                .build());
+
+            inventoryRepository.save(Inventory.builder()
+                .id(1L)
+                .product(product)
                 .stock(5)
                 .build());
 
@@ -137,68 +168,231 @@ class OrderServiceTest {
     }
 
     @Nested
-    @DisplayName("주문 완료 테스트")
-    class CompleteOrderTest {
+    @DisplayName("결제 요청 테스트")
+    class PayOrderTest {
 
         @Test
-        @DisplayName("재고가 부족 시, 예외 발생")
-        void testCheckStock() {
+        @DisplayName("쿠폰 사용하지 않고 주문 업데이트")
+        void testPayOrderWithoutCoupon() {
             // Given
-            Product product1 = productRepository.save(Product.builder()
+            Orders order = ordersRepository.save(Orders.builder()
                 .id(1L)
-                .stock(5)
+                .user(user)
+                .status(OrderStatus.PENDING)
+                .totalPrice(new BigDecimal("50000"))
                 .build());
 
-            Orders savedOrder = ordersRepository.save(Orders.builder()
+            String expectedUrl = "mocked-url";
+            doAnswer(invocation -> {
+                KakaoPayReadyEvent event = invocation.getArgument(0);
+                event.getFuture().complete(expectedUrl);
+                return null;
+            }).when(eventPublisher).publishEvent(any(KakaoPayReadyEvent.class));
+
+            // When
+            sut.payOrder(user, order.getId(), null);
+
+            // Then
+            Orders updatedOrder = ordersRepository.findById(order.getId()).orElseThrow();
+            assertThat(updatedOrder.getStatus()).isEqualTo(OrderStatus.PENDING);
+            assertThat(updatedOrder.getUserReceivedCoupon()).isNull();
+        }
+
+        @Test
+        @DisplayName("쿠폰 적용 후 주문 업데이트")
+        void testPayOrderWithCoupon() {
+            // Given
+            Orders order = ordersRepository.save(Orders.builder()
                 .id(1L)
+                .user(user)
+                .status(OrderStatus.PENDING)
+                .totalPrice(new BigDecimal("50000"))
+                .build());
+
+            Coupon coupon = Coupon.builder()
+                .id(1L)
+                .discountCost(10000)
+                .build();
+
+            userReceivedCouponRepository.save(UserReceivedCoupon.builder()
+                .id(1L)
+                .user(user)
+                .coupon(coupon)
+                .isUsed(false)
+                .build());
+
+            String expectedUrl = "mocked-url";
+            doAnswer(invocation -> {
+                KakaoPayReadyEvent event = invocation.getArgument(0);
+                event.getFuture().complete(expectedUrl);
+                return null;
+            }).when(eventPublisher).publishEvent(any(KakaoPayReadyEvent.class));
+
+            // When
+            sut.payOrder(user, order.getId(), 1L);
+
+            // Then
+            Orders updatedOrder = ordersRepository.findById(order.getId()).orElseThrow();
+            assertEquals(1L, updatedOrder.getUserReceivedCoupon().getId());
+            assertEquals(new BigDecimal("40000"), updatedOrder.getTotalPrice());
+            assertEquals(OrderStatus.PENDING, updatedOrder.getStatus());
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 쿠폰으로 요청 시 예외 발생")
+        void testPayOrderWithInvalidCoupon() {
+            // Given
+            Orders order = ordersRepository.save(Orders.builder()
+                .id(1L)
+                .user(user)
+                .status(OrderStatus.PENDING)
+                .build());
+
+            // When & Then
+            CommonException exception = assertThrows(CommonException.class,
+                () -> sut.payOrder(user, order.getId(), 999L));
+            assertEquals("쿠폰 does not exist", exception.getMessage());
+        }
+
+        @Test
+        @DisplayName("주문 소유자가 아닌 경우 예외 발생")
+        void testPayOrderInvalidOwner() {
+            // Given
+            User anotherUser = User.builder()
+                .id(2L)
+                .build();
+            Orders order = ordersRepository.save(Orders.builder()
+                .id(1L)
+                .user(anotherUser)
+                .status(OrderStatus.PENDING)
+                .build());
+
+            // When & Then
+            assertThrows(CommonException.class,
+                () -> sut.payOrder(user, order.getId(), null));
+        }
+    }
+
+    @Nested
+    @DisplayName("결제 승인 테스트")
+    class ApprovePaymentTest {
+
+        @Test
+        @DisplayName("재고 차감 및 주문 완료 상태 변경")
+        void testApprovePaymentOrderCompletion() {
+            // Given
+            userRepository.save(user); // UUID를 위해 저장
+
+            Product product = productRepository.save(Product.builder()
+                .id(1L)
+                .build());
+
+            Inventory inventory = inventoryRepository.save(Inventory.builder()
+                .id(1L)
+                .product(product)
+                .stock(10)
+                .build());
+
+            Orders order = ordersRepository.save(Orders.builder()
+                .id(1L)
+                .user(user)
+                .status(OrderStatus.PENDING)
+                .totalPrice(new BigDecimal("50000"))
                 .build());
 
             orderItemRepository.saveAll(List.of(
                 OrderItem.builder()
                     .id(1L)
-                    .orders(savedOrder)
-                    .product(product1)
-                    .quantity(10)
-                    .build()
-            ));
+                    .orders(order)
+                    .product(product)
+                    .quantity(5)
+                    .build()));
 
-            // When & Then
-            CommonException exception = assertThrows(CommonException.class,
-                () -> sut.lockAndCompleteOrder(user, savedOrder.getId()));
-            assertEquals("재고 부족 is not valid", exception.getMessage());
+            Payment payment = Payment.builder()
+                .pid("pid123")
+                .orderId(order.getId().toString())
+                .uid(user.getUuid())
+                .build();
+
+            paymentRepository.save(payment);
+
+            // When
+            sut.approvePayment("pid123", "token123");
+
+            // Then
+            Orders updatedOrder = ordersRepository.findById(order.getId()).orElseThrow();
+            assertThat(updatedOrder.getStatus()).isEqualTo(OrderStatus.COMPLETED);
+
+            Inventory updatedInventory = inventoryRepository.findById(inventory.getId())
+                .orElseThrow();
+            assertThat(updatedInventory.getStock()).isEqualTo(5); // 재고 차감 확인
         }
 
         @Test
-        @DisplayName("재고 차감 & 주문 complete 상태 변경 성공")
-        void testCompleteOrder() {
+        @DisplayName("재고 부족 시 예외 발생")
+        void testApprovePaymentStockInsufficient() {
             // Given
-            Product product1 = productRepository.save(Product.builder()
+            userRepository.save(user); // UUID를 위해 저장
+
+            Product product = productRepository.save(Product.builder()
                 .id(1L)
-                .stock(10)
                 .build());
 
-            Orders savedOrder = ordersRepository.save(Orders.builder()
+            Inventory inventory = inventoryRepository.save(Inventory.builder()
                 .id(1L)
+                .product(product)
+                .stock(5)
+                .build());
+
+            Orders order = ordersRepository.save(Orders.builder()
+                .id(1L)
+                .user(user)
                 .status(OrderStatus.PENDING)
                 .build());
 
             orderItemRepository.saveAll(List.of(
                 OrderItem.builder()
                     .id(1L)
-                    .orders(savedOrder)
-                    .product(product1)
-                    .quantity(5)
-                    .build()
-            ));
+                    .orders(order)
+                    .product(product)
+                    .quantity(10)
+                    .build()));
 
-            // When
-            Orders orders = sut.lockAndCompleteOrder(user, savedOrder.getId());
+            Payment payment = Payment.builder()
+                .pid("pid123")
+                .orderId(order.getId().toString())
+                .uid(user.getUuid())
+                .build();
+            paymentRepository.save(payment);
 
-            // Then
-            Product updatedProduct = productRepository.findById(1L).orElseThrow();
-            assertThat(updatedProduct.getStock()).isEqualTo(5); // 재고가 차감되었는지 확인
-            assertThat(orders.getStatus()).isEqualTo(
-                OrderStatus.COMPLETED); // 주문 상태가 COMPLETED로 변경되었는지 확인
+            // When & Then
+            CommonException exception = assertThrows(CommonException.class,
+                () -> sut.approvePayment("pid123", "token123"));
+            assertEquals("재고 부족 is not valid", exception.getMessage());
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 사용자일 경우 예외 발생")
+        void testApprovePaymentInvalidUser() {
+            // Given
+            Orders order = ordersRepository.save(Orders.builder()
+                .id(1L)
+                .user(user)
+                .status(OrderStatus.PENDING)
+                .build());
+
+            Payment payment = Payment.builder()
+                .pid("pid123")
+                .orderId(order.getId().toString())
+                .uid("invalid-uuid")
+                .build();
+
+            paymentRepository.save(payment);
+
+            // When & Then
+            CommonException exception = assertThrows(CommonException.class,
+                () -> sut.approvePayment("pid123", "token123"));
+            assertEquals("user does not exist", exception.getMessage());
         }
 
         @Test
@@ -261,17 +455,17 @@ class OrderServiceTest {
         @DisplayName("사용자의 모든 주문을 조회 성공")
         void testGetOrdersByUser() {
             // Given
-            Orders savedOrder1 = ordersRepository.save(Orders.builder()
+            ordersRepository.save(Orders.builder()
                 .id(1L)
                 .user(user)
                 .status(OrderStatus.COMPLETED)
                 .build());
-            Orders savedOrder2 = ordersRepository.save(Orders.builder()
+            ordersRepository.save(Orders.builder()
                 .id(2L)
                 .user(user)
                 .status(OrderStatus.COMPLETED)
                 .build());
-            Orders pendingOrder = ordersRepository.save(Orders.builder()
+            ordersRepository.save(Orders.builder()
                 .id(3L)
                 .user(user)
                 .status(OrderStatus.PENDING)
@@ -281,7 +475,7 @@ class OrderServiceTest {
             List<OrderGetResponse> orderResponses = sut.getOrdersByUser(user);
 
             // Then
-            assertThat(orderResponses.size()).isEqualTo(2); // 확정 주문만 모두 조회 됐는지 체크
+            assertThat(orderResponses.size()).isEqualTo(2); // 확정 주문만 조회
         }
 
         @Test

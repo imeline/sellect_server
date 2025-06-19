@@ -65,7 +65,7 @@ public class OrdersEntity extends BaseTimeEntity {
             .status(this.status)
             .createdAt(this.getCreatedAt())
             .updatedAt(this.getUpdatedAt())
-            .deletedAt(this.getDeleteAt())
+            .deleteAt(this.getDeleteAt())
             .build();
     }
 
@@ -81,7 +81,7 @@ public class OrdersEntity extends BaseTimeEntity {
             .status(orders.getStatus())
             .createdAt(orders.getCreatedAt())
             .updatedAt(orders.getUpdatedAt())
-            .deleteAt(orders.getDeletedAt())
+            .deleteAt(orders.getDeleteAt())
             .build();
     }
 }

@@ -14,8 +14,8 @@ public class ProductImageRepositoryImpl implements ProductImageRepository {
     private final ProductImageJpaRepository productImageJpaRepository;
 
     @Override
-    public void save(ProductImage productImage, Product product) {
-        productImageJpaRepository.save(ProductImageEntity.from(productImage, product));
+    public ProductImage save(ProductImage productImage, Product product) {
+        return productImageJpaRepository.save(ProductImageEntity.from(productImage, product)).toModel();
     }
 
     @Override

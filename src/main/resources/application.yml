@@ -5,13 +5,14 @@ spring:
     password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
+    open-in-view: true
     hibernate:
       ddl-auto: ${DDL_AUTO}
-    #    show-sql: true
+    show-sql: true
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
-  #        format_sql: true
+        format_sql: true
   #  flyway:
   #    enabled: false
   #    baseline-on-migrate: true  # 기존 DB가 있을 경우 필요한 설정
@@ -57,3 +58,7 @@ management:
         include: "*"
   server:
     port: 8080
+
+logging:
+  level:
+    org.hibernate.SQL: TRACE

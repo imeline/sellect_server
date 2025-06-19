@@ -1,13 +1,17 @@
 package com.sellect.server.coupon.application;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.BDDAssertions.then;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
 
 import com.sellect.server.auth.domain.User;
 import com.sellect.server.auth.repository.entity.Role;
 import com.sellect.server.common.exception.CommonException;
 import com.sellect.server.coupon.controller.request.IssueCouponRequest;
+import com.sellect.server.coupon.controller.response.ActiveCouponResponse;
+import com.sellect.server.coupon.controller.response.CouponPossibleOrderResponse;
 import com.sellect.server.coupon.controller.response.CouponResponse;
 import com.sellect.server.coupon.domain.Coupon;
 import com.sellect.server.coupon.domain.UserReceivedCoupon;
@@ -15,9 +19,11 @@ import com.sellect.server.coupon.repository.CouponRepository;
 import com.sellect.server.coupon.repository.FakeCouponRepository;
 import com.sellect.server.coupon.repository.FakeuserReceivedCouponRepository;
 import com.sellect.server.coupon.repository.UserReceivedCouponRepository;
+import com.sellect.server.product.domain.Product;
 import com.sellect.server.product.repository.FakeProductRepository;
 import com.sellect.server.product.repository.ProductRepository;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -28,6 +34,10 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+//import org.redisson.api.RedissonClient;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 class CouponServiceTest {
 
@@ -35,14 +45,16 @@ class CouponServiceTest {
     CouponRepository couponRepository;
     UserReceivedCouponRepository userReceivedCouponRepository;
     ProductRepository productRepository;
+//    RedissonClient redissonClient;
 
     @BeforeEach
     void setUp() {
+//        redissonClient = mock(RedissonClient.class);
         couponRepository = new FakeCouponRepository();
         userReceivedCouponRepository = new FakeuserReceivedCouponRepository();
         productRepository = new FakeProductRepository();
-        couponService = new CouponService(couponRepository, userReceivedCouponRepository,
-            productRepository);
+//        couponService = new CouponService(couponRepository, userReceivedCouponRepository, productRepository, redissonClient);
+        couponService = new CouponService(couponRepository, userReceivedCouponRepository, productRepository);
     }
 
 
@@ -96,7 +108,7 @@ class CouponServiceTest {
 
 
     @Nested
-    @DisplayName("registerCoupon() 메소드는")
+    @DisplayName("downloadCoupon() 메소드는")
     class RegisterCouponTest {
 
         @Test
@@ -108,7 +120,7 @@ class CouponServiceTest {
                 .id(1L)
                 .nickname("test")
                 .uuid("uuid")
-                .role(Role.USER)
+                .role(Role.SELLER)
                 .build();
 
             Coupon coupon = Coupon.builder()
@@ -388,7 +400,7 @@ class CouponServiceTest {
             userReceivedCouponRepository.save(userReceivedCoupon2);
 
             //when
-            List<CouponResponse> couponList = couponService.getCouponList(user, 0, 5,  false);
+            List<CouponResponse> couponList = couponService.getCouponList(user, 0, 5, false);
 
             //then
             then(couponList.size()).isEqualTo(1);
@@ -411,5 +423,161 @@ class CouponServiceTest {
             then(couponList).isEmpty();
         }
     }
+
+    @Nested
+    @DisplayName("getActiveCouponList() 메소드는")
+    class GetActiveCouponLiset {
+
+        @Test
+        @DisplayName("유저가 등록 할 수 있는 쿠폰 목록을 조회한다.")
+        void willSuccess() {
+            //given
+            Coupon coupon = Coupon.builder()
+                .id(1L)
+                .seller(User.builder().id(2L).nickname("seller").role(Role.SELLER).build())
+                .discountCost(3000)
+                .quantity(10)
+                .expirationDate(LocalDate.now().plusDays(10))
+                .createdAt(LocalDateTime.now())
+                .build();
+
+            Coupon coupon2 = Coupon.builder()
+                .id(3L)
+                .seller(User.builder().id(2L).nickname("seller").role(Role.SELLER).build())
+                .discountCost(10000)
+                .quantity(10)
+                .expirationDate(LocalDate.now().plusDays(30))
+                .createdAt(LocalDateTime.now())
+                .build();
+
+            couponRepository.save(coupon);
+            couponRepository.save(coupon2);
+            Pageable pageable = PageRequest.of(0, 5);
+
+            //when
+            Page<ActiveCouponResponse> activeCouponList = couponService.getActiveCouponList(
+                User.builder().id(1L).role(Role.USER).build(), pageable);
+
+            //then
+            assertEquals(2, activeCouponList.getContent().size());
+//            assertEquals(10000, activeCouponList.getContent().get(0).couponInfo().discountCost());
+//            assertEquals(3000, activeCouponList.getContent().get(1).couponInfo().discountCost());
+        }
+    }
+
+    @Nested
+    @DisplayName("getCouponsByMatchingSeller() 메소드는")
+    class GetCouponsByMatchingSeller {
+
+        @Test
+        @DisplayName("판매자가 등록한 상품에 매칭되는 쿠폰 목록을 조회한다.")
+        void willSuccess() {
+            //given
+            User user = User.builder().id(1L).nickname("test").role(Role.USER).build();
+            User seller1 = User.builder().id(2L).nickname("seller").role(Role.SELLER).build();
+            User seller2 = User.builder().id(5L).nickname("anotherSseller").role(Role.SELLER)
+                .build();
+
+            Coupon coupon1 = Coupon.builder()
+                .id(1L)
+                .seller(seller1)
+                .discountCost(3000)
+                .quantity(10)
+                .expirationDate(LocalDate.now().plusDays(30))
+                .createdAt(LocalDateTime.now())
+                .build();
+
+            Coupon coupon2 = Coupon.builder()
+                .id(3L)
+                .seller(seller1)
+                .discountCost(10000)
+                .quantity(10)
+                .expirationDate(LocalDate.now().plusDays(10))
+                .createdAt(LocalDateTime.now())
+                .build();
+
+            Coupon coupon3 = Coupon.builder()
+                .id(3L)
+                .seller(seller2)
+                .discountCost(10000)
+                .quantity(10)
+                .expirationDate(LocalDate.now().plusDays(30))
+                .createdAt(LocalDateTime.now())
+                .build();
+
+            Product product1 = Product.builder()
+                .id(1L)
+                .seller(seller1)
+                .build();
+
+            Product product2 = Product.builder()
+                .id(2L)
+                .seller(seller1)
+                .build();
+
+            UserReceivedCoupon userReceivedCoupon1 = UserReceivedCoupon.builder()
+                .id(1L)
+                .user(user)
+                .coupon(coupon1)
+                .isUsed(false)
+                .build();
+            UserReceivedCoupon userReceivedCoupon2 = UserReceivedCoupon.builder()
+                .id(2L)
+                .user(user)
+                .coupon(coupon2)
+                .isUsed(false)
+                .build();
+            UserReceivedCoupon userReceivedCoupon3 = UserReceivedCoupon.builder()
+                .id(3L)
+                .user(user)
+                .coupon(coupon3)
+                .isUsed(false)
+                .build();
+
+            productRepository.save(product1);
+            productRepository.save(product2);
+            couponRepository.save(coupon1);
+            couponRepository.save(coupon2);
+            userReceivedCouponRepository.save(userReceivedCoupon1);
+            userReceivedCouponRepository.save(userReceivedCoupon2);
+            userReceivedCouponRepository.save(userReceivedCoupon3);
+
+            List<Long> productIds = List.of(1L, 2L);
+
+            //when
+            List<CouponPossibleOrderResponse> couponList = couponService.getCouponsByMatchingSeller(
+                user, productIds);
+
+            //then
+            couponList.forEach(System.out::println);
+            then(couponList.size()).isEqualTo(2);
+            then(couponList.get(0).userReceivedCouponId()).isEqualTo(2L);
+            then(couponList.get(1).userReceivedCouponId()).isEqualTo(1L);
+        }
+        
+        @Test
+        @DisplayName("존재하지 않는 상품 ID가 포함된 경우 예외를 던진다.")
+        void willFailWithNonExistentProductId() {
+            // given
+            User user = User.builder().id(1L).nickname("test").role(Role.USER).build();
+            User seller1 = User.builder().id(2L).nickname("seller").role(Role.SELLER).build();
+
+            Product product1 = Product.builder()
+                .id(1L)
+                .seller(seller1)
+                .build();
+
+            // 존재하는 상품만 저장
+            productRepository.save(product1);
+
+            List<Long> productIds = List.of(1L, 999L); // 999L은 존재하지 않음
+
+            // when & then
+            assertThatThrownBy(() -> couponService.getCouponsByMatchingSeller(user, productIds))
+                .isInstanceOf(CommonException.class)
+                .hasMessageContaining("999");
+        }
+    }
+
 
 }

@@ -14,13 +14,13 @@ public record ProductModifyResponse(
 
 ) {
 
-    public static ProductModifyResponse from(Product product) {
+    public static ProductModifyResponse from(Product product, int stock) {
         return ProductModifyResponse.builder()
             .productId(product.getId())
             .name(product.getName())
             .price(product.getPrice())
             .description(product.getDescription())
-            .stock(product.getStock())
+            .stock(stock)
             .build();
     }
 }

@@ -57,10 +57,6 @@ public class ProductEntity extends BaseTimeEntity {
     @Column(length = 5000)
     private String description;
 
-    @Column(nullable = false)
-    private Integer stock;
-
-
     public static ProductEntity from(Product product) {
         return ProductEntity.builder()
             .id(product.getId())
@@ -70,7 +66,6 @@ public class ProductEntity extends BaseTimeEntity {
             .price(product.getPrice())
             .name(product.getName())
             .description(product.getDescription())
-            .stock(product.getStock())
             .createdAt(product.getCreatedAt()) // BaseTimeEntity 필드 포함
             .updatedAt(product.getUpdatedAt()) // BaseTimeEntity 필드 포함
             .deleteAt(product.getDeleteAt()) // BaseTimeEntity 필드 포함
@@ -87,7 +82,6 @@ public class ProductEntity extends BaseTimeEntity {
             .price(this.price)
             .name(this.name)
             .description(this.description)
-            .stock(this.stock)
             .createdAt(this.getCreatedAt()) // BaseTimeEntity 필드 포함
             .updatedAt(this.getUpdatedAt()) // BaseTimeEntity 필드 포함
             .deleteAt(this.getDeleteAt()) // BaseTimeEntity 필드 포함

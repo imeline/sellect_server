@@ -15,8 +15,10 @@ import com.sellect.server.product.controller.response.ProductDetailRetrieveRespo
 import com.sellect.server.product.controller.response.ProductModifyResponse;
 import com.sellect.server.product.controller.response.ProductRegisterResponse;
 import com.sellect.server.product.controller.response.SellerStatsRetrieveResponse;
+import com.sellect.server.product.domain.Inventory;
 import com.sellect.server.product.domain.Product;
 import com.sellect.server.product.domain.ProductImage;
+import com.sellect.server.product.repository.InventoryRepository;
 import com.sellect.server.product.repository.ProductImageRepository;
 import com.sellect.server.product.repository.ProductRepository;
 import com.sellect.server.product.util.StorageUtil;
@@ -41,6 +43,7 @@ public class ProductService {
     private final CategoryRepository categoryRepository;
     private final ProductImageRepository productImageRepository;
     private final OrderItemRepository orderItemRepository;
+    private final InventoryRepository inventoryRepository;
     private final StorageClient storageClient;
 
     /**
@@ -71,9 +74,10 @@ public class ProductService {
             brand,
             request.getPriceAsBigDecimal(),
             request.name(),
-            request.description(),
-            request.stock()
+            request.description()
         ));
+
+        inventoryRepository.save(Inventory.register(product, request.stock()));
 
         // 이미지 저장 (이미지 이름에는 식별자(uuid)가 포함되어 있고, 이를 통해 image context 와 매핑)
         Map<String, MultipartFile> uuidToImageFile = new HashMap<>();
@@ -130,9 +134,10 @@ public class ProductService {
             brand,
             request.getPriceAsBigDecimal(),
             request.name(),
-            request.description(),
-            request.stock()
+            request.description()
         ));
+
+        inventoryRepository.save(Inventory.register(product, request.stock()));
 
         if (request.imageContexts().isEmpty()) {
             throw new CommonException(BError.REQUIRED, "image context");
@@ -164,13 +169,16 @@ public class ProductService {
         Product modifiedProduct = product.modify(
             Optional.ofNullable(request.getPriceAsBigDecimal()).orElse(product.getPrice()),
             Optional.ofNullable(request.name()).orElse(product.getName()),
-            Optional.ofNullable(request.description()).orElse(product.getDescription()),
-            Optional.ofNullable(request.stock()).orElse(product.getStock())
+            Optional.ofNullable(request.description()).orElse(product.getDescription())
         );
-
         productRepository.save(modifiedProduct);
 
-        return ProductModifyResponse.from(modifiedProduct);
+        Inventory inventory = getInventoryByProductId(productId);
+        Inventory modifyInventory = inventory.modifyStock(
+            Optional.ofNullable(request.stock()).orElse(inventory.getStock()));
+        inventoryRepository.save(modifyInventory);
+
+        return ProductModifyResponse.from(modifiedProduct, modifyInventory.getStock());
     }
 
     /**
@@ -187,6 +195,10 @@ public class ProductService {
         product.validateSeller(sellerId);
 
         productRepository.save(product.remove());
+
+        // 재고 삭제
+        Inventory inventory = getInventoryByProductId(productId);
+        inventoryRepository.save(inventory.deleteStock());
     }
 
     /**
@@ -199,14 +211,11 @@ public class ProductService {
             .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "product"));
 
         Category smallCategory = categoryRepository.findById(product.getCategory().getId())
-            .orElseThrow(() ->
-                new CommonException(BError.NOT_EXIST, "category"));
+            .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "small category"));
         Category mediumCategory = categoryRepository.findById(smallCategory.getParentId())
-            .orElseThrow(() ->
-                new CommonException(BError.NOT_EXIST, "category"));
+            .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "medium category"));
         Category largeCategory = categoryRepository.findById(mediumCategory.getParentId())
-            .orElseThrow(() ->
-                new CommonException(BError.NOT_EXIST, "category"));
+            .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "large category"));
 
         // 브랜드명 조회
         Brand brand = brandRepository.findById(product.getBrand().getId())
@@ -214,6 +223,9 @@ public class ProductService {
 
         // 이미지들 조회
         List<ProductImage> productImages = productImageRepository.findByProductId(productId);
+
+        // 재고 조회
+        Inventory inventory = getInventoryByProductId(productId);
 
         // todo: JPA가 알아서 조회
         return ProductDetailRetrieveResponse.from(
@@ -223,7 +235,9 @@ public class ProductService {
             largeCategory,
             product.getSeller(),
             brand,
-            productImages);
+            inventory.getStock(),
+            productImages
+        );
     }
 
     //========================= Seller 전용 =========================//
@@ -249,12 +263,14 @@ public class ProductService {
             Brand brand = brandRepository.findById(product.getBrand().getId())
                 .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "brand"));
 
+            Inventory inventory = getInventoryByProductId(product.getId());
+
             List<ProductImage> productImages = productImageRepository.findByProductId(
                 product.getId());
             return ProductDetailRetrieveResponse.from(
                 product,
                 smallCategory, mediumCategory, largeCategory,
-                product.getSeller(), brand,
+                product.getSeller(), brand, inventory.getStock(),
                 productImages);
         });
     }
@@ -279,6 +295,7 @@ public class ProductService {
         Category largeCategory = categoryRepository.findById(mediumCategory.getParentId())
             .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "category"));
 
+        Inventory inventory = getInventoryByProductId(productId);
         List<ProductImage> productImages = productImageRepository.findByProductId(productId);
         Integer totalOrders = orderItemRepository.countCompleteOrdersByProductId(productId)
             .orElse(0);
@@ -286,7 +303,7 @@ public class ProductService {
             .orElse(BigDecimal.ZERO);
 
         return ProductDetailRetrieveBySellerResponse.from(
-            product, productImages,
+            product, productImages, inventory.getStock(),
             smallCategory, mediumCategory, largeCategory,
             totalOrders, totalSales);
     }
@@ -302,5 +319,11 @@ public class ProductService {
             .orElse(BigDecimal.ZERO);
 
         return SellerStatsRetrieveResponse.from(totalSales, productIds.size());
+    }
+
+    @Transactional(readOnly = true)
+    protected Inventory getInventoryByProductId(Long productId) {
+        return inventoryRepository.findByProductId(productId)
+            .orElseThrow(() -> new CommonException(BError.NOT_EXIST, "inventory"));
     }
 }

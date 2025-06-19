@@ -24,7 +24,7 @@ class SearchServiceTest {
     // SearchRepository 의 구현체가 복잡하기에 fakeRepository 보다 Mocking 하는걸로 대체했습니다.
     private final SearchRepository searchRepository = mock(SearchRepository.class);
     private final ApplicationEventPublisher eventPublisher = mock(ApplicationEventPublisher.class);
-    private final SearchService searchService = new SearchService(searchRepository, eventPublisher);
+    private final SearchService sut = new SearchService(searchRepository, eventPublisher);
 
     @Nested
     @DisplayName("searchTotal 실행")
@@ -41,7 +41,7 @@ class SearchServiceTest {
             when(searchRepository.searchTotal(eq(condition), anyInt(), anyInt(), any())).thenReturn(mockPage);
 
             // when
-            searchService.searchTotal("user123", condition, 0, 10, SearchSortType.PRICE_ASC);
+            sut.searchTotal("user123", condition, 0, 10, SearchSortType.PRICE_ASC);
 
             // then
             verify(searchRepository).searchTotal(eq(condition), anyInt(), anyInt(), any());

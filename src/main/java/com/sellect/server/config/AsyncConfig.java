@@ -18,4 +18,15 @@ public class AsyncConfig {
         executor.initialize();
         return executor;
     }
+
+    @Bean(name = "paymentTaskExecutor")
+    public ThreadPoolTaskExecutor payTaskExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(5); // 최소 스레드 개수
+        executor.setMaxPoolSize(10); // 최대 스레드 개수
+        executor.setQueueCapacity(50); // 대기 큐 크기
+        executor.setThreadNamePrefix("paymentTaskExecutor AsyncThread - "); // 스레드 이름 지정
+        executor.initialize();
+        return executor;
+    }
 }

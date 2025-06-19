@@ -2,7 +2,6 @@ package com.sellect.server.coupon.repository;
 
 
 import static org.assertj.core.api.BDDAssertions.then;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import com.sellect.server.auth.domain.User;
 import com.sellect.server.auth.repository.entity.Role;
@@ -10,6 +9,7 @@ import com.sellect.server.auth.repository.entity.UserEntity;
 import com.sellect.server.coupon.domain.Coupon;
 import jakarta.persistence.EntityManager;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -50,6 +50,8 @@ class CouponRepositoryImplTest {
             .seller(sellerEntity.toModel())
             .discountCost(1000)
             .quantity(10)
+            .createdAt(LocalDateTime.now().minusDays(1))
+            .updatedAt(LocalDateTime.now().minusDays(1))
             .expirationDate(LocalDate.now().plusDays(7))
             .build();
 
@@ -58,6 +60,7 @@ class CouponRepositoryImplTest {
 
         //then
         Coupon savedCoupon = couponRepositoryImpl.findById(1L).orElse(null);
+        assert savedCoupon != null;
         then(savedCoupon.getId()).isEqualTo(1L);
         then(savedCoupon.getSeller().getNickname()).isEqualTo("seller");
         then(savedCoupon.getDiscountCost()).isEqualTo(1000);
@@ -76,6 +79,8 @@ class CouponRepositoryImplTest {
                 .seller(sellerEntity.toModel())
                 .discountCost(1000)
                 .quantity(10)
+                .createdAt(LocalDateTime.now().minusDays(1))
+                .updatedAt(LocalDateTime.now().minusDays(1))
                 .expirationDate(LocalDate.now().plusDays(7))
                 .build();
             Coupon savedCoupon = couponRepositoryImpl.save(coupon);
@@ -104,12 +109,16 @@ class CouponRepositoryImplTest {
                 .seller(sellerEntity.toModel())
                 .discountCost(1000)
                 .quantity(10)
+                .createdAt(LocalDateTime.now().minusDays(1))
+                .updatedAt(LocalDateTime.now().minusDays(1))
                 .expirationDate(LocalDate.now().plusDays(7))
                 .build();
             Coupon coupon2 = Coupon.builder()
                 .seller(sellerEntity.toModel())
                 .discountCost(2000)
                 .quantity(20)
+                .createdAt(LocalDateTime.now().minusDays(1))
+                .updatedAt(LocalDateTime.now().minusDays(1))
                 .expirationDate(LocalDate.now().plusDays(3))
                 .build();
             Coupon savedCoupon1 = couponRepositoryImpl.save(coupon1);
@@ -141,6 +150,8 @@ class CouponRepositoryImplTest {
                 .seller(sellerEntity.toModel())
                 .discountCost(1000)
                 .quantity(10)
+                .createdAt(LocalDateTime.now().minusDays(1))
+                .updatedAt(LocalDateTime.now().minusDays(1))
                 .expirationDate(LocalDate.now().plusDays(7))
                 .build();
             Coupon savedCoupon = couponRepositoryImpl.save(coupon); // 저장 후 반환된 객체 사용

@@ -3,11 +3,127 @@ package com.sellect.server.payment.domain;
 import static org.assertj.core.api.BDDAssertions.then;
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.sellect.server.common.exception.CommonException;
+import com.sellect.server.common.exception.enums.BError;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 class PaymentTest {
+
+    @Nested
+    @DisplayName("readyPayment()")
+    class PaymentCreateTest{
+        @Test
+        @DisplayName("[성공] 유효한 입력으로 결제 준비 상태 생성 성공")
+        void testReadySuccess() {
+            // Given
+            String orderId = "order123";
+            String pid = "product456";
+            String uid = "user789";
+            Integer price = 1000;
+            String tid = "transaction101";
+
+            // When
+            Payment payment = Payment.ready(orderId, pid, uid, price, tid);
+
+            // Then
+            assertNotNull(payment);
+            assertEquals(orderId, payment.getOrderId());
+            assertEquals(pid, payment.getPid());
+            assertEquals(uid, payment.getUid());
+            assertEquals(price, payment.getPrice());
+            assertEquals(tid, payment.getTid());
+            assertEquals(PaymentStatus.READY, payment.getStatus());
+            assertNotNull(payment.getCreatedAt());
+            assertNotNull(payment.getUpdatedAt());
+        }
+
+        @Test
+        @DisplayName("결제 금액이 음수일 때 예외 발생")
+        void testReadyWithNegativePrice() {
+            // Given
+            String orderId = "order123";
+            String pid = "product456";
+            String uid = "user789";
+            Integer price = -100; // 음수 가격
+            String tid = "transaction101";
+
+            // When & Then
+            CommonException exception = assertThrows(CommonException.class, () -> {
+                Payment.ready(orderId, pid, uid, price, tid);
+            });
+            assertEquals("결제 금액은 0원 보다 높어야 합니다.", exception.getMessage());
+        }
+
+        @Test
+        @DisplayName("orderId가 null일 때 예외 발생")
+        void testReadyWithNullOrderId() {
+            // Given
+            String orderId = null; // null 입력
+            String pid = "product456";
+            String uid = "user789";
+            Integer price = 1000;
+            String tid = "transaction101";
+
+            // When & Then
+            CommonException exception = assertThrows(CommonException.class, () -> {
+                Payment.ready(orderId, pid, uid, price, tid);
+            });
+            assertEquals("결제 정보가 올바르지 않습니다.", exception.getMessage());
+        }
+
+        @Test
+        @DisplayName("pid가 null일 때 예외 발생")
+        void testReadyWithNullPid() {
+            // Given
+            String orderId = "order123";
+            String pid = null; // null 입력
+            String uid = "user789";
+            Integer price = 1000;
+            String tid = "transaction101";
+
+            // When & Then
+            CommonException exception = assertThrows(CommonException.class, () -> {
+                Payment.ready(orderId, pid, uid, price, tid);
+            });
+            assertEquals("결제 정보가 올바르지 않습니다.", exception.getMessage());
+        }
+
+        @Test
+        @DisplayName("uid가 null일 때 예외 발생")
+        void testReadyWithNullUid() {
+            // Given
+            String orderId = "order123";
+            String pid = "product456";
+            String uid = null; // null 입력
+            Integer price = 1000;
+            String tid = "transaction101";
+
+            // When & Then
+            CommonException exception = assertThrows(CommonException.class, () -> {
+                Payment.ready(orderId, pid, uid, price, tid);
+            });
+            assertEquals("결제 정보가 올바르지 않습니다.", exception.getMessage());
+        }
+
+        @Test
+        @DisplayName("tid가 null일 때 예외 발생")
+        void testReadyWithNullTid() {
+            // Given
+            String orderId = "order123";
+            String pid = "product456";
+            String uid = "user789";
+            Integer price = 1000;
+            String tid = null; // null 입력
+
+            // When & Then
+            CommonException exception = assertThrows(CommonException.class, () -> {
+                Payment.ready(orderId, pid, uid, price, tid);
+            });
+            assertEquals("결제 정보가 올바르지 않습니다.", exception.getMessage());
+        }
+    }
 
     @Test
     @DisplayName("결제 승인")
@@ -21,7 +137,7 @@ class PaymentTest {
     @DisplayName("결제 상태 변경 테스트")
     class PaymentStatusChangeTest{
         @Test
-        @DisplayName("대기상태에서 결제 승인으로 변경한다.")
+        @DisplayName("[성공] Status.READY -> Status.APPROVE")
         void paymentApproveSuccess() {
             //given
             Payment payment = Payment.ready("orderId", "pid", "uid", 1000, "tid");
@@ -33,7 +149,7 @@ class PaymentTest {
         }
 
         @Test
-        @DisplayName("대기상태에서 결제 취소로 변경한다.")
+        @DisplayName("[성공] Status.READY -> Status.FAIL")
         void paymentFailSuccess() {
             //given
             Payment payment = Payment.ready("orderId", "pid", "uid", 1000, "tid");
@@ -45,7 +161,7 @@ class PaymentTest {
         }
 
         @Test
-        @DisplayName("대기 상태에서 결제 캔슬 상태로 변경한다.")
+        @DisplayName("[성공] Status.READY -> Status.CANCEL")
         void paymentCancelSuccess() {
             //given
             Payment payment = Payment.ready("orderId", "pid", "uid", 1000, "tid");
@@ -80,11 +196,46 @@ class PaymentTest {
             PaymentStatus initialStatus = failedPayment.getStatus();
 
             // when
-            Payment result = failedPayment;
 
             // then
-            then(result.getStatus()).isEqualTo(initialStatus);
-            then(result.getStatus()).isNotEqualTo(PaymentStatus.READY);
+            then(failedPayment.getStatus()).isEqualTo(initialStatus);
+            then(failedPayment.getStatus()).isNotEqualTo(PaymentStatus.READY);
+        }
+
+        @Test
+        @DisplayName("[실패] Staus.Ready가 아닐떄, failPayment() 호출")
+        void throwExceptionWhenStatusReadyCallFailPayment() {
+            //given
+            Payment payment = Payment.ready("orderId", "pid", "uid", 1000, "tid");
+            Payment failedPayment = payment.failPayment();// 먼저 CANCEL로 상태 변경
+
+            //when
+            CommonException exception = assertThrows(CommonException.class, () -> {
+                Payment twoFailPayment = failedPayment.failPayment();
+            });
+
+            //then
+            then(exception.getErrorType()).isEqualTo(BError.class);
+            then(exception.getMessage()).isEqualTo(
+                "failPayment() failed for reason (PaymentStatus is not Ready)");
+        }
+
+        @Test
+        @DisplayName("[실패] Staus.Ready가 아닐떄, cancelPayment() 호출")
+        void throwExceptionWhenStatusReadyCallCancelPayment() {
+            //given
+            Payment payment = Payment.ready("orderId", "pid", "uid", 1000, "tid");
+            Payment failedPayment = payment.failPayment();// 먼저 CANCEL로 상태 변경
+
+            //when
+            CommonException exception = assertThrows(CommonException.class, () -> {
+                Payment twoFailPayment = failedPayment.cancelPayment();
+            });
+
+            //then
+            then(exception.getErrorType()).isEqualTo(BError.class);
+            then(exception.getMessage()).isEqualTo(
+                "cancelPayment() failed for reason (PaymentStatus is not Ready)");
         }
     }
 }

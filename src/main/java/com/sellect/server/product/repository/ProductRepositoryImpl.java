@@ -43,13 +43,7 @@ public class ProductRepositoryImpl implements ProductRepository {
         return productJpaRepository.findContainingName(keyword, pageable)
             .map(ProductEntity::toModel);
     }
-
-    @Override
-    public Optional<Product> findByIdWithLock(Long id) {
-        return productJpaRepository.findWithLockById(id)
-            .map(ProductEntity::toModel);
-    }
-
+    
     @Override
     public Page<Product> findBySellerId(Long sellerId, Pageable pageable) {
         return productJpaRepository.findBySellerEntityId(sellerId, pageable)
@@ -59,5 +53,13 @@ public class ProductRepositoryImpl implements ProductRepository {
     @Override
     public List<Long> findProductIdsBySellerId(Long sellerId) {
         return productJpaRepository.findIdBySellerEntityIdAndDeleteAtIsNull(sellerId);
+    }
+
+
+    // payment approve v0
+    @Override
+    public Optional<Object> findByIdWithLock(Long id) {
+        return productJpaRepository.findWithLockById(id)
+            .map(ProductEntity::toModel);
     }
 }

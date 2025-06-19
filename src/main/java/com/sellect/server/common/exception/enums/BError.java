@@ -19,11 +19,16 @@ public enum BError implements Error {
     NOT_REGISTERED("NOT_REGISTERED", "%1 not registered"),
 
     NOT_SELLER("NOT_SELLER", "%1 is not a seller"),
+    NOT_USER("NOT_USER", "%1 is not a user"),
     COUPON_QUANTITY_ZERO("COUPON_QUANTITY_ZERO", "The quantity of the coupon%1 is 0"),
     ALREADY_RECEIVED("COUPON_ALREADY_REGISTERED", "The coupon%1 has already been registered"),
     PAYMENT_FAILED("PAYMENT_FAIL", "%1"),
+    ACCESS_DENIED("NOT_ACCESSIBLE", "access denied to %1"),
+    COUPON_EXPIRED("COUPON_EXPIRED", "The coupon%1 has expired"),
+    KAKKO_READY_FAIL("READY_FAIL", "kakao pay ready fail"),
+    KAKKO_APPROVE_FAIL("APPROVE_FAIL", "kakao pay approve fail"),
+    LOCK_ACQUISITION_FAILED("LOCK_ACQUISITION_FAIL", "lock");
 
-    ACCESS_DENIED("NOT_ACCESSIBLE", "access denied to %1"),;
 
     private final String errCode;
     private final String msg;

@@ -48,7 +48,6 @@ public class FakeProductRepository implements ProductRepository {
                 .price(product.getPrice())
                 .name(product.getName())
                 .description(product.getDescription())
-                .stock(product.getStock())
                 .createdAt(product.getCreatedAt()) // 생성 시간 유지
                 .updatedAt(product.getUpdatedAt()) // 업데이트 시간 유지
                 .deleteAt(product.getDeleteAt())   // 삭제 시간 유지
@@ -76,13 +75,9 @@ public class FakeProductRepository implements ProductRepository {
             .collect(Collectors.toList());
         int start = (int) pageable.getOffset();
         int end = Math.min(start + pageable.getPageSize(), findProducts.size());
-        List<Product> pagedProducts = (start < end) ? findProducts.subList(start, end) : Collections.emptyList();
+        List<Product> pagedProducts =
+            (start < end) ? findProducts.subList(start, end) : Collections.emptyList();
         return new PageImpl<>(pagedProducts, pageable, findProducts.size());
-    }
-
-    @Override
-    public Optional<Product> findByIdWithLock(Long productId) {
-        return findById(productId); // 락은 가짜로 구현 불가, 일반 조회로 대체
     }
 
     @Override
@@ -93,7 +88,8 @@ public class FakeProductRepository implements ProductRepository {
             .collect(Collectors.toList());
         int start = (int) pageable.getOffset();
         int end = Math.min(start + pageable.getPageSize(), sellerProducts.size());
-        List<Product> pagedProducts = (start < end) ? sellerProducts.subList(start, end) : Collections.emptyList();
+        List<Product> pagedProducts =
+            (start < end) ? sellerProducts.subList(start, end) : Collections.emptyList();
         return new PageImpl<>(pagedProducts, pageable, sellerProducts.size());
     }
 
@@ -104,6 +100,11 @@ public class FakeProductRepository implements ProductRepository {
             .filter(product -> product.getDeleteAt() == null)
             .map(Product::getId)
             .collect(Collectors.toList());
+    }
+
+    @Override
+    public Optional<Object> findByIdWithLock(Long id) {
+        return Optional.empty();
     }
 
     public void clear() {
