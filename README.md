@@ -1,4 +1,4 @@
-## 이커머스 서비스 'Sellect'
+<!--## 이커머스 서비스 'Sellect'
 
 ### ✅ 주요 기능
 
@@ -35,4 +35,4 @@
 
 ### ✅ 시연 영상
 https://github.com/user-attachments/assets/9df5f767-4710-4b46-875b-26b6ce65a99e
-
+-->
