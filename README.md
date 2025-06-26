@@ -35,3 +35,8 @@
 
 ### ✅ 시연 영상
 https://github.com/user-attachments/assets/9df5f767-4710-4b46-875b-26b6ce65a99e
+
+### ✅ ERD
+![Copy of  2025-03-14   최신 (4)](https://github.com/user-attachments/assets/75c2c9da-7886-4e3b-8a0b-d99f51f4892f)
+
+
